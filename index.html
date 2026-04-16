@@ -191,18 +191,39 @@
 
     /* Фото-рамка на кнопках-фильтрах (Hot Wheels / Monster Trucks) */
     .filter-photo {
-      width: 140px;
-      height: 100px;
+      width: 96px;
+      height: 64px;
     }
     .filter-photo img {
       width: 100%;
       height: 100%;
       object-fit: cover;
     }
+    @media (min-width: 480px) {
+      .filter-photo {
+        width: 120px;
+        height: 80px;
+      }
+    }
     @media (min-width: 768px) {
       .filter-photo {
-        width: 200px;
-        height: 130px;
+        width: 180px;
+        height: 120px;
+      }
+    }
+
+    /* Текст фильтра — адаптивный, влезает на iPhone и красиво растёт на планшете */
+    .filter-label {
+      font-size: clamp(1.4rem, 6.5vw, 3.75rem);
+      line-height: 0.95;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+    }
+    /* На узких мобильных разрешаем перенос, если два слова всё же не влезут */
+    @media (max-width: 400px) {
+      .filter-label {
+        white-space: normal;
+        font-size: clamp(1.25rem, 7.5vw, 1.75rem);
       }
     }
   </style>
@@ -662,8 +683,8 @@
        ========================================================================= */
     function FilterPill({ active, onClick, kind }) {
       const common =
-        'filter-btn rounded-[40px] border-4 shadow-2xl flex items-center gap-4 ' +
-        'px-4 md:px-6 py-3 md:py-4 transition-all';
+        'filter-btn rounded-[40px] border-4 shadow-2xl flex items-center gap-2 sm:gap-3 md:gap-4 ' +
+        'px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 transition-all max-w-full';
 
       // Большая рамка для фото
       const photoWrap = {
@@ -695,7 +716,7 @@
               />
             </div>
             <span
-              className="bangers text-4xl md:text-6xl tracking-wider"
+              className="bangers filter-label"
               style={{
                 color: active ? '#ffcc00' : '#e11d48',
                 WebkitTextStroke: active ? '2px #000' : '0',
@@ -707,7 +728,7 @@
                 display: 'inline-block',
               }}
             >
-              ХОТ&nbsp;ВИЛС
+              ХОТ ВИЛС
             </span>
           </button>
         );
@@ -734,18 +755,17 @@
             />
           </div>
           <span
-            className="bangers text-4xl md:text-6xl tracking-wider"
+            className="bangers filter-label"
             style={{
               color: active ? '#39ff14' : '#0f3d1f',
               WebkitTextStroke: active ? '2px #000' : '0',
               textShadow: active
                 ? '3px 3px 0 #000, 0 0 18px rgba(57,255,20,0.8)'
                 : '3px 3px 0 #39ff14, 4px 4px 0 #000',
-              letterSpacing: '0.04em',
               display: 'inline-block',
             }}
           >
-            МОНСТР&nbsp;ТРАКИ
+            МОНСТР ТРАКИ
           </span>
         </button>
       );
