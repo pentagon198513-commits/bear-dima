@@ -212,6 +212,79 @@
       }
     }
 
+    /* ========== Эффектный заголовок МЕДВЕДЬ ========== */
+    .hero-title {
+      position: relative;
+      display: inline-block;
+      font-family: 'Bangers', 'Fredoka', system-ui, sans-serif;
+      font-size: clamp(3.5rem, 13vw, 7.5rem);
+      line-height: 0.9;
+      letter-spacing: 0.05em;
+      transform: rotate(-3deg);
+      animation: hero-bounce 2.6s ease-in-out infinite;
+      padding: 0 0.15em;
+    }
+    .hero-title__bg,
+    .hero-title__front {
+      display: block;
+    }
+    /* Тень-слой (ступенчатая 3D-тень сзади) */
+    .hero-title__bg {
+      position: absolute;
+      inset: 0;
+      color: transparent;
+      -webkit-text-stroke: 3px #0a0a0a;
+      text-shadow:
+        3px 3px 0 #0066ff,
+        6px 6px 0 #ff6b00,
+        9px 9px 0 #e11d48,
+        12px 12px 0 rgba(0, 0, 0, 0.25);
+      z-index: 1;
+      pointer-events: none;
+    }
+    /* Передний слой — хромированная заливка с огненным градиентом */
+    .hero-title__front {
+      position: relative;
+      background: linear-gradient(
+        180deg,
+        #fff176 0%,
+        #ffd54f 20%,
+        #ffb300 45%,
+        #ff6d00 65%,
+        #e53935 85%,
+        #b71c1c 100%
+      );
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+      -webkit-text-stroke: 2px #fff;
+      filter: drop-shadow(0 0 6px rgba(255, 193, 7, 0.9));
+      z-index: 2;
+    }
+    /* Искорки */
+    .hero-spark {
+      position: absolute;
+      color: #fff176;
+      font-size: 0.35em;
+      text-shadow: 0 0 12px #ffca28, 0 0 24px #ff6d00;
+      animation: hero-twinkle 1.6s ease-in-out infinite;
+      pointer-events: none;
+      z-index: 3;
+    }
+    .hero-spark--1 { top: -6%; left: -4%; animation-delay: 0s; }
+    .hero-spark--2 { top: 30%; right: -6%; font-size: 0.45em; animation-delay: 0.4s; }
+    .hero-spark--3 { bottom: -8%; left: 35%; font-size: 0.3em; animation-delay: 0.9s; }
+
+    @keyframes hero-bounce {
+      0%, 100% { transform: rotate(-3deg) translateY(0); }
+      50%      { transform: rotate(-1deg) translateY(-6px); }
+    }
+    @keyframes hero-twinkle {
+      0%, 100% { opacity: 0.4; transform: scale(0.85) rotate(0deg); }
+      50%      { opacity: 1;   transform: scale(1.25) rotate(25deg); }
+    }
+
     /* Текст фильтра — адаптивный, влезает на iPhone и красиво растёт на планшете */
     .filter-label {
       font-size: clamp(1.4rem, 6.5vw, 3.75rem);
@@ -245,7 +318,7 @@
       {
         id: 1, category: 'hotwheels',
         name: 'BONE SHAKER',
-        emoji: '💀',
+        img: 'img/cars/bone_shaker.jpg',
         bg: 'linear-gradient(135deg,#ff8a00 0%,#e52e71 100%)',
         store: 'ozon',
         link: 'https://www.ozon.ru/search/?text=hot+wheels+bone+shaker',
@@ -253,7 +326,7 @@
       {
         id: 2, category: 'hotwheels',
         name: 'TWIN MILL',
-        emoji: '🔥',
+        img: 'img/cars/twin_mill.jpg',
         bg: 'linear-gradient(135deg,#ff6b00 0%,#ffd200 100%)',
         store: 'wildberries',
         link: 'https://www.wildberries.ru/catalog/0/search.aspx?search=hot%20wheels%20twin%20mill',
@@ -261,7 +334,7 @@
       {
         id: 3, category: 'hotwheels',
         name: 'DEORA II',
-        emoji: '🏄',
+        img: 'img/cars/deora_ii.jpg',
         bg: 'linear-gradient(135deg,#00c6ff 0%,#0072ff 100%)',
         store: 'yandex',
         link: 'https://market.yandex.ru/search?text=hot%20wheels%20deora',
@@ -269,7 +342,7 @@
       {
         id: 4, category: 'hotwheels',
         name: 'RIP ROD',
-        emoji: '⚡',
+        img: 'img/cars/rip_rod.jpg',
         bg: 'linear-gradient(135deg,#f7971e 0%,#ffd200 100%)',
         store: 'ozon',
         link: 'https://www.ozon.ru/search/?text=hot+wheels+rip+rod',
@@ -277,7 +350,7 @@
       {
         id: 5, category: 'hotwheels',
         name: 'RODGER DODGER',
-        emoji: '🏁',
+        img: 'img/cars/rodger_dodger.jpg',
         bg: 'linear-gradient(135deg,#141e30 0%,#243b55 100%)',
         store: 'wildberries',
         link: 'https://www.wildberries.ru/catalog/0/search.aspx?search=hot%20wheels%20rodger%20dodger',
@@ -285,7 +358,7 @@
       {
         id: 6, category: 'hotwheels',
         name: 'GAZELLA GT',
-        emoji: '🏎️',
+        img: 'img/cars/gazella_gt.jpg',
         bg: 'linear-gradient(135deg,#ee0979 0%,#ff6a00 100%)',
         store: 'yandex',
         link: 'https://market.yandex.ru/search?text=hot%20wheels%20gazella',
@@ -293,7 +366,7 @@
       {
         id: 7, category: 'hotwheels',
         name: 'DRAGON BLASTER',
-        emoji: '🐉',
+        img: 'img/cars/dragon_blaster.jpg',
         bg: 'linear-gradient(135deg,#0066ff 0%,#00c853 100%)',
         store: 'ozon',
         link: 'https://www.ozon.ru/search/?text=hot+wheels+dragon',
@@ -303,7 +376,7 @@
       {
         id: 8, category: 'monster',
         name: 'BIGFOOT',
-        emoji: '🦶',
+        img: 'img/cars/bigfoot.jpg',
         bg: 'linear-gradient(135deg,#134e5e 0%,#71b280 100%)',
         store: 'ozon',
         link: 'https://www.ozon.ru/search/?text=monster+trucks+bigfoot',
@@ -311,7 +384,7 @@
       {
         id: 9, category: 'monster',
         name: 'GRAVE DIGGER',
-        emoji: '⚰️',
+        img: 'img/cars/grave_digger.jpg',
         bg: 'linear-gradient(135deg,#232526 0%,#414345 100%)',
         store: 'wildberries',
         link: 'https://www.wildberries.ru/catalog/0/search.aspx?search=monster%20jam%20grave%20digger',
@@ -319,7 +392,7 @@
       {
         id: 10, category: 'monster',
         name: 'MONSTER MUTT',
-        emoji: '🐕',
+        img: 'img/cars/monster_mutt.jpg',
         bg: 'linear-gradient(135deg,#3d2817 0%,#a0522d 100%)',
         store: 'yandex',
         link: 'https://market.yandex.ru/search?text=monster%20mutt',
@@ -327,7 +400,7 @@
       {
         id: 11, category: 'monster',
         name: 'EL TORO LOCO',
-        emoji: '🐂',
+        img: 'img/cars/el_toro_loco.jpg',
         bg: 'linear-gradient(135deg,#cb2d3e 0%,#ef473a 100%)',
         store: 'ozon',
         link: 'https://www.ozon.ru/search/?text=monster+jam+el+toro+loco',
@@ -335,7 +408,7 @@
       {
         id: 12, category: 'monster',
         name: 'MAX-D',
-        emoji: '💥',
+        img: 'img/cars/max_d.jpg',
         bg: 'linear-gradient(135deg,#414345 0%,#39ff14 100%)',
         store: 'wildberries',
         link: 'https://www.wildberries.ru/catalog/0/search.aspx?search=monster%20jam%20max-d',
@@ -343,7 +416,7 @@
       {
         id: 13, category: 'monster',
         name: 'MEGALODON',
-        emoji: '🦈',
+        img: 'img/cars/megalodon.jpg',
         bg: 'linear-gradient(135deg,#0f2027 0%,#2c5364 100%)',
         store: 'yandex',
         link: 'https://market.yandex.ru/search?text=monster%20jam%20megalodon',
@@ -351,7 +424,7 @@
       {
         id: 14, category: 'monster',
         name: 'EARTHSHAKER',
-        emoji: '🌋',
+        img: 'img/cars/earthshaker.jpg',
         bg: 'linear-gradient(135deg,#b24592 0%,#f15f79 100%)',
         store: 'ozon',
         link: 'https://www.ozon.ru/search/?text=monster+truck+earthshaker',
@@ -359,7 +432,7 @@
       {
         id: 15, category: 'monster',
         name: 'ZOMBIE',
-        emoji: '🧟',
+        img: 'img/cars/zombie.jpg',
         bg: 'linear-gradient(135deg,#355c7d 0%,#6c5b7b 50%,#c06c84 100%)',
         store: 'wildberries',
         link: 'https://www.wildberries.ru/catalog/0/search.aspx?search=monster%20jam%20zombie',
@@ -644,14 +717,23 @@
           className="toy-card block bg-white rounded-[30px] overflow-hidden shadow-xl border-4 border-white focus:outline-none focus:ring-8 focus:ring-yellow-300"
           aria-label={`Открыть ${toy.name} в магазине ${toy.store}`}
         >
-          {/* Верх карточки — картинка */}
+          {/* Верх карточки — фото машинки */}
           <div
-            className="relative flex items-center justify-center"
-            style={{ background: toy.bg, minHeight: '170px' }}
+            className="relative overflow-hidden"
+            style={{ background: toy.bg, aspectRatio: '1 / 1' }}
           >
-            <div className="toy-emoji wiggle select-none" aria-hidden="true">
-              {toy.emoji}
-            </div>
+            <img
+              src={toy.img}
+              alt={toy.name}
+              loading="lazy"
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                display: 'block',
+              }}
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            />
             {/* «Блик» на глянце */}
             <div className="absolute inset-0 pointer-events-none shine" />
             {/* Иконка магазина в правом верхнем углу */}
@@ -788,15 +870,17 @@
           <div className="absolute top-0 left-0 right-0 h-3 race-stripe" />
 
           <div className="relative max-w-7xl mx-auto px-4 md:px-8 pt-10 pb-6">
-            <div className="flex flex-col md:flex-row items-end justify-center gap-4 md:gap-8">
+            <div className="flex flex-col md:flex-row items-center md:items-end justify-center gap-4 md:gap-8">
               <BearLogo size={220} />
 
               <div className="flex flex-col items-center md:items-start pb-4">
-                <h1
-                  className="chrome-text fredoka text-6xl md:text-8xl font-black leading-none"
-                  aria-label="Медведь"
-                >
-                  МЕДВЕДЬ
+                <h1 className="hero-title" aria-label="Медведь">
+                  <span className="hero-title__bg">МЕДВЕДЬ</span>
+                  <span className="hero-title__front">МЕДВЕДЬ</span>
+                  {/* искорки */}
+                  <span className="hero-spark hero-spark--1">★</span>
+                  <span className="hero-spark hero-spark--2">✦</span>
+                  <span className="hero-spark hero-spark--3">✧</span>
                 </h1>
                 <div className="mt-3 dima-note">
                   <span className="dima-handwriting text-2xl md:text-3xl">
