@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#FF6B00" />
+  <title>🧩 Собери машинку — Медведь</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon-180.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="game.css" />
+  <script src="sounds.js" defer></script>
+  <style>
+    .puzzle-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      padding: 8px;
+      width: 100%;
+    }
+    .preview {
+      width: 90px; height: 90px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 3px dashed var(--hw-red);
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3px;
+      position: relative;
+    }
+    .preview img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+    .preview-label {
+      font-family: 'Bangers', sans-serif;
+      color: var(--hw-red);
+      font-size: 1rem;
+      background: #fff;
+      padding: 2px 10px;
+      border-radius: 10px;
+      border: 2px solid var(--hw-red);
+      margin-bottom: -6px;
+    }
+    .puzzle-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 4px;
+      width: min(90vw, 450px);
+      aspect-ratio: 1 / 1;
+      background: linear-gradient(135deg, var(--hw-red), #b71c1c);
+      border: 6px solid var(--hw-yellow);
+      border-radius: 20px;
+      padding: 8px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3), 0 0 40px rgba(255,107,0,0.4);
+    }
+    .tile {
+      border-radius: 10px;
+      background-size: 300% 300%;
+      background-repeat: no-repeat;
+      cursor: pointer;
+      transition: transform 0.2s;
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,0.5), 0 3px 8px rgba(0,0,0,0.3);
+    }
+    .tile:hover { transform: scale(1.03); }
+    .tile.empty {
+      background: rgba(0,0,0,0.3);
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,0.2);
+      cursor: default;
+    }
+    .tile.empty:hover { transform: none; }
+    .car-picker {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .car-pick {
+      width: 60px; height: 60px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 3px solid #fff;
+      cursor: pointer;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+    }
+    .car-pick img { width: 100%; height: 100%; object-fit: cover; }
+    .car-pick.active { border-color: var(--hw-yellow); box-shadow: 0 0 14px var(--hw-yellow); }
+  </style>
+</head>
+<body>
+  <header class="game-header">
+    <a href="../" class="back-btn"><span>←</span><span>НАЗАД</span></a>
+    <h1 class="game-title">🧩 ПАЗЛ</h1>
+    <div class="game-stats">
+      <div class="stat-pill">🎯 <span id="moves">0</span></div>
+      <div class="stat-pill">⏱ <span id="timer">0с</span></div>
+    </div>
+    <div class="sound-toggles">
+      <button class="sound-btn" id="sfxBtn" aria-label="Звук">🔊</button>
+      <button class="sound-btn" id="musBtn" aria-label="Музыка">🎵</button>
+    </div>
+  </header>
+
+  <main class="game-area">
+    <div class="puzzle-wrap">
+      <div class="preview-label">🎯 СОБЕРИ ТАКОЕ:</div>
+      <div class="preview"><img id="previewImg" alt="preview" /></div>
+      <div class="puzzle-grid" id="grid"></div>
+      <div class="car-picker" id="picker"></div>
+    </div>
+  </main>
+
+  <div class="win-modal" id="winModal">
+    <div class="win-box">
+      <h2 class="win-title">🏆 СОБРАЛ!</h2>
+      <div class="win-stat">Ходов: <span id="winMoves">0</span></div>
+      <div class="win-stat">Время: <span id="winTime">0с</span></div>
+      <button class="win-btn" onclick="startGame()">🔁 ЕЩЁ РАЗ</button><br />
+      <a href="../" class="win-btn" style="margin-top:10px;">🏠 ДОМОЙ</a>
+    </div>
+  </div>
+
+  <script>
+    const IMAGES = [
+      'bone_shaker', 'twin_mill', 'gazella_gt',
+      'grave_digger', 'bigfoot', 'el_toro_loco'
+    ];
+
+    const gridEl = document.getElementById('grid');
+    const pickerEl = document.getElementById('picker');
+    const previewImg = document.getElementById('previewImg');
+    const movesEl = document.getElementById('moves');
+    const timerEl = document.getElementById('timer');
+    const winModal = document.getElementById('winModal');
+    const winMovesEl = document.getElementById('winMoves');
+    const winTimeEl = document.getElementById('winTime');
+
+    let currentImage = IMAGES[Math.floor(Math.random() * IMAGES.length)];
+    let tiles = []; // массив значений 0..8, где 8 = пустая
+    let moves = 0, seconds = 0, timerId = null, won = false;
+
+    function getImageUrl(name) { return `../img/cars/${name}.jpg`; }
+
+    function renderPicker() {
+      pickerEl.innerHTML = '';
+      IMAGES.forEach(name => {
+        const el = document.createElement('div');
+        el.className = 'car-pick' + (name === currentImage ? ' active' : '');
+        el.innerHTML = `<img src="${getImageUrl(name)}" alt="${name}" />`;
+        el.onclick = () => { currentImage = name; startGame(); };
+        pickerEl.appendChild(el);
+      });
+    }
+
+    function canSwap(i, emptyIdx) {
+      const r1 = Math.floor(i / 3), c1 = i % 3;
+      const r2 = Math.floor(emptyIdx / 3), c2 = emptyIdx % 3;
+      return (r1 === r2 && Math.abs(c1 - c2) === 1) ||
+             (c1 === c2 && Math.abs(r1 - r2) === 1);
+    }
+
+    function shuffleTiles() {
+      // начинаем с решённого и делаем 80 случайных валидных ходов — точно решаемо
+      tiles = [0,1,2,3,4,5,6,7,8];
+      let empty = 8;
+      for (let k = 0; k < 80; k++) {
+        const candidates = [];
+        for (let i = 0; i < 9; i++) if (canSwap(i, empty)) candidates.push(i);
+        const pick = candidates[Math.floor(Math.random() * candidates.length)];
+        [tiles[pick], tiles[empty]] = [tiles[empty], tiles[pick]];
+        empty = pick;
+      }
+    }
+
+    function renderGrid() {
+      gridEl.innerHTML = '';
+      tiles.forEach((val, i) => {
+        const t = document.createElement('div');
+        t.className = 'tile' + (val === 8 ? ' empty' : '');
+        if (val !== 8) {
+          const row = Math.floor(val / 3), col = val % 3;
+          t.style.backgroundImage = `url('${getImageUrl(currentImage)}')`;
+          t.style.backgroundPosition = `${col * 50}% ${row * 50}%`;
+        }
+        t.onclick = () => tryMove(i);
+        gridEl.appendChild(t);
+      });
+    }
+
+    function tryMove(i) {
+      if (won) return;
+      const empty = tiles.indexOf(8);
+      if (!canSwap(i, empty)) {
+        window.BearSound && BearSound.blocked();
+        return;
+      }
+      [tiles[i], tiles[empty]] = [tiles[empty], tiles[i]];
+      moves++;
+      movesEl.textContent = moves;
+      window.BearSound && BearSound.move();
+      renderGrid();
+      if (isSolved()) winGame();
+    }
+
+    function isSolved() {
+      return tiles.every((v, i) => v === i);
+    }
+
+    function startGame() {
+      previewImg.src = getImageUrl(currentImage);
+      shuffleTiles();
+      moves = 0;
+      seconds = 0;
+      won = false;
+      movesEl.textContent = '0';
+      timerEl.textContent = '0с';
+      winModal.classList.remove('show');
+      if (timerId) clearInterval(timerId);
+      timerId = setInterval(() => { seconds++; timerEl.textContent = seconds + 'с'; }, 1000);
+      renderGrid();
+      renderPicker();
+    }
+
+    function winGame() {
+      won = true;
+      clearInterval(timerId);
+      window.BearSound && BearSound.win();
+      winMovesEl.textContent = moves;
+      winTimeEl.textContent = seconds + 'с';
+      setTimeout(() => winModal.classList.add('show'), 400);
+    }
+
+    /* Кнопки звука */
+    function refreshSoundBtns() {
+      const s = window.BearSound; if (!s) return;
+      const sfx = document.getElementById('sfxBtn');
+      const mus = document.getElementById('musBtn');
+      sfx.classList.toggle('off', !s.sfxEnabled);
+      sfx.textContent = s.sfxEnabled ? '🔊' : '🔇';
+      mus.classList.toggle('off', !s.musicEnabled);
+      mus.textContent = s.musicEnabled ? '🎵' : '🎶';
+    }
+    document.getElementById('sfxBtn').addEventListener('click', () => { BearSound.toggleSfx(); refreshSoundBtns(); });
+    document.getElementById('musBtn').addEventListener('click', () => { BearSound.toggleMusic(); refreshSoundBtns(); });
+    window.addEventListener('load', () => setTimeout(refreshSoundBtns, 100));
+
+    startGame();
+  </script>
+</body>
+</html>
