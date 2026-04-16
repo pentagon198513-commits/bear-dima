@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#FF6B00" />
+  <title>🐍 Машинка-Змейка — Медведь</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon-180.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="game.css" />
+  <style>
+    .canvas-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 8px;
+    }
+    canvas {
+      width: min(95vw, 500px);
+      height: min(95vw, 500px);
+      background: #2b1810;
+      border: 6px solid var(--hw-yellow);
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), 0 0 40px rgba(255, 107, 0, 0.4);
+      display: block;
+      touch-action: none;
+    }
+    .start-overlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.65);
+      z-index: 500;
+    }
+    .start-overlay.hide { display: none; }
+    .start-box {
+      background: linear-gradient(180deg, #ffcc00, #ff6b00);
+      border: 6px solid #fff;
+      border-radius: 28px;
+      padding: 26px 36px;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+      max-width: 90vw;
+    }
+    .start-box h2 {
+      font-family: 'Bangers', sans-serif;
+      font-size: clamp(2rem, 7vw, 3.2rem);
+      color: #fff;
+      -webkit-text-stroke: 2px #000;
+      text-shadow: 3px 3px 0 var(--hw-red);
+      margin: 0 0 12px;
+    }
+    .start-box p {
+      font-family: 'Nunito', sans-serif;
+      font-weight: 900;
+      color: #fff;
+      font-size: clamp(1rem, 3.5vw, 1.3rem);
+      text-shadow: 2px 2px 0 #000;
+      margin: 6px 0;
+    }
+  </style>
+</head>
+<body>
+  <header class="game-header">
+    <a href="../" class="back-btn"><span>←</span><span>НАЗАД</span></a>
+    <h1 class="game-title">🐍 ЗМЕЙКА</h1>
+    <div class="game-stats">
+      <div class="stat-pill">🏁 <span id="score">0</span></div>
+      <div class="stat-pill">🏆 <span id="best">0</span></div>
+    </div>
+  </header>
+
+  <main class="game-area">
+    <div class="canvas-wrap"><canvas id="c" width="400" height="400"></canvas></div>
+  </main>
+
+  <!-- Touch-джойстик -->
+  <div class="touch-pad" aria-hidden="true">
+    <button class="pad-btn pad-up"    data-dir="up">▲</button>
+    <button class="pad-btn pad-left"  data-dir="left">◄</button>
+    <button class="pad-btn pad-right" data-dir="right">►</button>
+    <button class="pad-btn pad-down"  data-dir="down">▼</button>
+  </div>
+
+  <!-- Старт-экран -->
+  <div class="start-overlay" id="start">
+    <div class="start-box">
+      <h2>🐍 ЗМЕЙКА</h2>
+      <p>Управляй машинкой 🏎️</p>
+      <p>Ешь колёса ⚫ — расти!</p>
+      <p>Не вреж в стену и в себя.</p>
+      <button class="win-btn" onclick="beginGame()">🚦 СТАРТ</button>
+    </div>
+  </div>
+
+  <!-- Победа/поражение -->
+  <div class="win-modal" id="winModal">
+    <div class="win-box">
+      <h2 class="win-title" id="winTitle">💥 УПС!</h2>
+      <div class="win-stat">Счёт: <span id="finalScore">0</span></div>
+      <div class="win-stat">Рекорд: <span id="finalBest">0</span></div>
+      <button class="win-btn" onclick="beginGame()">🔁 ЕЩЁ РАЗ</button><br />
+      <a href="../" class="win-btn" style="margin-top:10px;">🏠 ДОМОЙ</a>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const bestEl  = document.getElementById('best');
+    const startOverlay = document.getElementById('start');
+    const winModal = document.getElementById('winModal');
+    const winTitle = document.getElementById('winTitle');
+    const finalScoreEl = document.getElementById('finalScore');
+    const finalBestEl = document.getElementById('finalBest');
+
+    const GRID = 20;
+    const CELL = canvas.width / GRID;
+
+    let snake, dir, nextDir, food, score, best, timer, alive;
+    best = parseInt(localStorage.getItem('bear_snake_best') || '0', 10);
+    bestEl.textContent = best;
+
+    function placeFood() {
+      while (true) {
+        const f = { x: Math.floor(Math.random() * GRID), y: Math.floor(Math.random() * GRID) };
+        if (!snake.some(s => s.x === f.x && s.y === f.y)) return f;
+      }
+    }
+
+    function beginGame() {
+      snake = [{x: 10, y: 10}, {x: 9, y: 10}, {x: 8, y: 10}];
+      dir = {x: 1, y: 0};
+      nextDir = dir;
+      food = placeFood();
+      score = 0;
+      alive = true;
+      scoreEl.textContent = '0';
+      startOverlay.classList.add('hide');
+      winModal.classList.remove('show');
+      if (timer) clearInterval(timer);
+      timer = setInterval(tick, 140);
+      draw();
+    }
+
+    function tick() {
+      if (!alive) return;
+      dir = nextDir;
+      const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+      // Столкновение со стеной
+      if (head.x < 0 || head.x >= GRID || head.y < 0 || head.y >= GRID) return die();
+      // Столкновение с собой
+      if (snake.some(s => s.x === head.x && s.y === head.y)) return die();
+      snake.unshift(head);
+      // Съели еду?
+      if (head.x === food.x && head.y === food.y) {
+        score++;
+        scoreEl.textContent = score;
+        food = placeFood();
+      } else {
+        snake.pop();
+      }
+      draw();
+    }
+
+    function die() {
+      alive = false;
+      clearInterval(timer);
+      if (score > best) {
+        best = score;
+        localStorage.setItem('bear_snake_best', best);
+        winTitle.textContent = '🏆 НОВЫЙ РЕКОРД!';
+      } else {
+        winTitle.textContent = '💥 УПС!';
+      }
+      finalScoreEl.textContent = score;
+      finalBestEl.textContent = best;
+      bestEl.textContent = best;
+      setTimeout(() => winModal.classList.add('show'), 300);
+    }
+
+    function draw() {
+      // Фон-асфальт с разметкой
+      ctx.fillStyle = '#2b1810';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // Пунктир дороги
+      ctx.strokeStyle = 'rgba(255,204,0,0.25)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 8]);
+      ctx.beginPath();
+      for (let i = 1; i < GRID; i += 2) {
+        ctx.moveTo(0, i * CELL);
+        ctx.lineTo(canvas.width, i * CELL);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Еда — колесо
+      const fx = food.x * CELL + CELL / 2;
+      const fy = food.y * CELL + CELL / 2;
+      ctx.fillStyle = '#1a1a1a';
+      ctx.beginPath();
+      ctx.arc(fx, fy, CELL * 0.42, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#888';
+      ctx.beginPath();
+      ctx.arc(fx, fy, CELL * 0.22, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffcc00';
+      ctx.beginPath();
+      ctx.arc(fx, fy, CELL * 0.08, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Змея-машинка
+      snake.forEach((s, i) => {
+        const x = s.x * CELL;
+        const y = s.y * CELL;
+        if (i === 0) {
+          // Голова — красная с "лобовым стеклом"
+          ctx.fillStyle = '#e11d48';
+          roundRect(ctx, x + 2, y + 2, CELL - 4, CELL - 4, 6);
+          ctx.fill();
+          ctx.fillStyle = '#87ceeb';
+          roundRect(ctx, x + 5, y + 5, CELL - 10, (CELL - 10) / 2, 3);
+          ctx.fill();
+          // Глаза
+          ctx.fillStyle = '#fff';
+          const eyeOffsetX = dir.x * 3, eyeOffsetY = dir.y * 3;
+          ctx.fillRect(x + 6 + eyeOffsetX, y + 8 + eyeOffsetY, 3, 3);
+          ctx.fillRect(x + CELL - 9 + eyeOffsetX, y + 8 + eyeOffsetY, 3, 3);
+        } else {
+          // Тело — оранжевое, чередование
+          ctx.fillStyle = i % 2 === 0 ? '#ff6b00' : '#ff8a00';
+          roundRect(ctx, x + 3, y + 3, CELL - 6, CELL - 6, 4);
+          ctx.fill();
+          // Блик
+          ctx.fillStyle = 'rgba(255,255,255,0.2)';
+          roundRect(ctx, x + 4, y + 4, CELL - 8, 2, 1);
+          ctx.fill();
+        }
+      });
+    }
+
+    function roundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    }
+
+    function setDir(ndx, ndy) {
+      // Нельзя разворачиваться на 180° в одном шаге
+      if (snake && snake.length > 1) {
+        if (ndx === -dir.x && ndy === -dir.y) return;
+      }
+      nextDir = { x: ndx, y: ndy };
+    }
+
+    // Клавиатура
+    document.addEventListener('keydown', (e) => {
+      const k = e.key;
+      if (k === 'ArrowUp'    || k === 'w' || k === 'ц') setDir(0, -1);
+      if (k === 'ArrowDown'  || k === 's' || k === 'ы') setDir(0, 1);
+      if (k === 'ArrowLeft'  || k === 'a' || k === 'ф') setDir(-1, 0);
+      if (k === 'ArrowRight' || k === 'd' || k === 'в') setDir(1, 0);
+    });
+
+    // Touch-pad кнопки
+    document.querySelectorAll('.pad-btn').forEach(btn => {
+      const handler = (e) => {
+        e.preventDefault();
+        const d = btn.dataset.dir;
+        if (d === 'up')    setDir(0, -1);
+        if (d === 'down')  setDir(0, 1);
+        if (d === 'left')  setDir(-1, 0);
+        if (d === 'right') setDir(1, 0);
+      };
+      btn.addEventListener('touchstart', handler, { passive: false });
+      btn.addEventListener('click', handler);
+    });
+
+    // Свайпы по canvas
+    let touchStart = null;
+    canvas.addEventListener('touchstart', (e) => {
+      touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }, { passive: true });
+    canvas.addEventListener('touchmove', (e) => {
+      if (!touchStart) return;
+      const t = e.touches[0];
+      const dx = t.clientX - touchStart.x;
+      const dy = t.clientY - touchStart.y;
+      if (Math.abs(dx) + Math.abs(dy) < 30) return;
+      if (Math.abs(dx) > Math.abs(dy)) setDir(dx > 0 ? 1 : -1, 0);
+      else setDir(0, dy > 0 ? 1 : -1);
+      touchStart = null;
+    }, { passive: true });
+
+    // Стартовый экран видимый по умолчанию — не начинаем сразу
+  </script>
+</body>
+</html>
