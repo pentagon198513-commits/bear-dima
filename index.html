@@ -436,6 +436,30 @@
        Картинки — эмодзи + цветной градиент (чтобы не зависеть от интернета
        и обложек с авторскими правами).
        ========================================================================= */
+    const GAMES = [
+      {
+        id: 'memory', name: 'НАЙДИ ПАРЫ',
+        emoji: '🃏',
+        desc: 'Переворачивай и ищи пары',
+        href: 'games/memory.html',
+        bg: 'linear-gradient(135deg,#ff6b00,#e11d48)',
+      },
+      {
+        id: 'snake', name: 'ЗМЕЙКА',
+        emoji: '🐍',
+        desc: 'Машинка ест колёса',
+        href: 'games/snake.html',
+        bg: 'linear-gradient(135deg,#0066ff,#00c6ff)',
+      },
+      {
+        id: 'maze', name: 'ЛАБИРИНТ',
+        emoji: '🌀',
+        desc: 'Веди мишку до финиша',
+        href: 'games/maze.html',
+        bg: 'linear-gradient(135deg,#39ff14,#0d7a00)',
+      },
+    ];
+
     const TOYS = [
       // ——— HOT WHEELS ———
       {
@@ -884,6 +908,44 @@
     }
 
     /* =========================================================================
+       КАРТОЧКА ИГРЫ — яркий баннер с эмодзи + название.
+       ========================================================================= */
+    function GameCard({ game }) {
+      return (
+        <a
+          href={game.href}
+          className="toy-card block rounded-[30px] overflow-hidden shadow-xl border-4 border-white focus:outline-none focus:ring-8 focus:ring-yellow-300"
+          aria-label={`Играть: ${game.name}`}
+        >
+          <div
+            className="relative flex flex-col items-center justify-center text-center"
+            style={{ background: game.bg, aspectRatio: '1 / 1', padding: '18px' }}
+          >
+            <div className="toy-emoji wiggle select-none" style={{fontSize:'clamp(4rem,18vw,7rem)'}} aria-hidden="true">
+              {game.emoji}
+            </div>
+            <div className="absolute inset-0 pointer-events-none shine" />
+          </div>
+          <div className="p-4 flex flex-col gap-2 bg-white">
+            <h3 className="bangers text-3xl md:text-4xl text-gray-900 leading-tight text-center">
+              {game.name}
+            </h3>
+            <p className="text-center text-sm md:text-base font-bold text-gray-600 leading-tight">
+              {game.desc}
+            </p>
+            <div
+              className="bouncy inline-flex items-center justify-center self-center gap-2 rounded-2xl px-6 py-3 text-white text-xl md:text-2xl font-black uppercase-ru shadow-lg mt-1"
+              style={{ background: 'linear-gradient(135deg,#39ff14,#0066ff)' }}
+            >
+              <span>ИГРАТЬ</span>
+              <span className="text-2xl">🎮</span>
+            </div>
+          </div>
+        </a>
+      );
+    }
+
+    /* =========================================================================
        КНОПКА-ФИЛЬТР (таблетка).
        ========================================================================= */
     function FilterPill({ active, onClick, kind }) {
@@ -939,38 +1001,80 @@
         );
       }
 
-      // MONSTER TRUCKS
+      if (kind === 'monster') {
+        return (
+          <button
+            onClick={onClick}
+            className={[
+              common,
+              active
+                ? 'mud-stripe border-white scale-105'
+                : 'bg-white border-green-500 opacity-85 hover:opacity-100',
+            ].join(' ')}
+            aria-pressed={active}
+            aria-label="Показать Монстр Траки"
+          >
+            <div className="filter-photo" style={photoWrap}>
+              <img
+                src="img/monstertrucks.jpg"
+                alt="Monster Truck Grave Digger"
+                style={{ display: 'block', objectFit: 'cover' }}
+              />
+            </div>
+            <span
+              className="bangers filter-label"
+              style={{
+                color: active ? '#39ff14' : '#0f3d1f',
+                WebkitTextStroke: active ? '2px #000' : '0',
+                textShadow: active
+                  ? '3px 3px 0 #000, 0 0 18px rgba(57,255,20,0.8)'
+                  : '3px 3px 0 #39ff14, 4px 4px 0 #000',
+                display: 'inline-block',
+              }}
+            >
+              МОНСТР ТРАКИ
+            </span>
+          </button>
+        );
+      }
+
+      // GAMES
       return (
         <button
           onClick={onClick}
           className={[
             common,
             active
-              ? 'mud-stripe border-white scale-105'
-              : 'bg-white border-green-500 opacity-85 hover:opacity-100',
+              ? 'border-white scale-105'
+              : 'bg-white border-purple-400 opacity-85 hover:opacity-100',
           ].join(' ')}
+          style={active ? {
+            background: 'linear-gradient(135deg,#ff6b00 0%,#e11d48 50%,#0066ff 100%)',
+          } : {}}
           aria-pressed={active}
-          aria-label="Показать Монстр Траки"
+          aria-label="Показать Игры"
         >
-          <div className="filter-photo" style={photoWrap}>
-            <img
-              src="img/monstertrucks.jpg"
-              alt="Monster Truck Grave Digger"
-              style={{ display: 'block', objectFit: 'cover' }}
-            />
+          <div className="filter-photo" style={{
+            ...photoWrap,
+            background: 'linear-gradient(135deg,#ffcc00,#ff6b00)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <span style={{fontSize:'clamp(2.5rem,7vw,4rem)',filter:'drop-shadow(0 3px 5px rgba(0,0,0,0.3))'}}>🎮</span>
           </div>
           <span
             className="bangers filter-label"
             style={{
-              color: active ? '#39ff14' : '#0f3d1f',
+              color: active ? '#fff9c4' : '#4a148c',
               WebkitTextStroke: active ? '2px #000' : '0',
               textShadow: active
-                ? '3px 3px 0 #000, 0 0 18px rgba(57,255,20,0.8)'
-                : '3px 3px 0 #39ff14, 4px 4px 0 #000',
+                ? '3px 3px 0 #000, 0 0 18px rgba(255,204,0,0.9)'
+                : '3px 3px 0 #ffcc00, 4px 4px 0 #000',
               display: 'inline-block',
             }}
           >
-            МОНСТР ТРАКИ
+            ИГРЫ
           </span>
         </button>
       );
@@ -1034,6 +1138,11 @@
                 onClick={() => setCategory('monster')}
                 kind="monster"
               />
+              <FilterPill
+                active={category === 'games'}
+                onClick={() => setCategory('games')}
+                kind="games"
+              />
             </div>
 
             {/* Счётчик */}
@@ -1042,7 +1151,7 @@
                 className="bangers text-2xl md:text-3xl px-6 py-2 rounded-full bg-white/90 shadow-lg border-4 border-yellow-400"
                 style={{ color: '#0066ff' }}
               >
-                🏁 Машинок: {count}
+                {category === 'games' ? '🎮 Игр: ' : '🏁 Машинок: '}{count}
               </div>
             </div>
           </div>
@@ -1075,17 +1184,19 @@
        ========================================================================= */
     function App() {
       const [category, setCategory] = useState('hotwheels');
-      const filtered = useMemo(
+      const isGames = category === 'games';
+      const filteredToys = useMemo(
         () => TOYS.filter((t) => t.category === category),
         [category]
       );
+      const count = isGames ? GAMES.length : filteredToys.length;
 
       return (
         <div className="min-h-screen">
           <Header
             category={category}
             setCategory={setCategory}
-            count={filtered.length}
+            count={count}
           />
 
           <main className="max-w-7xl mx-auto px-4 md:px-8 py-8">
@@ -1096,9 +1207,9 @@
                   'repeat(auto-fill, minmax(260px, 1fr))',
               }}
             >
-              {filtered.map((toy) => (
-                <ToyCard key={toy.id} toy={toy} />
-              ))}
+              {isGames
+                ? GAMES.map((g) => <GameCard key={g.id} game={g} />)
+                : filteredToys.map((toy) => <ToyCard key={toy.id} toy={toy} />)}
             </div>
           </main>
 
