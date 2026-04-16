@@ -188,6 +188,23 @@
 
     /* Чтобы textUppercase на кириллице выглядел ровно */
     .uppercase-ru { text-transform: uppercase; }
+
+    /* Фото-рамка на кнопках-фильтрах (Hot Wheels / Monster Trucks) */
+    .filter-photo {
+      width: 140px;
+      height: 100px;
+    }
+    .filter-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    @media (min-width: 768px) {
+      .filter-photo {
+        width: 200px;
+        height: 130px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -645,8 +662,17 @@
        ========================================================================= */
     function FilterPill({ active, onClick, kind }) {
       const common =
-        'filter-btn rounded-full border-4 shadow-2xl flex items-center gap-3 ' +
-        'px-5 md:px-7 py-3 md:py-4 transition-all';
+        'filter-btn rounded-[40px] border-4 shadow-2xl flex items-center gap-4 ' +
+        'px-4 md:px-6 py-3 md:py-4 transition-all';
+
+      // Большая рамка для фото
+      const photoWrap = {
+        borderRadius: '24px',
+        overflow: 'hidden',
+        flexShrink: 0,
+        border: '3px solid #fff',
+        boxShadow: '0 6px 16px rgba(0,0,0,0.35)',
+      };
 
       if (kind === 'hotwheels') {
         return (
@@ -661,7 +687,13 @@
             aria-pressed={active}
             aria-label="Показать Хот Вилс"
           >
-            <HotWheelsIcon size={72} />
+            <div className="filter-photo" style={photoWrap}>
+              <img
+                src="img/hotwheels.jpg"
+                alt="Hot Wheels car"
+                style={{ display: 'block', objectFit: 'cover' }}
+              />
+            </div>
             <span
               className="bangers text-4xl md:text-6xl tracking-wider"
               style={{
@@ -694,7 +726,13 @@
           aria-pressed={active}
           aria-label="Показать Монстр Траки"
         >
-          <MonsterTruckIcon size={72} />
+          <div className="filter-photo" style={photoWrap}>
+            <img
+              src="img/monstertrucks.jpg"
+              alt="Monster Truck Grave Digger"
+              style={{ display: 'block', objectFit: 'cover' }}
+            />
+          </div>
           <span
             className="bangers text-4xl md:text-6xl tracking-wider"
             style={{
