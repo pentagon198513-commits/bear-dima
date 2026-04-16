@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#FF6B00" />
+  <title>🎈 Лопни шарики — Медведь</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon-180.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="game.css" />
+  <script src="sounds.js" defer></script>
+  <style>
+    .canvas-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 8px;
+    }
+    canvas {
+      width: min(95vw, 500px);
+      height: min(95vw, 500px);
+      background: linear-gradient(180deg, #87ceeb 0%, #ffe3a0 100%);
+      border: 6px solid var(--hw-yellow);
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), 0 0 40px rgba(255, 107, 0, 0.4);
+      display: block;
+      touch-action: manipulation;
+      cursor: crosshair;
+    }
+  </style>
+</head>
+<body>
+  <header class="game-header">
+    <a href="../" class="back-btn"><span>←</span><span>НАЗАД</span></a>
+    <h1 class="game-title">🎈 ЛОПНИ ШАРИКИ</h1>
+    <div class="game-stats">
+      <div class="stat-pill">⭐ <span id="score">0</span></div>
+      <div class="stat-pill">❤️ <span id="lives">3</span></div>
+    </div>
+    <div class="sound-toggles">
+      <button class="sound-btn" id="sfxBtn" aria-label="Звук">🔊</button>
+      <button class="sound-btn" id="musBtn" aria-label="Музыка">🎵</button>
+    </div>
+  </header>
+
+  <main class="game-area">
+    <div class="canvas-wrap"><canvas id="c" width="500" height="500"></canvas></div>
+  </main>
+
+  <div class="win-modal" id="winModal">
+    <div class="win-box">
+      <h2 class="win-title" id="winTitle">💥 КОНЕЦ</h2>
+      <div class="win-stat">Очки: <span id="finalScore">0</span></div>
+      <div class="win-stat">Рекорд: <span id="finalBest">0</span></div>
+      <button class="win-btn" onclick="startGame()">🔁 ЕЩЁ РАЗ</button><br />
+      <a href="../" class="win-btn" style="margin-top:10px;">🏠 ДОМОЙ</a>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const livesEl = document.getElementById('lives');
+    const winModal = document.getElementById('winModal');
+    const winTitle = document.getElementById('winTitle');
+    const finalScoreEl = document.getElementById('finalScore');
+    const finalBestEl = document.getElementById('finalBest');
+
+    const W = canvas.width, H = canvas.height;
+    let bubbles = [];
+    let particles = [];
+    let score = 0;
+    let lives = 3;
+    let best = parseInt(localStorage.getItem('bear_bubble_best') || '0', 10);
+    let lastSpawn = 0;
+    let spawnInterval = 1200;
+    let running = false;
+    let rafId;
+
+    function spawnBubble() {
+      const r = 25 + Math.random() * 30;
+      const colors = ['#e11d48','#ff6b00','#ffcc00','#39ff14','#0066ff','#ff00ff','#00ffff'];
+      bubbles.push({
+        x: r + Math.random() * (W - 2 * r),
+        y: H + r,
+        r,
+        vy: -(1.2 + Math.random() * 1.8) * (1 + score / 200),
+        color: colors[Math.floor(Math.random() * colors.length)],
+        wiggle: Math.random() * Math.PI * 2,
+        pts: r > 45 ? 1 : (r > 35 ? 2 : 3),
+      });
+    }
+
+    function startGame() {
+      bubbles = [];
+      particles = [];
+      score = 0;
+      lives = 3;
+      lastSpawn = 0;
+      spawnInterval = 1200;
+      scoreEl.textContent = '0';
+      livesEl.textContent = '3';
+      winModal.classList.remove('show');
+      running = true;
+      cancelAnimationFrame(rafId);
+      loop(performance.now());
+    }
+
+    function loop(now) {
+      if (!running) return;
+      // спавн
+      if (now - lastSpawn > spawnInterval) {
+        spawnBubble();
+        lastSpawn = now;
+        // ускоряем игру
+        spawnInterval = Math.max(400, 1200 - score * 8);
+      }
+      // обновление
+      for (let i = bubbles.length - 1; i >= 0; i--) {
+        const b = bubbles[i];
+        b.y += b.vy;
+        b.wiggle += 0.08;
+        b.x += Math.sin(b.wiggle) * 0.6;
+        if (b.y + b.r < 0) {
+          bubbles.splice(i, 1);
+          lives--;
+          livesEl.textContent = lives;
+          window.BearSound && BearSound.blocked();
+          if (lives <= 0) return die();
+        }
+      }
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx; p.y += p.vy; p.vy += 0.25; p.life--;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+      // отрисовка
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = 'rgba(135, 206, 235, 0.2)';
+      ctx.fillRect(0, 0, W, H);
+      // облака
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      for (let i = 0; i < 4; i++) {
+        const cx = (i * 180 + (now / 30) % W) % (W + 80) - 40;
+        const cy = 30 + i * 15;
+        ctx.beginPath(); ctx.arc(cx, cy, 20, 0, Math.PI * 2);
+        ctx.arc(cx + 18, cy, 16, 0, Math.PI * 2);
+        ctx.arc(cx - 18, cy, 16, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // шарики
+      bubbles.forEach(b => {
+        // тело
+        const grad = ctx.createRadialGradient(b.x - b.r * 0.3, b.y - b.r * 0.3, b.r * 0.1, b.x, b.y, b.r);
+        grad.addColorStop(0, '#fff');
+        grad.addColorStop(0.25, b.color);
+        grad.addColorStop(1, b.color);
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.fill();
+        // блик
+        ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        ctx.beginPath(); ctx.arc(b.x - b.r * 0.35, b.y - b.r * 0.35, b.r * 0.2, 0, Math.PI * 2); ctx.fill();
+        // ниточка
+        ctx.strokeStyle = 'rgba(0,0,0,0.3)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(b.x, b.y + b.r);
+        ctx.quadraticCurveTo(b.x + 5, b.y + b.r + 12, b.x - 2, b.y + b.r + 25);
+        ctx.stroke();
+      });
+      // частицы
+      particles.forEach(p => {
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life / 30;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+      rafId = requestAnimationFrame(loop);
+    }
+
+    function pop(x, y) {
+      for (let i = bubbles.length - 1; i >= 0; i--) {
+        const b = bubbles[i];
+        const dx = b.x - x, dy = b.y - y;
+        if (dx * dx + dy * dy <= b.r * b.r) {
+          // частицы
+          for (let k = 0; k < 16; k++) {
+            particles.push({
+              x: b.x, y: b.y,
+              vx: (Math.random() - 0.5) * 8,
+              vy: (Math.random() - 0.5) * 8 - 2,
+              size: 2 + Math.random() * 4,
+              color: b.color,
+              life: 30,
+            });
+          }
+          bubbles.splice(i, 1);
+          score += b.pts;
+          scoreEl.textContent = score;
+          window.BearSound && BearSound.pop();
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function die() {
+      running = false;
+      cancelAnimationFrame(rafId);
+      window.BearSound && BearSound.lose();
+      if (score > best) {
+        best = score;
+        localStorage.setItem('bear_bubble_best', best);
+        winTitle.textContent = '🏆 НОВЫЙ РЕКОРД!';
+      } else {
+        winTitle.textContent = '💥 КОНЕЦ';
+      }
+      finalScoreEl.textContent = score;
+      finalBestEl.textContent = best;
+      setTimeout(() => winModal.classList.add('show'), 300);
+    }
+
+    function handleTap(e) {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const t = (e.touches && e.touches[0]) || e;
+      const x = (t.clientX - rect.left) * (W / rect.width);
+      const y = (t.clientY - rect.top) * (H / rect.height);
+      pop(x, y);
+    }
+    canvas.addEventListener('click', handleTap);
+    canvas.addEventListener('touchstart', handleTap, { passive: false });
+
+    /* Кнопки звука */
+    function refreshSoundBtns() {
+      const s = window.BearSound; if (!s) return;
+      const sfx = document.getElementById('sfxBtn');
+      const mus = document.getElementById('musBtn');
+      sfx.classList.toggle('off', !s.sfxEnabled);
+      sfx.textContent = s.sfxEnabled ? '🔊' : '🔇';
+      mus.classList.toggle('off', !s.musicEnabled);
+      mus.textContent = s.musicEnabled ? '🎵' : '🎶';
+    }
+    document.getElementById('sfxBtn').addEventListener('click', () => { BearSound.toggleSfx(); refreshSoundBtns(); });
+    document.getElementById('musBtn').addEventListener('click', () => { BearSound.toggleMusic(); refreshSoundBtns(); });
+    window.addEventListener('load', () => setTimeout(refreshSoundBtns, 100));
+
+    startGame();
+  </script>
+</body>
+</html>
