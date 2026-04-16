@@ -164,38 +164,45 @@ body {
   to { transform: scale(1) rotate(0); }
 }
 
-/* ===== Touch-джойстик для iPhone (для змейки/лабиринта) ===== */
+/* ===== Touch-джойстик — полупрозрачный, поверх поля ===== */
 .touch-pad {
   display: none;
-  grid-template-columns: repeat(3, 80px);
-  grid-template-rows: repeat(3, 80px);
-  gap: 6px;
-  padding: 10px;
+  grid-template-columns: repeat(3, 62px);
+  grid-template-rows: repeat(3, 62px);
+  gap: 4px;
+  padding: 6px;
   position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  right: 10px;
   z-index: 100;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 28px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0.75;
+  transition: opacity 0.2s;
 }
+.touch-pad:active { opacity: 1; }
 .touch-pad .pad-btn {
-  background: rgba(255, 255, 255, 0.9);
-  border: 4px solid var(--hw-red);
+  background: rgba(255, 255, 255, 0.55);
+  border: 3px solid rgba(225, 29, 72, 0.85);
   border-radius: 50%;
-  font-size: 32px;
-  color: var(--hw-red);
+  font-size: 24px;
+  color: rgba(225, 29, 72, 0.95);
   font-weight: 900;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.2);
   cursor: pointer;
   user-select: none;
+  padding: 0;
 }
 .touch-pad .pad-btn:active {
-  background: var(--hw-orange);
+  background: rgba(255, 107, 0, 0.9);
   color: #fff;
   transform: translateY(2px);
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
 }
 .pad-up    { grid-area: 1 / 2; }
 .pad-left  { grid-area: 2 / 1; }
@@ -204,4 +211,51 @@ body {
 
 @media (pointer: coarse), (max-width: 900px) {
   .touch-pad { display: grid; }
+}
+
+/* ===== Кнопки звука/музыки в шапке игры ===== */
+.sound-toggles {
+  display: flex;
+  gap: 6px;
+  margin-left: 8px;
+}
+.sound-btn {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px;
+  background: #fff;
+  border: 3px solid var(--hw-blue);
+  border-radius: 22px;
+  font-size: 20px;
+  color: var(--hw-blue);
+  cursor: pointer;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.15);
+  transition: transform 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sound-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.15); }
+.sound-btn.off { opacity: 0.4; border-color: #888; color: #888; }
+
+/* Подсказка как играть (поверх canvas, полупрозрачная) */
+.hint {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 20px;
+  font-family: 'Bangers', sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: 0.04em;
+  z-index: 50;
+  pointer-events: none;
+  animation: hint-pulse 2s ease-in-out infinite;
+}
+@keyframes hint-pulse {
+  0%, 100% { opacity: 0.7; }
+  50%      { opacity: 1; }
 }
