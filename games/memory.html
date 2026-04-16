@@ -9,6 +9,7 @@
   <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon-180.png" />
   <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@700;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="game.css" />
+  <script src="sounds.js" defer></script>
   <style>
     .memory-grid {
       display: grid;
@@ -95,6 +96,10 @@
       <div class="stat-pill">🎯 <span id="moves">0</span></div>
       <div class="stat-pill">⏱ <span id="timer">0с</span></div>
     </div>
+    <div class="sound-toggles">
+      <button class="sound-btn" id="sfxBtn" aria-label="Звук" title="Звук">🔊</button>
+      <button class="sound-btn" id="musBtn" aria-label="Музыка" title="Музыка">🎵</button>
+    </div>
   </header>
 
   <main class="game-area">
@@ -180,6 +185,7 @@
       if (lock) return;
       if (card.classList.contains('flipped') || card.classList.contains('matched')) return;
       card.classList.add('flipped');
+      window.BearSound && BearSound.click();
       if (!first) {
         first = card;
         return;
@@ -192,6 +198,7 @@
         first.classList.add('matched');
         second.classList.add('matched');
         matched++;
+        window.BearSound && BearSound.match();
         reset();
         if (matched === IMAGES.length) winGame();
       } else {
@@ -212,8 +219,26 @@
       clearInterval(timerId);
       winMovesEl.textContent = moves;
       winTimeEl.textContent = seconds + 'с';
+      window.BearSound && BearSound.win();
       setTimeout(() => winModal.classList.add('show'), 500);
     }
+
+    /* Кнопки звука/музыки */
+    function refreshSoundBtns() {
+      const s = window.BearSound;
+      if (!s) return;
+      document.getElementById('sfxBtn').classList.toggle('off', !s.sfxEnabled);
+      document.getElementById('sfxBtn').textContent = s.sfxEnabled ? '🔊' : '🔇';
+      document.getElementById('musBtn').classList.toggle('off', !s.musicEnabled);
+      document.getElementById('musBtn').textContent = s.musicEnabled ? '🎵' : '🎶';
+    }
+    document.getElementById('sfxBtn').addEventListener('click', () => {
+      BearSound.toggleSfx(); refreshSoundBtns();
+    });
+    document.getElementById('musBtn').addEventListener('click', () => {
+      BearSound.toggleMusic(); refreshSoundBtns();
+    });
+    window.addEventListener('load', () => { setTimeout(refreshSoundBtns, 100); });
 
     startGame();
   </script>
