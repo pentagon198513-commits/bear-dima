@@ -9,6 +9,7 @@
   <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon-180.png" />
   <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@700;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="game.css" />
+  <script src="sounds.js" defer></script>
   <style>
     .canvas-wrap {
       display: flex;
@@ -72,19 +73,17 @@
       <div class="stat-pill">🏁 <span id="score">0</span></div>
       <div class="stat-pill">🏆 <span id="best">0</span></div>
     </div>
+    <div class="sound-toggles">
+      <button class="sound-btn" id="sfxBtn" aria-label="Звук">🔊</button>
+      <button class="sound-btn" id="musBtn" aria-label="Музыка">🎵</button>
+    </div>
   </header>
 
   <main class="game-area">
     <div class="canvas-wrap"><canvas id="c" width="400" height="400"></canvas></div>
   </main>
 
-  <!-- Touch-джойстик -->
-  <div class="touch-pad" aria-hidden="true">
-    <button class="pad-btn pad-up"    data-dir="up">▲</button>
-    <button class="pad-btn pad-left"  data-dir="left">◄</button>
-    <button class="pad-btn pad-right" data-dir="right">►</button>
-    <button class="pad-btn pad-down"  data-dir="down">▼</button>
-  </div>
+  <div class="hint" id="hint">👆 Свайпай по полю!</div>
 
   <!-- Старт-экран -->
   <div class="start-overlay" id="start">
@@ -143,6 +142,8 @@
       scoreEl.textContent = '0';
       startOverlay.classList.add('hide');
       winModal.classList.remove('show');
+      const hint = document.getElementById('hint');
+      if (hint) { hint.style.display = 'block'; setTimeout(() => hint.style.display = 'none', 3500); }
       if (timer) clearInterval(timer);
       timer = setInterval(tick, 140);
       draw();
@@ -162,6 +163,7 @@
         score++;
         scoreEl.textContent = score;
         food = placeFood();
+        window.BearSound && BearSound.eat();
       } else {
         snake.pop();
       }
@@ -169,6 +171,7 @@
     }
 
     function die() {
+      window.BearSound && BearSound.lose();
       alive = false;
       clearInterval(timer);
       if (score > best) {
@@ -273,20 +276,6 @@
       if (k === 'ArrowRight' || k === 'd' || k === 'в') setDir(1, 0);
     });
 
-    // Touch-pad кнопки
-    document.querySelectorAll('.pad-btn').forEach(btn => {
-      const handler = (e) => {
-        e.preventDefault();
-        const d = btn.dataset.dir;
-        if (d === 'up')    setDir(0, -1);
-        if (d === 'down')  setDir(0, 1);
-        if (d === 'left')  setDir(-1, 0);
-        if (d === 'right') setDir(1, 0);
-      };
-      btn.addEventListener('touchstart', handler, { passive: false });
-      btn.addEventListener('click', handler);
-    });
-
     // Свайпы по canvas
     let touchStart = null;
     canvas.addEventListener('touchstart', (e) => {
@@ -302,6 +291,20 @@
       else setDir(0, dy > 0 ? 1 : -1);
       touchStart = null;
     }, { passive: true });
+
+    // Кнопки звука
+    function refreshSoundBtns() {
+      const s = window.BearSound; if (!s) return;
+      const sfx = document.getElementById('sfxBtn');
+      const mus = document.getElementById('musBtn');
+      sfx.classList.toggle('off', !s.sfxEnabled);
+      sfx.textContent = s.sfxEnabled ? '🔊' : '🔇';
+      mus.classList.toggle('off', !s.musicEnabled);
+      mus.textContent = s.musicEnabled ? '🎵' : '🎶';
+    }
+    document.getElementById('sfxBtn').addEventListener('click', () => { BearSound.toggleSfx(); refreshSoundBtns(); });
+    document.getElementById('musBtn').addEventListener('click', () => { BearSound.toggleMusic(); refreshSoundBtns(); });
+    window.addEventListener('load', () => setTimeout(refreshSoundBtns, 100));
 
     // Стартовый экран видимый по умолчанию — не начинаем сразу
   </script>
