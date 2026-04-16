@@ -212,77 +212,192 @@
       }
     }
 
-    /* ========== Эффектный заголовок МЕДВЕДЬ ========== */
+    /* ========== Заголовок МЕДВЕДЬ в стиле Monster Trucks ========== */
     .hero-title {
       position: relative;
       display: inline-block;
       font-family: 'Bangers', 'Fredoka', system-ui, sans-serif;
-      font-size: clamp(3.5rem, 13vw, 7.5rem);
+      font-size: clamp(3.25rem, 12.5vw, 7rem);
       line-height: 0.9;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.06em;
+      padding: 0.35em 0.6em 0.45em;
       transform: rotate(-3deg);
-      animation: hero-bounce 2.6s ease-in-out infinite;
-      padding: 0 0.15em;
+      animation: hero-bounce 2.8s ease-in-out infinite;
+      isolation: isolate;
+      filter: drop-shadow(0 15px 25px rgba(0,0,0,0.4));
     }
+
+    /* Грязевая подложка Monster Trucks */
+    .hero-plate {
+      position: absolute;
+      inset: 0;
+      background:
+        /* грязь-брызги */
+        radial-gradient(circle at 12% 82%, #5a3820 7px, transparent 8px),
+        radial-gradient(circle at 28% 15%, #3d2817 9px, transparent 10px),
+        radial-gradient(circle at 78% 18%, #5a3820 5px, transparent 6px),
+        radial-gradient(circle at 92% 78%, #3d2817 10px, transparent 11px),
+        radial-gradient(circle at 52% 92%, #5a3820 6px, transparent 7px),
+        radial-gradient(circle at 8% 45%, #3d2817 4px, transparent 5px),
+        /* зелёный светящийся акцент */
+        radial-gradient(ellipse at 25% 25%, rgba(57, 255, 20, 0.3) 0%, transparent 55%),
+        radial-gradient(ellipse at 80% 75%, rgba(255, 107, 0, 0.25) 0%, transparent 55%),
+        /* базовая грязь-градиент */
+        linear-gradient(135deg, #0a0502 0%, #2b1810 40%, #3d2817 70%, #1a0a05 100%);
+      border-radius: 18px;
+      transform: skewX(-7deg);
+      box-shadow:
+        0 12px 40px rgba(0, 0, 0, 0.65),
+        inset 0 0 30px rgba(57, 255, 20, 0.15),
+        0 0 45px rgba(255, 107, 0, 0.55),
+        0 0 80px rgba(57, 255, 20, 0.35);
+      z-index: -1;
+    }
+    /* Неоновая двойная рамка — зелёно-оранжевая как у монстр-траков */
+    .hero-plate::before {
+      content: '';
+      position: absolute;
+      inset: -5px;
+      border-radius: 22px;
+      background: linear-gradient(45deg, #39ff14 0%, #ffcc00 25%, #ff6b00 50%, #e11d48 75%, #39ff14 100%);
+      z-index: -1;
+      filter: blur(2px);
+      animation: hero-neon 3s linear infinite;
+    }
+    /* Шашечка финиша снизу таблички */
+    .hero-plate::after {
+      content: '';
+      position: absolute;
+      left: 10%;
+      right: 10%;
+      bottom: 8%;
+      height: 6px;
+      background-image:
+        repeating-linear-gradient(90deg, #fff 0 7px, #000 7px 14px),
+        repeating-linear-gradient(90deg, #000 0 7px, #fff 7px 14px);
+      background-size: 100% 3px, 100% 3px;
+      background-position: 0 0, 0 3px;
+      background-repeat: no-repeat;
+      border-radius: 2px;
+      box-shadow: 0 0 10px rgba(57, 255, 20, 0.7);
+    }
+
+    /* Языки пламени — эмодзи-декор вокруг текста */
+    .hero-fire {
+      position: absolute;
+      font-size: 0.75em;
+      filter:
+        drop-shadow(0 0 8px #ff6b00)
+        drop-shadow(0 0 16px #ffcc00)
+        drop-shadow(0 0 24px #e53935);
+      animation: hero-flicker 0.45s ease-in-out infinite alternate;
+      pointer-events: none;
+      z-index: 4;
+      user-select: none;
+    }
+    .hero-fire--1 { top: -0.55em;  left: -0.25em;   animation-delay: 0s;   transform: rotate(-12deg); }
+    .hero-fire--2 { top: -0.7em;   left: 35%;       animation-delay: 0.15s; font-size: 0.9em; }
+    .hero-fire--3 { top: -0.55em;  right: -0.25em;  animation-delay: 0.3s; transform: rotate(12deg); }
+    .hero-fire--4 { bottom: -0.3em; left: 12%;      animation-delay: 0.4s; font-size: 0.55em; }
+    .hero-fire--5 { bottom: -0.3em; right: 12%;     animation-delay: 0.55s; font-size: 0.55em; }
+
     .hero-title__bg,
     .hero-title__front {
       display: block;
     }
-    /* Тень-слой (ступенчатая 3D-тень сзади) */
+    /* Тень сзади — зелёная (Monster Jam) и огненная */
     .hero-title__bg {
       position: absolute;
-      inset: 0;
+      inset: 0.35em 0.6em 0.45em 0.6em;
       color: transparent;
-      -webkit-text-stroke: 3px #0a0a0a;
+      -webkit-text-stroke: 2px #000;
       text-shadow:
-        3px 3px 0 #0066ff,
-        6px 6px 0 #ff6b00,
-        9px 9px 0 #e11d48,
-        12px 12px 0 rgba(0, 0, 0, 0.25);
+        -4px -4px 0 #39ff14,
+         4px  4px 0 #ff3c00,
+         0 0 35px rgba(255, 107, 0, 0.8);
       z-index: 1;
       pointer-events: none;
+      animation: hero-glitch 3.2s steps(2, end) infinite;
     }
-    /* Передний слой — хромированная заливка с огненным градиентом */
+    /* Передний слой — огненный градиент с жирной чёрной обводкой */
     .hero-title__front {
       position: relative;
       background: linear-gradient(
         180deg,
-        #fff176 0%,
-        #ffd54f 20%,
-        #ffb300 45%,
-        #ff6d00 65%,
-        #e53935 85%,
+        #ffffff 0%,
+        #fff59d 12%,
+        #ffd54f 28%,
+        #ffa726 48%,
+        #ff6b00 68%,
+        #e53935 88%,
         #b71c1c 100%
       );
       -webkit-background-clip: text;
       background-clip: text;
       -webkit-text-fill-color: transparent;
       color: transparent;
-      -webkit-text-stroke: 2px #fff;
-      filter: drop-shadow(0 0 6px rgba(255, 193, 7, 0.9));
+      -webkit-text-stroke: 4px #000;
+      filter:
+        drop-shadow(0 0 8px rgba(255, 221, 0, 1))
+        drop-shadow(0 0 18px rgba(255, 107, 0, 0.95))
+        drop-shadow(0 0 28px rgba(57, 255, 20, 0.5))
+        drop-shadow(0 4px 0 #000);
       z-index: 2;
     }
-    /* Искорки */
+
+    /* Искорки — теперь в духе Monster (зелёно-огненные) */
     .hero-spark {
       position: absolute;
-      color: #fff176;
-      font-size: 0.35em;
-      text-shadow: 0 0 12px #ffca28, 0 0 24px #ff6d00;
-      animation: hero-twinkle 1.6s ease-in-out infinite;
+      color: #39ff14;
+      font-size: 0.4em;
+      text-shadow:
+        0 0 6px #fff,
+        0 0 14px #39ff14,
+        0 0 26px #ff6d00;
+      animation: hero-twinkle 1.5s ease-in-out infinite;
       pointer-events: none;
       z-index: 3;
     }
-    .hero-spark--1 { top: -6%; left: -4%; animation-delay: 0s; }
-    .hero-spark--2 { top: 30%; right: -6%; font-size: 0.45em; animation-delay: 0.4s; }
-    .hero-spark--3 { bottom: -8%; left: 35%; font-size: 0.3em; animation-delay: 0.9s; }
+    .hero-spark--1 { top: 20%;  left: -6%;  animation-delay: 0s;    color: #ffcc00; text-shadow: 0 0 6px #fff, 0 0 14px #ffcc00, 0 0 26px #ff6d00; }
+    .hero-spark--2 { top: 55%;  right: -5%; font-size: 0.55em; animation-delay: 0.35s; }
+    .hero-spark--3 { bottom: 15%; left: 45%; font-size: 0.35em; animation-delay: 0.85s; color: #ff6b00; text-shadow: 0 0 6px #fff, 0 0 14px #ff6b00, 0 0 26px #ffcc00; }
 
     @keyframes hero-bounce {
-      0%, 100% { transform: rotate(-3deg) translateY(0); }
-      50%      { transform: rotate(-1deg) translateY(-6px); }
+      0%, 100% { transform: rotate(-3deg) translateY(0) scale(1); }
+      50%      { transform: rotate(-1.5deg) translateY(-6px) scale(1.02); }
     }
     @keyframes hero-twinkle {
-      0%, 100% { opacity: 0.4; transform: scale(0.85) rotate(0deg); }
-      50%      { opacity: 1;   transform: scale(1.25) rotate(25deg); }
+      0%, 100% { opacity: 0.45; transform: scale(0.8) rotate(0deg); }
+      50%      { opacity: 1;    transform: scale(1.4) rotate(25deg); }
+    }
+    @keyframes hero-flicker {
+      0%   { transform: scale(1) rotate(-5deg) translateY(0); opacity: 0.85; }
+      40%  { transform: scale(1.08) rotate(3deg) translateY(-2px); opacity: 0.95; }
+      100% { transform: scale(1.2) rotate(8deg) translateY(-4px); opacity: 1; }
+    }
+    @keyframes hero-glitch {
+      0%, 92%, 100% {
+        text-shadow:
+          -4px -4px 0 #39ff14,
+           4px  4px 0 #ff3c00,
+           0 0 35px rgba(255, 107, 0, 0.8);
+      }
+      94% {
+        text-shadow:
+          -7px -2px 0 #39ff14,
+           6px  5px 0 #ff3c00,
+           0 0 35px rgba(255, 107, 0, 0.8);
+      }
+      96% {
+        text-shadow:
+           5px -5px 0 #39ff14,
+          -5px  4px 0 #ff3c00,
+           0 0 35px rgba(255, 107, 0, 0.8);
+      }
+    }
+    @keyframes hero-neon {
+      0%   { filter: blur(2px) hue-rotate(0deg); }
+      100% { filter: blur(2px) hue-rotate(360deg); }
     }
 
     /* Текст фильтра — адаптивный, влезает на iPhone и красиво растёт на планшете */
@@ -875,12 +990,21 @@
 
               <div className="flex flex-col items-center md:items-start pb-4">
                 <h1 className="hero-title" aria-label="Медведь">
-                  <span className="hero-title__bg">МЕДВЕДЬ</span>
+                  {/* грязевая подложка Monster Trucks */}
+                  <span className="hero-plate" aria-hidden="true" />
+                  {/* языки пламени */}
+                  <span className="hero-fire hero-fire--1" aria-hidden="true">🔥</span>
+                  <span className="hero-fire hero-fire--2" aria-hidden="true">🔥</span>
+                  <span className="hero-fire hero-fire--3" aria-hidden="true">🔥</span>
+                  <span className="hero-fire hero-fire--4" aria-hidden="true">🔥</span>
+                  <span className="hero-fire hero-fire--5" aria-hidden="true">🔥</span>
+                  {/* текст: задний глитч-слой + передний огненный */}
+                  <span className="hero-title__bg" aria-hidden="true">МЕДВЕДЬ</span>
                   <span className="hero-title__front">МЕДВЕДЬ</span>
                   {/* искорки */}
-                  <span className="hero-spark hero-spark--1">★</span>
-                  <span className="hero-spark hero-spark--2">✦</span>
-                  <span className="hero-spark hero-spark--3">✧</span>
+                  <span className="hero-spark hero-spark--1" aria-hidden="true">★</span>
+                  <span className="hero-spark hero-spark--2" aria-hidden="true">✦</span>
+                  <span className="hero-spark hero-spark--3" aria-hidden="true">✧</span>
                 </h1>
                 <div className="mt-3 dima-note">
                   <span className="dima-handwriting text-2xl md:text-3xl">
