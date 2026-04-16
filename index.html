@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#FF6B00" />
+  <title>МЕДВЕДЬ — Машинки Димы 🐻🏎️</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Bangers&family=Fredoka:wght@600;700&family=Nunito:wght@800;900&family=Caveat:wght@700&display=swap"
+    rel="stylesheet"
+  />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    :root {
+      --hw-blue: #0066ff;
+      --hw-orange: #ff6b00;
+      --mt-green: #39ff14;
+      --mt-mud: #3d2817;
+    }
+
+    html, body {
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior: none;
+    }
+
+    body {
+      font-family: 'Nunito', system-ui, sans-serif;
+      background-color: #fff3d6;
+      background-image:
+        radial-gradient(at 10% 0%, #ffd580 0px, transparent 50%),
+        radial-gradient(at 90% 10%, #c2f0ff 0px, transparent 50%),
+        radial-gradient(at 50% 100%, #ffe3a0 0px, transparent 50%);
+      min-height: 100vh;
+    }
+
+    /* Полупрозрачная асфальтовая текстура поверх фона */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.15;
+      background-image:
+        linear-gradient(45deg, rgba(0, 0, 0, 0.2) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(0, 0, 0, 0.2) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(0, 0, 0, 0.2) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(0, 0, 0, 0.2) 75%);
+      background-size: 24px 24px;
+      background-position: 0 0, 0 12px, 12px -12px, -12px 0;
+    }
+
+    #root { position: relative; z-index: 1; }
+
+    /* Хром для логотипа */
+    .chrome-text {
+      background: linear-gradient(
+        180deg,
+        #ffffff 0%,
+        #e9ecef 22%,
+        #adb5bd 46%,
+        #495057 54%,
+        #adb5bd 66%,
+        #ffffff 100%
+      );
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+      filter:
+        drop-shadow(0 3px 0 #0066ff)
+        drop-shadow(0 6px 0 #003a99)
+        drop-shadow(0 10px 14px rgba(0, 0, 0, 0.35));
+      letter-spacing: 0.05em;
+    }
+
+    .dima-handwriting {
+      font-family: 'Caveat', cursive;
+      color: #e11d48;
+      text-shadow: 2px 2px 0 #fff, 3px 3px 0 rgba(0,0,0,0.1);
+    }
+
+    .bangers { font-family: 'Bangers', 'Nunito', sans-serif; letter-spacing: 0.06em; }
+    .fredoka { font-family: 'Fredoka', 'Nunito', sans-serif; }
+
+    /* Пульсация для кнопок-подсказок */
+    @keyframes bouncy {
+      0%, 100% { transform: translateY(0) rotate(-2deg); }
+      50% { transform: translateY(-6px) rotate(2deg); }
+    }
+    .bouncy { animation: bouncy 1.4s ease-in-out infinite; }
+
+    @keyframes wiggle {
+      0%, 100% { transform: rotate(-3deg); }
+      50% { transform: rotate(3deg); }
+    }
+    .wiggle { animation: wiggle 2s ease-in-out infinite; }
+
+    @keyframes shine {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    .shine {
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255,255,255,0.6),
+        transparent
+      );
+      background-size: 200% 100%;
+      animation: shine 3s linear infinite;
+    }
+
+    /* Карточка — тень и hover */
+    .toy-card {
+      transition: transform 0.25s cubic-bezier(.2,.8,.2,1.4), box-shadow 0.25s ease;
+      will-change: transform;
+    }
+    .toy-card:hover {
+      transform: translateY(-10px) rotate(-1deg) scale(1.03);
+      box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+    }
+    .toy-card:active {
+      transform: translateY(-2px) scale(0.97);
+    }
+
+    /* Гоночная полоса Hot Wheels */
+    .race-stripe {
+      background-image: repeating-linear-gradient(
+        90deg,
+        #fff 0 14px,
+        #ff6b00 14px 28px,
+        #0066ff 28px 42px
+      );
+    }
+
+    /* Грязь для Monster Trucks */
+    .mud-stripe {
+      background-image:
+        radial-gradient(circle at 10% 40%, #5a3820 4px, transparent 5px),
+        radial-gradient(circle at 30% 70%, #3d2817 6px, transparent 7px),
+        radial-gradient(circle at 55% 30%, #5a3820 5px, transparent 6px),
+        radial-gradient(circle at 80% 60%, #3d2817 7px, transparent 8px),
+        linear-gradient(90deg, #2a1a0e, #3d2817);
+    }
+
+    /* Кнопки-фильтры */
+    .filter-btn {
+      min-width: 64px;
+      min-height: 64px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      user-select: none;
+    }
+    .filter-btn:active { transform: scale(0.94); }
+
+    /* Скролл-бар стилизуем мягко */
+    ::-webkit-scrollbar { width: 14px; height: 14px; }
+    ::-webkit-scrollbar-thumb {
+      background: linear-gradient(#ff6b00, #0066ff);
+      border-radius: 10px;
+      border: 3px solid #fff3d6;
+    }
+
+    /* Эмодзи машинки */
+    .toy-emoji {
+      font-size: 5.5rem;
+      line-height: 1;
+      filter: drop-shadow(0 10px 15px rgba(0,0,0,0.25));
+    }
+
+    /* Подпись Димы — как бы на бумажке */
+    .dima-note {
+      background: #fffbea;
+      padding: 8px 16px;
+      border-radius: 8px;
+      transform: rotate(-4deg);
+      box-shadow: 2px 3px 8px rgba(0,0,0,0.15);
+      border: 1px dashed rgba(0,0,0,0.1);
+    }
+
+    /* Чтобы textUppercase на кириллице выглядел ровно */
+    .uppercase-ru { text-transform: uppercase; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" data-presets="env,react">
+    const { useState, useMemo } = React;
+
+    /* =========================================================================
+       ДАННЫЕ О ТОВАРАХ (mock). 15 игрушек: 7 Hot Wheels + 8 Monster Trucks.
+       Ссылки — реальные поиски в РФ-магазинах (Ozon / WB / Яндекс Маркет).
+       Картинки — эмодзи + цветной градиент (чтобы не зависеть от интернета
+       и обложек с авторскими правами).
+       ========================================================================= */
+    const TOYS = [
+      // ——— HOT WHEELS ———
+      {
+        id: 1, category: 'hotwheels',
+        name: 'BONE SHAKER',
+        emoji: '💀',
+        bg: 'linear-gradient(135deg,#ff8a00 0%,#e52e71 100%)',
+        store: 'ozon',
+        link: 'https://www.ozon.ru/search/?text=hot+wheels+bone+shaker',
+      },
+      {
+        id: 2, category: 'hotwheels',
+        name: 'TWIN MILL',
+        emoji: '🔥',
+        bg: 'linear-gradient(135deg,#ff6b00 0%,#ffd200 100%)',
+        store: 'wildberries',
+        link: 'https://www.wildberries.ru/catalog/0/search.aspx?search=hot%20wheels%20twin%20mill',
+      },
+      {
+        id: 3, category: 'hotwheels',
+        name: 'DEORA II',
+        emoji: '🏄',
+        bg: 'linear-gradient(135deg,#00c6ff 0%,#0072ff 100%)',
+        store: 'yandex',
+        link: 'https://market.yandex.ru/search?text=hot%20wheels%20deora',
+      },
+      {
+        id: 4, category: 'hotwheels',
+        name: 'RIP ROD',
+        emoji: '⚡',
+        bg: 'linear-gradient(135deg,#f7971e 0%,#ffd200 100%)',
+        store: 'ozon',
+        link: 'https://www.ozon.ru/search/?text=hot+wheels+rip+rod',
+      },
+      {
+        id: 5, category: 'hotwheels',
+        name: 'RODGER DODGER',
+        emoji: '🏁',
+        bg: 'linear-gradient(135deg,#141e30 0%,#243b55 100%)',
+        store: 'wildberries',
+        link: 'https://www.wildberries.ru/catalog/0/search.aspx?search=hot%20wheels%20rodger%20dodger',
+      },
+      {
+        id: 6, category: 'hotwheels',
+        name: 'GAZELLA GT',
+        emoji: '🏎️',
+        bg: 'linear-gradient(135deg,#ee0979 0%,#ff6a00 100%)',
+        store: 'yandex',
+        link: 'https://market.yandex.ru/search?text=hot%20wheels%20gazella',
+      },
+      {
+        id: 7, category: 'hotwheels',
+        name: 'DRAGON BLASTER',
+        emoji: '🐉',
+        bg: 'linear-gradient(135deg,#0066ff 0%,#00c853 100%)',
+        store: 'ozon',
+        link: 'https://www.ozon.ru/search/?text=hot+wheels+dragon',
+      },
+
+      // ——— MONSTER TRUCKS ———
+      {
+        id: 8, category: 'monster',
+        name: 'BIGFOOT',
+        emoji: '🦶',
+        bg: 'linear-gradient(135deg,#134e5e 0%,#71b280 100%)',
+        store: 'ozon',
+        link: 'https://www.ozon.ru/search/?text=monster+trucks+bigfoot',
+      },
+      {
+        id: 9, category: 'monster',
+        name: 'GRAVE DIGGER',
+        emoji: '⚰️',
+        bg: 'linear-gradient(135deg,#232526 0%,#414345 100%)',
+        store: 'wildberries',
+        link: 'https://www.wildberries.ru/catalog/0/search.aspx?search=monster%20jam%20grave%20digger',
+      },
+      {
+        id: 10, category: 'monster',
+        name: 'MONSTER MUTT',
+        emoji: '🐕',
+        bg: 'linear-gradient(135deg,#3d2817 0%,#a0522d 100%)',
+        store: 'yandex',
+        link: 'https://market.yandex.ru/search?text=monster%20mutt',
+      },
+      {
+        id: 11, category: 'monster',
+        name: 'EL TORO LOCO',
+        emoji: '🐂',
+        bg: 'linear-gradient(135deg,#cb2d3e 0%,#ef473a 100%)',
+        store: 'ozon',
+        link: 'https://www.ozon.ru/search/?text=monster+jam+el+toro+loco',
+      },
+      {
+        id: 12, category: 'monster',
+        name: 'MAX-D',
+        emoji: '💥',
+        bg: 'linear-gradient(135deg,#414345 0%,#39ff14 100%)',
+        store: 'wildberries',
+        link: 'https://www.wildberries.ru/catalog/0/search.aspx?search=monster%20jam%20max-d',
+      },
+      {
+        id: 13, category: 'monster',
+        name: 'MEGALODON',
+        emoji: '🦈',
+        bg: 'linear-gradient(135deg,#0f2027 0%,#2c5364 100%)',
+        store: 'yandex',
+        link: 'https://market.yandex.ru/search?text=monster%20jam%20megalodon',
+      },
+      {
+        id: 14, category: 'monster',
+        name: 'EARTHSHAKER',
+        emoji: '🌋',
+        bg: 'linear-gradient(135deg,#b24592 0%,#f15f79 100%)',
+        store: 'ozon',
+        link: 'https://www.ozon.ru/search/?text=monster+truck+earthshaker',
+      },
+      {
+        id: 15, category: 'monster',
+        name: 'ZOMBIE',
+        emoji: '🧟',
+        bg: 'linear-gradient(135deg,#355c7d 0%,#6c5b7b 50%,#c06c84 100%)',
+        store: 'wildberries',
+        link: 'https://www.wildberries.ru/catalog/0/search.aspx?search=monster%20jam%20zombie',
+      },
+    ];
+
+    /* =========================================================================
+       ЛОГОТИП — Медведь в гоночном шлеме (inline SVG).
+       Никаких внешних картинок, всё нарисовано кодом.
+       ========================================================================= */
+    function BearLogo({ size = 200 }) {
+      return (
+        <svg
+          viewBox="0 0 220 320"
+          width={size * 220 / 320}
+          height={size}
+          className="drop-shadow-2xl wiggle"
+          aria-label="Медвежонок-гонщик во весь рост"
+          role="img"
+        >
+          {/* Тень под ногами */}
+          <ellipse cx="110" cy="308" rx="82" ry="8" fill="rgba(0,0,0,0.3)" />
+
+          {/* Ноги */}
+          <ellipse cx="85" cy="272" rx="18" ry="28" fill="#8B4513" />
+          <ellipse cx="135" cy="272" rx="18" ry="28" fill="#8B4513" />
+          {/* Кроссовки-гонщики */}
+          <rect x="63" y="286" width="44" height="17" rx="8" fill="#fff" />
+          <rect x="113" y="286" width="44" height="17" rx="8" fill="#fff" />
+          <rect x="63" y="292" width="44" height="5" fill="#ff6b00" />
+          <rect x="113" y="292" width="44" height="5" fill="#ff6b00" />
+          <circle cx="75" cy="291" r="2.2" fill="#0066ff" />
+          <circle cx="125" cy="291" r="2.2" fill="#0066ff" />
+
+          {/* Гоночный комбинезон */}
+          <path d="M 68 175 Q 58 240 85 267 L 135 267 Q 162 240 152 175 Z" fill="#e11d48" />
+          {/* Молния */}
+          <line x1="110" y1="188" x2="110" y2="252" stroke="#2b1810" strokeWidth="2" strokeDasharray="3 2" />
+          {/* Белый круг с номером 6 (возраст Димы) */}
+          <circle cx="110" cy="218" r="23" fill="#fff" stroke="#2b1810" strokeWidth="3" />
+          <text x="110" y="230" textAnchor="middle" fontSize="32" fontWeight="900" fill="#e11d48" fontFamily="Bangers">6</text>
+
+          {/* Правая лапа поднята — приветствие */}
+          <path d="M 150 182 Q 188 145 200 100 L 182 92 Q 170 138 145 162 Z" fill="#8B4513" />
+          <circle cx="200" cy="97" r="18" fill="#A0522D" />
+          {/* Пальчики машущей лапы */}
+          <ellipse cx="194" cy="87" rx="3.5" ry="5" fill="#2b1810" />
+          <ellipse cx="202" cy="85" rx="3.5" ry="5" fill="#2b1810" />
+          <ellipse cx="209" cy="89" rx="3.5" ry="5" fill="#2b1810" />
+
+          {/* Левая лапа — держит машинку Hot Wheels */}
+          <path d="M 70 195 Q 42 222 30 255 L 50 263 Q 62 232 84 212 Z" fill="#8B4513" />
+          <circle cx="32" cy="256" r="18" fill="#A0522D" />
+          {/* Мини-машинка в лапке */}
+          <g transform="translate(2, 248)">
+            <rect x="0" y="10" width="36" height="11" rx="2" fill="#0066ff" />
+            <path d="M 6 4 L 16 4 L 30 10 L 2 10 Z" fill="#ff6b00" />
+            <rect x="6" y="6" width="10" height="3" fill="#87ceeb" />
+            <circle cx="9" cy="23" r="4" fill="#1a1a1a" />
+            <circle cx="28" cy="23" r="4" fill="#1a1a1a" />
+            <circle cx="9" cy="23" r="1.5" fill="#fff" />
+            <circle cx="28" cy="23" r="1.5" fill="#fff" />
+          </g>
+
+          {/* ===== ГОЛОВА ===== */}
+          {/* Уши */}
+          <circle cx="62" cy="95" r="21" fill="#8B4513" />
+          <circle cx="158" cy="95" r="21" fill="#8B4513" />
+          <circle cx="62" cy="95" r="11" fill="#D2691E" />
+          <circle cx="158" cy="95" r="11" fill="#D2691E" />
+
+          {/* Голова */}
+          <circle cx="110" cy="135" r="62" fill="#A0522D" />
+          <circle cx="110" cy="138" r="55" fill="#8B4513" />
+
+          {/* Мордочка */}
+          <ellipse cx="110" cy="160" rx="32" ry="24" fill="#F4D8A8" />
+          <ellipse cx="110" cy="150" rx="7" ry="6" fill="#2b1810" />
+
+          {/* Розовые щёчки */}
+          <ellipse cx="73" cy="160" rx="9" ry="6" fill="#ff8aa5" opacity="0.6" />
+          <ellipse cx="147" cy="160" rx="9" ry="6" fill="#ff8aa5" opacity="0.6" />
+
+          {/* Глаза большие, весёлые */}
+          <circle cx="88" cy="130" r="8" fill="#fff" />
+          <circle cx="132" cy="130" r="8" fill="#fff" />
+          <circle cx="89" cy="132" r="4.5" fill="#1a1a1a" />
+          <circle cx="133" cy="132" r="4.5" fill="#1a1a1a" />
+          <circle cx="91" cy="129" r="2" fill="#fff" />
+          <circle cx="135" cy="129" r="2" fill="#fff" />
+
+          {/* Широкая улыбка */}
+          <path d="M 88 172 Q 110 189 132 172" stroke="#2b1810" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+          {/* Язычок */}
+          <path d="M 104 181 Q 110 189 116 181 Q 116 184 110 185 Q 104 184 104 181 Z" fill="#ff4d6d" />
+
+          {/* ===== ШЛЕМ (без флагов стран — только гонки и шашечки) ===== */}
+          <path
+            d="M 52 110 Q 52 58 110 50 Q 168 58 168 110 L 168 118 L 52 118 Z"
+            fill="#e11d48"
+          />
+          {/* Тёмная часть шлема снизу */}
+          <rect x="52" y="118" width="116" height="10" fill="#1a1a1a" />
+          {/* Прорезь забрала */}
+          <path d="M 62 116 Q 110 122 158 116 L 158 120 L 62 120 Z" fill="#1a1a1a" />
+
+          {/* Белая полоса с финишной шашечкой */}
+          <rect x="52" y="82" width="116" height="14" fill="#fff" />
+          {/* Шашечные квадратики, ряд 1 */}
+          <rect x="52" y="82" width="7" height="7" fill="#000" />
+          <rect x="66" y="82" width="7" height="7" fill="#000" />
+          <rect x="80" y="82" width="7" height="7" fill="#000" />
+          <rect x="94" y="82" width="7" height="7" fill="#000" />
+          <rect x="108" y="82" width="7" height="7" fill="#000" />
+          <rect x="122" y="82" width="7" height="7" fill="#000" />
+          <rect x="136" y="82" width="7" height="7" fill="#000" />
+          <rect x="150" y="82" width="7" height="7" fill="#000" />
+          <rect x="164" y="82" width="4" height="7" fill="#000" />
+          {/* Шашечные квадратики, ряд 2 (со сдвигом) */}
+          <rect x="59" y="89" width="7" height="7" fill="#000" />
+          <rect x="73" y="89" width="7" height="7" fill="#000" />
+          <rect x="87" y="89" width="7" height="7" fill="#000" />
+          <rect x="101" y="89" width="7" height="7" fill="#000" />
+          <rect x="115" y="89" width="7" height="7" fill="#000" />
+          <rect x="129" y="89" width="7" height="7" fill="#000" />
+          <rect x="143" y="89" width="7" height="7" fill="#000" />
+          <rect x="157" y="89" width="7" height="7" fill="#000" />
+
+          {/* Блик на шлеме */}
+          <ellipse cx="80" cy="70" rx="20" ry="8" fill="rgba(255,255,255,0.55)" />
+        </svg>
+      );
+    }
+
+    /* =========================================================================
+       ИКОНКА HOT WHEELS — стилизованный спорткар с огненным хвостом.
+       ========================================================================= */
+    function HotWheelsIcon({ size = 70 }) {
+      return (
+        <svg viewBox="0 0 140 80" width={size} height={size * 80 / 140} aria-hidden="true">
+          {/* Огненный хвост */}
+          <path d="M 0 42 Q 8 28 26 35 L 38 58 L 3 62 Z" fill="#ffcc00" />
+          <path d="M 2 47 Q 14 38 28 43 L 35 60 L 7 63 Z" fill="#ff6b00" />
+          <path d="M 6 52 Q 18 45 30 49 L 32 61 L 10 64 Z" fill="#e11d48" />
+
+          {/* Днище/бампер */}
+          <rect x="30" y="56" width="100" height="5" fill="#0066ff" />
+
+          {/* Корпус белый */}
+          <path d="M 32 48 L 120 48 L 130 58 L 32 58 Z" fill="#fff" />
+          <path d="M 32 48 L 120 48 L 130 58 L 32 58 Z" fill="none" stroke="#000" strokeWidth="1.5" />
+
+          {/* Кабина красная */}
+          <path d="M 52 26 L 92 26 L 112 48 L 42 48 Z" fill="#e11d48" />
+          <path d="M 52 26 L 92 26 L 112 48 L 42 48 Z" fill="none" stroke="#000" strokeWidth="1.5" />
+
+          {/* Окно */}
+          <path d="M 58 30 L 88 30 L 102 46 L 50 46 Z" fill="#87ceeb" />
+          {/* Блик на окне */}
+          <path d="M 58 30 L 70 30 L 65 40 L 52 40 Z" fill="#fff" opacity="0.5" />
+
+          {/* Фара */}
+          <circle cx="126" cy="52" r="3" fill="#ffcc00" stroke="#000" strokeWidth="1" />
+
+          {/* Колёса */}
+          <circle cx="55" cy="63" r="13" fill="#1a1a1a" />
+          <circle cx="105" cy="63" r="13" fill="#1a1a1a" />
+          <circle cx="55" cy="63" r="7" fill="#fff" />
+          <circle cx="105" cy="63" r="7" fill="#fff" />
+          <circle cx="55" cy="63" r="3" fill="#0066ff" />
+          <circle cx="105" cy="63" r="3" fill="#0066ff" />
+          {/* Спицы */}
+          <g stroke="#0066ff" strokeWidth="1.5">
+            <line x1="55" y1="56" x2="55" y2="70" />
+            <line x1="48" y1="63" x2="62" y2="63" />
+            <line x1="105" y1="56" x2="105" y2="70" />
+            <line x1="98" y1="63" x2="112" y2="63" />
+          </g>
+        </svg>
+      );
+    }
+
+    /* =========================================================================
+       ИКОНКА MONSTER TRUCKS — грузовик на огромных колёсах + брызги грязи.
+       ========================================================================= */
+    function MonsterTruckIcon({ size = 70 }) {
+      return (
+        <svg viewBox="0 0 140 95" width={size} height={size * 95 / 140} aria-hidden="true">
+          {/* Кабина */}
+          <rect x="38" y="14" width="48" height="24" rx="3" fill="#39ff14" stroke="#000" strokeWidth="2" />
+          {/* Окно кабины */}
+          <rect x="43" y="18" width="38" height="16" rx="2" fill="#1a1a1a" />
+          <rect x="45" y="20" width="12" height="6" fill="#fff" opacity="0.4" />
+
+          {/* Кузов */}
+          <rect x="22" y="34" width="94" height="26" rx="3" fill="#39ff14" stroke="#000" strokeWidth="2" />
+          {/* Выхлопные трубы */}
+          <rect x="46" y="6" width="5" height="12" fill="#888" stroke="#000" strokeWidth="1" />
+          <rect x="54" y="6" width="5" height="12" fill="#888" stroke="#000" strokeWidth="1" />
+
+          {/* Фары */}
+          <circle cx="110" cy="42" r="3" fill="#ffcc00" stroke="#000" strokeWidth="1" />
+          <circle cx="110" cy="52" r="3" fill="#ffcc00" stroke="#000" strokeWidth="1" />
+
+          {/* ОГРОМНЫЕ колёса */}
+          <circle cx="32" cy="70" r="22" fill="#1a1a1a" />
+          <circle cx="108" cy="70" r="22" fill="#1a1a1a" />
+          {/* Обод серый */}
+          <circle cx="32" cy="70" r="11" fill="#666" stroke="#000" strokeWidth="1" />
+          <circle cx="108" cy="70" r="11" fill="#666" stroke="#000" strokeWidth="1" />
+          {/* Центр */}
+          <circle cx="32" cy="70" r="4" fill="#39ff14" />
+          <circle cx="108" cy="70" r="4" fill="#39ff14" />
+
+          {/* Крупный протектор */}
+          <g stroke="#333" strokeWidth="2.5">
+            <line x1="32" y1="48" x2="32" y2="53" />
+            <line x1="32" y1="87" x2="32" y2="92" />
+            <line x1="10" y1="70" x2="15" y2="70" />
+            <line x1="49" y1="70" x2="54" y2="70" />
+            <line x1="47" y1="55" x2="51" y2="58" />
+            <line x1="13" y1="55" x2="17" y2="58" />
+            <line x1="108" y1="48" x2="108" y2="53" />
+            <line x1="108" y1="87" x2="108" y2="92" />
+            <line x1="86" y1="70" x2="91" y2="70" />
+            <line x1="125" y1="70" x2="130" y2="70" />
+            <line x1="123" y1="55" x2="127" y2="58" />
+            <line x1="89" y1="55" x2="93" y2="58" />
+          </g>
+
+          {/* Брызги грязи */}
+          <circle cx="6" cy="88" r="3" fill="#3d2817" />
+          <circle cx="14" cy="93" r="2" fill="#5a3820" />
+          <circle cx="132" cy="88" r="2.5" fill="#3d2817" />
+          <circle cx="62" cy="92" r="2" fill="#3d2817" />
+          <circle cx="78" cy="90" r="2" fill="#5a3820" />
+        </svg>
+      );
+    }
+
+    /* =========================================================================
+       ИКОНКА МАГАЗИНА (Ozon / WB / Яндекс Маркет) — маленькая «пилюля».
+       ========================================================================= */
+    function StoreBadge({ store }) {
+      const map = {
+        ozon:        { label: 'Ozon',    bg: '#005BFF', color: '#fff' },
+        wildberries: { label: 'WB',      bg: '#CB11AB', color: '#fff' },
+        yandex:      { label: 'Маркет',  bg: '#FFCC00', color: '#1a1a1a' },
+      };
+      const s = map[store];
+      return (
+        <div
+          className="flex items-center gap-1 px-4 py-2 rounded-2xl text-lg font-black shadow-md"
+          style={{ background: s.bg, color: s.color }}
+        >
+          <span>🛒</span>
+          <span>{s.label}</span>
+        </div>
+      );
+    }
+
+    /* =========================================================================
+       КАРТОЧКА ИГРУШКИ — вся карточка кликабельна (как попросил Дима).
+       Открывается в новой вкладке, rel="noopener noreferrer".
+       ========================================================================= */
+    function ToyCard({ toy }) {
+      const handleOpen = (e) => {
+        // Подстраховка: принудительно открываем магазин в новой вкладке.
+        // Нужна, потому что внутри sandbox-iframe (например, в превью-панелях)
+        // обычный target="_blank" может блокироваться.
+        e.preventDefault();
+        const w = window.open(toy.link, '_blank', 'noopener,noreferrer');
+        // Если popup-blocker не дал открыть — переходим в текущей вкладке.
+        if (!w) window.location.href = toy.link;
+      };
+      return (
+        <a
+          href={toy.link}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={handleOpen}
+          className="toy-card block bg-white rounded-[30px] overflow-hidden shadow-xl border-4 border-white focus:outline-none focus:ring-8 focus:ring-yellow-300"
+          aria-label={`Открыть ${toy.name} в магазине ${toy.store}`}
+        >
+          {/* Верх карточки — картинка */}
+          <div
+            className="relative flex items-center justify-center"
+            style={{ background: toy.bg, minHeight: '170px' }}
+          >
+            <div className="toy-emoji wiggle select-none" aria-hidden="true">
+              {toy.emoji}
+            </div>
+            {/* «Блик» на глянце */}
+            <div className="absolute inset-0 pointer-events-none shine" />
+            {/* Иконка магазина в правом верхнем углу */}
+            <div className="absolute top-3 right-3">
+              <StoreBadge store={toy.store} />
+            </div>
+          </div>
+
+          {/* Низ карточки — текст */}
+          <div className="p-4 flex flex-col gap-3 bg-white">
+            <h3 className="bangers text-3xl md:text-4xl text-gray-900 leading-tight">
+              {toy.name}
+            </h3>
+
+            <div
+              className="bouncy inline-flex items-center justify-center self-start gap-2 rounded-2xl px-5 py-3 text-white text-xl md:text-2xl font-black uppercase-ru shadow-lg"
+              style={{ background: 'linear-gradient(135deg,#ff6b00,#e11d48)' }}
+            >
+              <span>КУПИТЬ ТУТ</span>
+              <span className="text-2xl">👉</span>
+            </div>
+          </div>
+        </a>
+      );
+    }
+
+    /* =========================================================================
+       КНОПКА-ФИЛЬТР (таблетка).
+       ========================================================================= */
+    function FilterPill({ active, onClick, kind }) {
+      const common =
+        'filter-btn rounded-full border-4 shadow-2xl flex items-center gap-3 ' +
+        'px-5 md:px-7 py-3 md:py-4 transition-all';
+
+      if (kind === 'hotwheels') {
+        return (
+          <button
+            onClick={onClick}
+            className={[
+              common,
+              active
+                ? 'race-stripe border-white scale-105'
+                : 'bg-white border-red-400 opacity-85 hover:opacity-100',
+            ].join(' ')}
+            aria-pressed={active}
+            aria-label="Показать Хот Вилс"
+          >
+            <HotWheelsIcon size={72} />
+            <span
+              className="bangers text-4xl md:text-6xl tracking-wider"
+              style={{
+                color: active ? '#ffcc00' : '#e11d48',
+                WebkitTextStroke: active ? '2px #000' : '0',
+                textShadow: active
+                  ? '3px 3px 0 #000, 0 0 18px rgba(255,107,0,0.9)'
+                  : '3px 3px 0 #ffcc00, 4px 4px 0 #000',
+                fontStyle: 'italic',
+                transform: 'skewX(-8deg)',
+                display: 'inline-block',
+              }}
+            >
+              ХОТ&nbsp;ВИЛС
+            </span>
+          </button>
+        );
+      }
+
+      // MONSTER TRUCKS
+      return (
+        <button
+          onClick={onClick}
+          className={[
+            common,
+            active
+              ? 'mud-stripe border-white scale-105'
+              : 'bg-white border-green-500 opacity-85 hover:opacity-100',
+          ].join(' ')}
+          aria-pressed={active}
+          aria-label="Показать Монстр Траки"
+        >
+          <MonsterTruckIcon size={72} />
+          <span
+            className="bangers text-4xl md:text-6xl tracking-wider"
+            style={{
+              color: active ? '#39ff14' : '#0f3d1f',
+              WebkitTextStroke: active ? '2px #000' : '0',
+              textShadow: active
+                ? '3px 3px 0 #000, 0 0 18px rgba(57,255,20,0.8)'
+                : '3px 3px 0 #39ff14, 4px 4px 0 #000',
+              letterSpacing: '0.04em',
+              display: 'inline-block',
+            }}
+          >
+            МОНСТР&nbsp;ТРАКИ
+          </span>
+        </button>
+      );
+    }
+
+    /* =========================================================================
+       ШАПКА.
+       ========================================================================= */
+    function Header({ category, setCategory, count }) {
+      return (
+        <header className="relative overflow-hidden border-b-8 border-red-500 shadow-2xl">
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                'linear-gradient(180deg,#FFD95B 0%,#FFB347 60%,#FF7E47 100%)',
+            }}
+          />
+          {/* Гоночная полоса сверху */}
+          <div className="absolute top-0 left-0 right-0 h-3 race-stripe" />
+
+          <div className="relative max-w-7xl mx-auto px-4 md:px-8 pt-10 pb-6">
+            <div className="flex flex-col md:flex-row items-end justify-center gap-4 md:gap-8">
+              <BearLogo size={220} />
+
+              <div className="flex flex-col items-center md:items-start pb-4">
+                <h1
+                  className="chrome-text fredoka text-6xl md:text-8xl font-black leading-none"
+                  aria-label="Медведь"
+                >
+                  МЕДВЕДЬ
+                </h1>
+                <div className="mt-3 dima-note">
+                  <span className="dima-handwriting text-2xl md:text-3xl">
+                    ✏️ Собрал Дима, 6 лет
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Фильтры */}
+            <div className="mt-8 flex flex-wrap justify-center gap-4 md:gap-6">
+              <FilterPill
+                active={category === 'hotwheels'}
+                onClick={() => setCategory('hotwheels')}
+                kind="hotwheels"
+              />
+              <FilterPill
+                active={category === 'monster'}
+                onClick={() => setCategory('monster')}
+                kind="monster"
+              />
+            </div>
+
+            {/* Счётчик */}
+            <div className="mt-5 flex justify-center">
+              <div
+                className="bangers text-2xl md:text-3xl px-6 py-2 rounded-full bg-white/90 shadow-lg border-4 border-yellow-400"
+                style={{ color: '#0066ff' }}
+              >
+                🏁 Машинок: {count}
+              </div>
+            </div>
+          </div>
+        </header>
+      );
+    }
+
+    /* =========================================================================
+       ПОДВАЛ.
+       ========================================================================= */
+    function Footer() {
+      return (
+        <footer className="mt-12 py-8 text-center">
+          <div className="inline-flex items-center gap-3 bg-white/80 rounded-full px-6 py-3 shadow-md border-4 border-dashed border-orange-400">
+            <span className="text-3xl">🐻</span>
+            <span className="dima-handwriting text-2xl md:text-3xl">
+              Мой сайт про машинки!
+            </span>
+            <span className="text-3xl">🏎️</span>
+          </div>
+          <p className="mt-4 text-sm text-gray-600 fredoka">
+            © Дима и папа. Все машинки — понарошку, но настоящие в магазинах!
+          </p>
+        </footer>
+      );
+    }
+
+    /* =========================================================================
+       ГЛАВНЫЙ КОМПОНЕНТ.
+       ========================================================================= */
+    function App() {
+      const [category, setCategory] = useState('hotwheels');
+      const filtered = useMemo(
+        () => TOYS.filter((t) => t.category === category),
+        [category]
+      );
+
+      return (
+        <div className="min-h-screen">
+          <Header
+            category={category}
+            setCategory={setCategory}
+            count={filtered.length}
+          />
+
+          <main className="max-w-7xl mx-auto px-4 md:px-8 py-8">
+            <div
+              className="grid gap-5 md:gap-7"
+              style={{
+                gridTemplateColumns:
+                  'repeat(auto-fill, minmax(260px, 1fr))',
+              }}
+            >
+              {filtered.map((toy) => (
+                <ToyCard key={toy.id} toy={toy} />
+              ))}
+            </div>
+          </main>
+
+          <Footer />
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
