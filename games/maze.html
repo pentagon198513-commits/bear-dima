@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#FF6B00" />
+  <title>🌀 Лабиринт — Медведь</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon-180.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="game.css" />
+  <style>
+    .canvas-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 8px;
+    }
+    canvas {
+      width: min(95vw, 520px);
+      height: min(95vw, 520px);
+      background: #0a1428;
+      border: 6px solid var(--hw-yellow);
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), 0 0 40px rgba(0, 102, 255, 0.4);
+      display: block;
+      touch-action: none;
+    }
+  </style>
+</head>
+<body>
+  <header class="game-header">
+    <a href="../" class="back-btn"><span>←</span><span>НАЗАД</span></a>
+    <h1 class="game-title">🌀 ЛАБИРИНТ</h1>
+    <div class="game-stats">
+      <div class="stat-pill">🏁 <span id="level">1</span></div>
+      <div class="stat-pill">⏱ <span id="timer">0с</span></div>
+    </div>
+  </header>
+
+  <main class="game-area">
+    <div class="canvas-wrap"><canvas id="c" width="520" height="520"></canvas></div>
+  </main>
+
+  <div class="touch-pad" aria-hidden="true">
+    <button class="pad-btn pad-up"    data-dir="up">▲</button>
+    <button class="pad-btn pad-left"  data-dir="left">◄</button>
+    <button class="pad-btn pad-right" data-dir="right">►</button>
+    <button class="pad-btn pad-down"  data-dir="down">▼</button>
+  </div>
+
+  <div class="win-modal" id="winModal">
+    <div class="win-box">
+      <h2 class="win-title">🏆 ФИНИШ!</h2>
+      <div class="win-stat">Уровень: <span id="winLevel">1</span></div>
+      <div class="win-stat">Время: <span id="winTime">0с</span></div>
+      <button class="win-btn" onclick="nextLevel()">➡ СЛЕДУЮЩИЙ</button><br />
+      <a href="../" class="win-btn" style="margin-top:10px;">🏠 ДОМОЙ</a>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+    const levelEl = document.getElementById('level');
+    const timerEl = document.getElementById('timer');
+    const winModal = document.getElementById('winModal');
+    const winLevelEl = document.getElementById('winLevel');
+    const winTimeEl = document.getElementById('winTime');
+
+    let maze, cols, rows, CELL;
+    let player = { x: 0, y: 0 };
+    let finish = { x: 0, y: 0 };
+    let level = 1;
+    let seconds = 0;
+    let timerId = null;
+    let won = false;
+
+    // ——— Генератор лабиринта (recursive backtracker) ———
+    // Каждая ячейка — битовая маска: 1=верх, 2=право, 4=низ, 8=лево стена
+    function generateMaze(w, h) {
+      const m = Array.from({length: h}, () => Array.from({length: w}, () => 15));
+      const visited = Array.from({length: h}, () => Array(w).fill(false));
+      const stack = [[0, 0]];
+      visited[0][0] = true;
+      const dirs = [[0,-1,1,4],[1,0,2,8],[0,1,4,1],[-1,0,8,2]]; // dx,dy,cur,neigh
+      while (stack.length) {
+        const [cx, cy] = stack[stack.length - 1];
+        const options = dirs.filter(([dx, dy]) => {
+          const nx = cx + dx, ny = cy + dy;
+          return nx >= 0 && nx < w && ny >= 0 && ny < h && !visited[ny][nx];
+        });
+        if (options.length === 0) { stack.pop(); continue; }
+        const [dx, dy, curWall, neighWall] = options[Math.floor(Math.random() * options.length)];
+        m[cy][cx] &= ~curWall;
+        const nx = cx + dx, ny = cy + dy;
+        m[ny][nx] &= ~neighWall;
+        visited[ny][nx] = true;
+        stack.push([nx, ny]);
+      }
+      return m;
+    }
+
+    function levelSize(lv) {
+      // Начинаем с 7×7, растём до 15×15
+      const n = Math.min(7 + (lv - 1), 15);
+      return { cols: n, rows: n };
+    }
+
+    function startLevel() {
+      const s = levelSize(level);
+      cols = s.cols;
+      rows = s.rows;
+      CELL = canvas.width / cols;
+      maze = generateMaze(cols, rows);
+      player = { x: 0, y: 0 };
+      finish = { x: cols - 1, y: rows - 1 };
+      seconds = 0;
+      won = false;
+      timerEl.textContent = '0с';
+      levelEl.textContent = level;
+      winModal.classList.remove('show');
+      if (timerId) clearInterval(timerId);
+      timerId = setInterval(() => { seconds++; timerEl.textContent = seconds + 'с'; }, 1000);
+      draw();
+    }
+
+    function nextLevel() {
+      level++;
+      startLevel();
+    }
+
+    function draw() {
+      ctx.fillStyle = '#0a1428';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Стены
+      ctx.strokeStyle = '#39ff14';
+      ctx.lineWidth = Math.max(2, CELL * 0.08);
+      ctx.lineCap = 'round';
+      ctx.shadowColor = '#39ff14';
+      ctx.shadowBlur = 8;
+
+      for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+          const cell = maze[y][x];
+          const px = x * CELL, py = y * CELL;
+          if (cell & 1) { ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px + CELL, py); ctx.stroke(); }
+          if (cell & 2) { ctx.beginPath(); ctx.moveTo(px + CELL, py); ctx.lineTo(px + CELL, py + CELL); ctx.stroke(); }
+          if (cell & 4) { ctx.beginPath(); ctx.moveTo(px, py + CELL); ctx.lineTo(px + CELL, py + CELL); ctx.stroke(); }
+          if (cell & 8) { ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px, py + CELL); ctx.stroke(); }
+        }
+      }
+      ctx.shadowBlur = 0;
+
+      // Финиш — шашечный флаг
+      const fx = finish.x * CELL, fy = finish.y * CELL;
+      const sq = CELL / 4;
+      for (let i = 0; i < 4; i++) {
+        for (let j = 0; j < 4; j++) {
+          ctx.fillStyle = (i + j) % 2 === 0 ? '#fff' : '#000';
+          ctx.fillRect(fx + i * sq + 3, fy + j * sq + 3, sq - 1, sq - 1);
+        }
+      }
+
+      // Игрок — медвежонок
+      const pcx = player.x * CELL + CELL / 2;
+      const pcy = player.y * CELL + CELL / 2;
+      const r = CELL * 0.35;
+      // Голова медведя
+      ctx.fillStyle = '#A0522D';
+      ctx.beginPath(); ctx.arc(pcx, pcy, r, 0, Math.PI * 2); ctx.fill();
+      // Уши
+      ctx.beginPath(); ctx.arc(pcx - r * 0.7, pcy - r * 0.7, r * 0.35, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(pcx + r * 0.7, pcy - r * 0.7, r * 0.35, 0, Math.PI * 2); ctx.fill();
+      // Мордочка
+      ctx.fillStyle = '#F4D8A8';
+      ctx.beginPath(); ctx.ellipse(pcx, pcy + r * 0.2, r * 0.55, r * 0.4, 0, 0, Math.PI * 2); ctx.fill();
+      // Нос
+      ctx.fillStyle = '#2b1810';
+      ctx.beginPath(); ctx.arc(pcx, pcy + r * 0.05, r * 0.15, 0, Math.PI * 2); ctx.fill();
+      // Глаза
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.arc(pcx - r * 0.3, pcy - r * 0.1, r * 0.13, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(pcx + r * 0.3, pcy - r * 0.1, r * 0.13, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#000';
+      ctx.beginPath(); ctx.arc(pcx - r * 0.3, pcy - r * 0.05, r * 0.07, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(pcx + r * 0.3, pcy - r * 0.05, r * 0.07, 0, Math.PI * 2); ctx.fill();
+      // Красный шлем
+      ctx.fillStyle = '#e11d48';
+      ctx.beginPath();
+      ctx.arc(pcx, pcy - r * 0.2, r * 0.95, Math.PI, 0);
+      ctx.fill();
+    }
+
+    function move(dx, dy) {
+      if (won) return;
+      const cell = maze[player.y][player.x];
+      // Проверяем что нет стены в том направлении
+      if (dy === -1 && (cell & 1)) return;
+      if (dx ===  1 && (cell & 2)) return;
+      if (dy ===  1 && (cell & 4)) return;
+      if (dx === -1 && (cell & 8)) return;
+      player.x += dx;
+      player.y += dy;
+      draw();
+      if (player.x === finish.x && player.y === finish.y) {
+        won = true;
+        clearInterval(timerId);
+        winLevelEl.textContent = level;
+        winTimeEl.textContent = seconds + 'с';
+        setTimeout(() => winModal.classList.add('show'), 200);
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      const k = e.key;
+      if (k === 'ArrowUp'    || k === 'w' || k === 'ц') { e.preventDefault(); move(0, -1); }
+      if (k === 'ArrowDown'  || k === 's' || k === 'ы') { e.preventDefault(); move(0, 1); }
+      if (k === 'ArrowLeft'  || k === 'a' || k === 'ф') { e.preventDefault(); move(-1, 0); }
+      if (k === 'ArrowRight' || k === 'd' || k === 'в') { e.preventDefault(); move(1, 0); }
+    });
+
+    document.querySelectorAll('.pad-btn').forEach(btn => {
+      const handler = (e) => {
+        e.preventDefault();
+        const d = btn.dataset.dir;
+        if (d === 'up')    move(0, -1);
+        if (d === 'down')  move(0, 1);
+        if (d === 'left')  move(-1, 0);
+        if (d === 'right') move(1, 0);
+      };
+      btn.addEventListener('touchstart', handler, { passive: false });
+      btn.addEventListener('click', handler);
+    });
+
+    let touchStart = null;
+    canvas.addEventListener('touchstart', (e) => {
+      touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }, { passive: true });
+    canvas.addEventListener('touchend', (e) => {
+      if (!touchStart) return;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - touchStart.x;
+      const dy = t.clientY - touchStart.y;
+      if (Math.abs(dx) + Math.abs(dy) < 25) { touchStart = null; return; }
+      if (Math.abs(dx) > Math.abs(dy)) move(dx > 0 ? 1 : -1, 0);
+      else move(0, dy > 0 ? 1 : -1);
+      touchStart = null;
+    }, { passive: true });
+
+    startLevel();
+  </script>
+</body>
+</html>
