@@ -164,9 +164,15 @@
   <div id="lobby" class="lobby">
     <h2>🚢 МОРСКОЙ БОЙ</h2>
     <p>Потопи вражеский флот!</p>
+    <div style="background:#fff;border-radius:16px;padding:12px 16px;margin:10px auto;max-width:340px;text-align:left;border:3px solid #ffcc00;box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+      <p style="margin:0 0 6px;font-size:0.95rem;"><b>Как играть вдвоём:</b></p>
+      <p style="margin:0 0 4px;font-size:0.9rem;">1️⃣ Игрок 1 нажимает <b>«Создать игру»</b></p>
+      <p style="margin:0 0 4px;font-size:0.9rem;">2️⃣ Появятся 4 цифры — скажи их другу</p>
+      <p style="margin:0;font-size:0.9rem;">3️⃣ Игрок 2 вводит цифры и жмёт <b>«Подключиться»</b></p>
+    </div>
     <button class="lobby-btn" onclick="createRoom()">🏠 СОЗДАТЬ ИГРУ</button>
     <div class="or-divider">— ИЛИ —</div>
-    <p>Код друга:</p>
+    <p>Введи 4 цифры от друга:</p>
     <input class="code-input" id="joinCode" maxlength="4" placeholder="1234" inputmode="numeric" pattern="[0-9]*" />
     <br /><button class="lobby-btn green" onclick="joinRoom()">🚀 ПОДКЛЮЧИТЬСЯ</button>
     <br /><button class="lobby-btn gray" onclick="startBot()">🤖 ИГРАТЬ С БОТОМ</button>
@@ -649,7 +655,15 @@
         conn = peer.connect('bear-bs-' + code, { reliable: true });
         conn.on('open', () => { conn.on('data', handleData); });
       });
-      peer.on('error', (e) => alert('Ошибка: ' + e.message));
+      peer.on('error', (e) => {
+        if (e.type === 'peer-unavailable') {
+          alert('Такой комнаты нет! Попроси друга нажать «Создать игру» и скажи тебе 4 цифры.');
+        } else if (e.type === 'network' || e.type === 'server-error') {
+          alert('Нет связи с сервером. Проверь интернет и попробуй снова.');
+        } else {
+          alert('Не получилось подключиться. Попробуй ещё раз!');
+        }
+      });
     }
 
     function handleData(data) {
