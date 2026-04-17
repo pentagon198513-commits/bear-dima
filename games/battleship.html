@@ -167,7 +167,7 @@
     <button class="lobby-btn" onclick="createRoom()">🏠 СОЗДАТЬ ИГРУ</button>
     <div class="or-divider">— ИЛИ —</div>
     <p>Код друга:</p>
-    <input class="code-input" id="joinCode" maxlength="6" placeholder="КОД" />
+    <input class="code-input" id="joinCode" maxlength="4" placeholder="1234" inputmode="numeric" pattern="[0-9]*" />
     <br /><button class="lobby-btn green" onclick="joinRoom()">🚀 ПОДКЛЮЧИТЬСЯ</button>
     <br /><button class="lobby-btn gray" onclick="startBot()">🤖 ИГРАТЬ С БОТОМ</button>
   </div>
@@ -617,7 +617,7 @@
     /* ===== PEER-TO-PEER ===== */
     let opponentReady = false;
 
-    function generateCode() { return Math.random().toString(36).substring(2, 6).toUpperCase(); }
+    function generateCode() { return String(Math.floor(1000 + Math.random() * 9000)); }
 
     function createRoom() {
       const code = generateCode();
@@ -642,7 +642,7 @@
     }
 
     function joinRoom() {
-      const code = document.getElementById('joinCode').value.trim().toUpperCase();
+      const code = document.getElementById('joinCode').value.trim();
       if (!code) return;
       peer = new Peer();
       peer.on('open', () => {
