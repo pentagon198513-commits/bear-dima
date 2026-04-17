@@ -83,7 +83,35 @@
       overflow:hidden;
     }
     .gcell:hover { filter:brightness(1.3); }
-    .gcell.ship { background:linear-gradient(135deg,#455a64,#607d8b); }
+    .gcell.ship { background:linear-gradient(135deg,#455a64,#607d8b); position:relative; }
+    /* Разные цвета корпуса по размеру корабля */
+    .gcell.ship-4 { background:linear-gradient(135deg,#263238,#37474f); } /* линкор — тёмный */
+    .gcell.ship-3 { background:linear-gradient(135deg,#1b5e20,#2e7d32); } /* крейсер — зелёный */
+    .gcell.ship-2 { background:linear-gradient(135deg,#0d47a1,#1565c0); } /* эсминец — синий */
+    .gcell.ship-1 { background:linear-gradient(135deg,#4a148c,#6a1b9a); border-radius:50%!important; } /* катер — фиолетовый, круглый */
+    /* Форма: нос и корма (горизонтальный) */
+    .gcell.nose-h  { border-radius:50% 6px 6px 50%!important; }
+    .gcell.stern-h { border-radius:6px 50% 50% 6px!important; }
+    /* Форма: нос и корма (вертикальный) */
+    .gcell.nose-v  { border-radius:50% 50% 6px 6px!important; }
+    .gcell.stern-v { border-radius:6px 6px 50% 50%!important; }
+    /* Иконка корабля */
+    .ship-icon {
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:clamp(0.65rem,2.5vw,1rem);
+      filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+      pointer-events:none;
+    }
+    /* Волны на водных клетках */
+    .gcell:not(.ship):not(.miss):not(.hit):not(.sunk)::before {
+      content:'~';
+      color:rgba(135,206,235,0.3);
+      font-size:0.8em;
+    }
     .gcell.miss { background:#1a4a7a; }
     .gcell.miss::after { content:''; position:absolute; width:30%; height:30%; background:#fff; border-radius:50%; opacity:.5; }
     .gcell.hit { background:#b71c1c; }
@@ -259,10 +287,22 @@
     function renderSetup() {
       const el = document.getElementById('setupGrid');
       el.innerHTML = '';
+      const map = buildShipMap(myShips);
       for (let y = 0; y < G; y++) {
         for (let x = 0; x < G; x++) {
           const c = document.createElement('div');
-          c.className = 'gcell' + (myBoard[y][x] === 'S' ? ' ship' : '');
+          const info = map[`${x},${y}`];
+          if (myBoard[y][x] === 'S' && info) {
+            c.className = 'gcell ship' + shipCellClass(info);
+            if (info.isFirst) {
+              const icon = document.createElement('span');
+              icon.className = 'ship-icon';
+              icon.textContent = shipEmoji(info.len);
+              c.appendChild(icon);
+            }
+          } else {
+            c.className = 'gcell';
+          }
           el.appendChild(c);
         }
       }
@@ -310,16 +350,59 @@
       }
     }
 
+    /* Emoji и CSS-класс по размеру корабля */
+    function shipEmoji(len) {
+      if (len === 4) return '🚢';
+      if (len === 3) return '🛥️';
+      if (len === 2) return '🚤';
+      return '⛵';
+    }
+
+    /* Построить карту: координата → { ship, index, isFirst, isLast } */
+    function buildShipMap(ships) {
+      const map = {};
+      ships.forEach(ship => {
+        const isH = ship.dir === 0; // горизонтальный
+        ship.cells.forEach((cell, idx) => {
+          map[`${cell.x},${cell.y}`] = {
+            ship, idx,
+            isFirst: idx === 0,
+            isLast: idx === ship.len - 1,
+            isH,
+            len: ship.len,
+          };
+        });
+      });
+      return map;
+    }
+
+    function shipCellClass(info) {
+      let cls = ` ship-${info.len}`;
+      if (info.len === 1) return cls; // круглый, уже в CSS
+      if (info.isFirst) cls += info.isH ? ' nose-h' : ' nose-v';
+      else if (info.isLast) cls += info.isH ? ' stern-h' : ' stern-v';
+      return cls;
+    }
+
     function renderMyGrid() {
       const el = document.getElementById('myGrid');
       el.innerHTML = '';
+      const map = buildShipMap(myShips);
       for (let y = 0; y < G; y++) {
         for (let x = 0; x < G; x++) {
           const c = document.createElement('div');
           const v = myBoard[y][x];
           let cls = 'gcell';
-          if (v === 'S') cls += ' ship';
-          else if (v === 'M') cls += ' miss';
+          const info = map[`${x},${y}`];
+          if (v === 'S' && info) {
+            cls += ' ship' + shipCellClass(info);
+            if (info.isFirst) {
+              const icon = document.createElement('span');
+              icon.className = 'ship-icon';
+              icon.textContent = shipEmoji(info.len);
+              c.appendChild(icon);
+            }
+          } else if (v === 'M') cls += ' miss';
           else if (v === 'H') cls += ' hit';
           else if (v === 'K') cls += ' sunk';
           c.className = cls;
