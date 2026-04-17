@@ -472,6 +472,20 @@
         href: 'games/puzzle.html',
         bg: 'linear-gradient(135deg,#b24592,#f15f79)',
       },
+      {
+        id: 'tictactoe', name: 'КРЕСТИКИ-НОЛИКИ',
+        emoji: '❌',
+        desc: 'Играй с другом онлайн!',
+        href: 'games/tictactoe.html',
+        bg: 'linear-gradient(135deg,#ff6b00,#ffcc00)',
+      },
+      {
+        id: 'battleship', name: 'МОРСКОЙ БОЙ',
+        emoji: '🚢',
+        desc: 'Потопи флот врага! Онлайн!',
+        href: 'games/battleship.html',
+        bg: 'linear-gradient(135deg,#0a1428,#0066ff)',
+      },
     ];
 
     const TOYS = [
@@ -860,21 +874,11 @@
        Открывается в новой вкладке, rel="noopener noreferrer".
        ========================================================================= */
     function ToyCard({ toy }) {
-      const handleOpen = (e) => {
-        // Подстраховка: принудительно открываем магазин в новой вкладке.
-        // Нужна, потому что внутри sandbox-iframe (например, в превью-панелях)
-        // обычный target="_blank" может блокироваться.
-        e.preventDefault();
-        const w = window.open(toy.link, '_blank', 'noopener,noreferrer');
-        // Если popup-blocker не дал открыть — переходим в текущей вкладке.
-        if (!w) window.location.href = toy.link;
-      };
       return (
         <a
           href={toy.link}
           target="_blank"
           rel="noopener noreferrer"
-          onClick={handleOpen}
           className="toy-card block bg-white rounded-[30px] overflow-hidden shadow-xl border-4 border-white focus:outline-none focus:ring-8 focus:ring-yellow-300"
           aria-label={`Открыть ${toy.name} в магазине ${toy.store}`}
         >
