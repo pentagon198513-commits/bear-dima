@@ -28,14 +28,36 @@
     /* Игровой экран */
     .game-screen { display:none; flex-direction:column; align-items:center; padding:8px; }
     .game-screen.show { display:flex; }
-    .status-bar { text-align:center; font-family:'Bangers',sans-serif; font-size:clamp(1rem,3.5vw,1.5rem); padding:8px; color:#fff; text-shadow:2px 2px 0 #000; }
-    .tab-bar { display:flex; gap:6px; margin:6px 0; }
-    .tab-btn { padding:10px 18px; border:3px solid #fff; border-radius:20px; font-family:'Bangers',sans-serif; font-size:clamp(0.9rem,3vw,1.2rem); cursor:pointer; transition:transform .15s; color:#fff; }
-    .tab-btn:active { transform:translateY(2px); }
-    .tab-btn.active { border-color:var(--hw-yellow); box-shadow:0 0 12px var(--hw-yellow); }
-    .tab-my { background:linear-gradient(135deg,#0066ff,#00c6ff); }
-    .tab-enemy { background:linear-gradient(135deg,#e11d48,#ff6b00); }
-    .grid-wrap { position:relative; }
+    .status-bar { text-align:center; font-family:'Bangers',sans-serif; font-size:clamp(1rem,3.5vw,1.5rem); padding:6px; color:#fff; text-shadow:2px 2px 0 #000; }
+
+    /* Два поля одновременно */
+    .battle-fields {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+    }
+    .field-box { display:flex; flex-direction:column; align-items:center; }
+    .field-label {
+      font-family:'Bangers',sans-serif;
+      font-size:clamp(0.9rem,3vw,1.3rem);
+      color:#fff;
+      text-shadow:2px 2px 0 #000;
+      text-align:center;
+      margin-bottom:3px;
+      letter-spacing:0.05em;
+    }
+    /* Мобильный: атака больше, свой флот меньше */
+    .field-enemy .grid { width:min(62vw,320px); }
+    .field-my .grid { width:min(44vw,210px); opacity:0.92; }
+
+    /* Планшет+: рядом, одинакового размера */
+    @media (min-width:768px) {
+      .battle-fields { flex-direction:row; justify-content:center; gap:16px; }
+      .field-enemy .grid { width:min(42vw,360px); }
+      .field-my .grid { width:min(42vw,360px); opacity:1; }
+    }
     .grid {
       display:grid;
       gap:2px;
@@ -137,13 +159,15 @@
   <!-- Бой -->
   <div id="battleView" class="game-screen">
     <div class="status-bar" id="status">Ожидание...</div>
-    <div class="tab-bar">
-      <button class="tab-btn tab-enemy active" id="tabEnemy" onclick="showTab('enemy')">💣 АТАКА</button>
-      <button class="tab-btn tab-my" id="tabMy" onclick="showTab('my')">🚢 МОЙ ФЛОТ</button>
-    </div>
-    <div class="grid-wrap">
-      <div class="grid g8" id="enemyGrid"></div>
-      <div class="grid g8" id="myGrid" style="display:none;"></div>
+    <div class="battle-fields">
+      <div class="field-box field-enemy">
+        <div class="field-label">💣 СТРЕЛЯЙ СЮДА</div>
+        <div class="grid g8" id="enemyGrid"></div>
+      </div>
+      <div class="field-box field-my">
+        <div class="field-label">🚢 ТВОЙ ФЛОТ</div>
+        <div class="grid g8" id="myGrid"></div>
+      </div>
     </div>
   </div>
 
@@ -270,14 +294,6 @@
       renderMyGrid();
       renderEnemyGrid();
       updateStatus();
-      showTab('enemy');
-    }
-
-    function showTab(tab) {
-      document.getElementById('enemyGrid').style.display = tab === 'enemy' ? 'grid' : 'none';
-      document.getElementById('myGrid').style.display = tab === 'my' ? 'grid' : 'none';
-      document.getElementById('tabEnemy').classList.toggle('active', tab === 'enemy');
-      document.getElementById('tabMy').classList.toggle('active', tab === 'my');
     }
 
     function updateStatus() {
@@ -475,7 +491,7 @@
       if (result.type === 'miss') {
         myTurn = true;
         updateStatus();
-        showTab('enemy');
+        // оба поля видны одновременно
       } else {
         // Попадание — бот стреляет ещё
         setTimeout(botFire, 600 + Math.random() * 400);
@@ -577,7 +593,7 @@
         } else if (result.type === 'miss') {
           myTurn = true;
           updateStatus();
-          showTab('enemy');
+          // оба поля видны одновременно
         }
         // При попадании — ход остаётся у соперника
       }
