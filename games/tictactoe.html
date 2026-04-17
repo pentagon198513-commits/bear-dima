@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#FF6B00" />
+  <title>❌⭕ Крестики-нолики — Медведь</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="game.css" />
+  <script src="sounds.js" defer></script>
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <style>
+    .lobby { text-align: center; padding: 20px; }
+    .lobby h2 {
+      font-family: 'Bangers', sans-serif;
+      font-size: clamp(1.5rem, 5vw, 2.5rem);
+      color: var(--hw-red);
+      margin: 10px 0;
+    }
+    .lobby p {
+      font-family: 'Nunito', sans-serif;
+      font-weight: 700;
+      font-size: clamp(1rem, 3vw, 1.2rem);
+      color: #333;
+      margin: 6px 0;
+    }
+    .lobby-btn {
+      display: inline-block;
+      margin: 10px 8px;
+      padding: 16px 28px;
+      min-height: 64px;
+      background: linear-gradient(135deg, var(--hw-orange), var(--hw-red));
+      border: 4px solid #fff;
+      border-radius: 28px;
+      color: #fff;
+      font-family: 'Bangers', sans-serif;
+      font-size: clamp(1.2rem, 4vw, 1.6rem);
+      cursor: pointer;
+      box-shadow: 0 5px 0 rgba(0,0,0,0.25);
+      transition: transform 0.15s;
+    }
+    .lobby-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,0.25); }
+    .lobby-btn.green { background: linear-gradient(135deg, #39ff14, #0d7a00); }
+    .code-display {
+      font-family: 'Bangers', sans-serif;
+      font-size: clamp(2rem, 8vw, 3.5rem);
+      color: var(--hw-blue);
+      letter-spacing: 0.15em;
+      background: #fff;
+      border: 4px solid var(--hw-blue);
+      border-radius: 16px;
+      padding: 10px 24px;
+      display: inline-block;
+      margin: 12px 0;
+      user-select: all;
+    }
+    .code-input {
+      font-family: 'Bangers', sans-serif;
+      font-size: clamp(1.5rem, 6vw, 2.5rem);
+      text-align: center;
+      letter-spacing: 0.15em;
+      border: 4px solid var(--hw-blue);
+      border-radius: 16px;
+      padding: 10px 20px;
+      width: 200px;
+      outline: none;
+      color: var(--hw-blue);
+    }
+    .code-input:focus { border-color: var(--hw-orange); }
+    .status-bar {
+      text-align: center;
+      font-family: 'Bangers', sans-serif;
+      font-size: clamp(1.2rem, 4vw, 1.8rem);
+      padding: 10px;
+      color: #fff;
+      text-shadow: 2px 2px 0 #000;
+    }
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: clamp(6px, 2vw, 12px);
+      width: min(88vw, 420px);
+      aspect-ratio: 1 / 1;
+      margin: 0 auto;
+      padding: 8px;
+    }
+    .cell {
+      background: #fff;
+      border: 4px solid var(--hw-yellow);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(3rem, 15vw, 6rem);
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.15s, background 0.15s;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    }
+    .cell:hover:not(.taken) { background: #fff9c4; transform: scale(1.05); }
+    .cell:active:not(.taken) { transform: scale(0.95); }
+    .cell.taken { cursor: default; }
+    .cell.win-cell { background: #c8e6c9; border-color: #39ff14; box-shadow: 0 0 20px #39ff14; }
+    .cell .x { color: var(--hw-red); }
+    .cell .o { color: var(--hw-blue); }
+    .or-divider {
+      font-family: 'Nunito', sans-serif;
+      font-weight: 900;
+      color: #999;
+      font-size: 1.2rem;
+      margin: 8px 0;
+    }
+    .waiting { animation: pulse 1.5s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:0.6} 50%{opacity:1} }
+  </style>
+</head>
+<body>
+  <header class="game-header">
+    <a href="../" class="back-btn"><span>←</span><span>НАЗАД</span></a>
+    <h1 class="game-title">❌⭕ КРЕСТИКИ-НОЛИКИ</h1>
+    <div class="sound-toggles">
+      <button class="sound-btn" id="sfxBtn" aria-label="Звук">🔊</button>
+      <button class="sound-btn" id="musBtn" aria-label="Музыка">🎵</button>
+    </div>
+  </header>
+
+  <!-- Лобби -->
+  <div id="lobby" class="lobby">
+    <h2>🎮 ИГРАЙ С ДРУГОМ</h2>
+    <p>Каждый со своего телефона или планшета!</p>
+    <div>
+      <button class="lobby-btn" onclick="createRoom()">🏠 СОЗДАТЬ ИГРУ</button>
+    </div>
+    <div class="or-divider">— ИЛИ —</div>
+    <div>
+      <p>Введи код друга:</p>
+      <input class="code-input" id="joinCode" maxlength="6" placeholder="КОД" autocomplete="off" />
+      <br />
+      <button class="lobby-btn green" onclick="joinRoom()">🚀 ПОДКЛЮЧИТЬСЯ</button>
+    </div>
+    <div style="margin-top:20px;">
+      <button class="lobby-btn" style="background:linear-gradient(135deg,#888,#555);" onclick="startBot()">🤖 ИГРАТЬ С БОТОМ</button>
+    </div>
+  </div>
+
+  <!-- Игровое поле (скрыто до подключения) -->
+  <div id="gameView" style="display:none;">
+    <div class="status-bar" id="status">Ожидание...</div>
+    <div class="board" id="board"></div>
+  </div>
+
+  <!-- Модалка результата -->
+  <div class="win-modal" id="winModal">
+    <div class="win-box">
+      <h2 class="win-title" id="winTitle">🏆 ПОБЕДА!</h2>
+      <div class="win-stat" id="winStat"></div>
+      <button class="win-btn" onclick="rematch()">🔁 ЕЩЁ РАЗ</button><br />
+      <a href="../" class="win-btn" style="margin-top:10px;">🏠 ДОМОЙ</a>
+    </div>
+  </div>
+
+  <script>
+    /* ===== СОСТОЯНИЕ ===== */
+    let board = Array(9).fill('');
+    let myMark = '';    // 'X' или 'O'
+    let myTurn = false;
+    let gameOver = false;
+    let peer = null;
+    let conn = null;
+    let isHost = false;
+    let isBot = false;
+
+    const WINS = [
+      [0,1,2],[3,4,5],[6,7,8], // ряды
+      [0,3,6],[1,4,7],[2,5,8], // колонки
+      [0,4,8],[2,4,6]          // диагонали
+    ];
+
+    /* ===== UI ===== */
+    function showGame() {
+      document.getElementById('lobby').style.display = 'none';
+      document.getElementById('gameView').style.display = 'block';
+      renderBoard();
+      updateStatus();
+    }
+
+    function renderBoard() {
+      const el = document.getElementById('board');
+      el.innerHTML = '';
+      board.forEach((val, i) => {
+        const cell = document.createElement('div');
+        cell.className = 'cell' + (val ? ' taken' : '');
+        if (val) {
+          const span = document.createElement('span');
+          span.className = val === 'X' ? 'x' : 'o';
+          span.textContent = val === 'X' ? '❌' : '⭕';
+          cell.appendChild(span);
+        }
+        cell.onclick = () => makeMove(i);
+        el.appendChild(cell);
+      });
+    }
+
+    function updateStatus() {
+      const el = document.getElementById('status');
+      if (gameOver) return;
+      if (myTurn) {
+        el.textContent = `Твой ход! Ты — ${myMark === 'X' ? '❌' : '⭕'}`;
+        el.style.color = '#39ff14';
+      } else {
+        el.textContent = isBot ? '🤖 Бот думает...' : '⏳ Ход соперника...';
+        el.style.color = '#ffcc00';
+        el.classList.add('waiting');
+      }
+    }
+
+    function highlightWin(combo) {
+      const cells = document.querySelectorAll('.cell');
+      combo.forEach(i => cells[i].classList.add('win-cell'));
+    }
+
+    /* ===== ЛОГИКА ИГРЫ ===== */
+    function checkWin() {
+      for (const combo of WINS) {
+        const [a,b,c] = combo;
+        if (board[a] && board[a] === board[b] && board[b] === board[c]) {
+          return { winner: board[a], combo };
+        }
+      }
+      if (board.every(c => c)) return { winner: 'draw', combo: null };
+      return null;
+    }
+
+    function makeMove(i) {
+      if (!myTurn || board[i] || gameOver) return;
+      board[i] = myMark;
+      myTurn = false;
+      window.BearSound && BearSound.click();
+      renderBoard();
+      updateStatus();
+
+      // Отправить ход
+      if (conn) conn.send({ type: 'move', index: i });
+
+      const result = checkWin();
+      if (result) return endGame(result);
+
+      // Если бот — его ход
+      if (isBot) setTimeout(botMove, 500 + Math.random() * 400);
+    }
+
+    function receiveMove(i) {
+      const opponentMark = myMark === 'X' ? 'O' : 'X';
+      board[i] = opponentMark;
+      myTurn = true;
+      window.BearSound && BearSound.tap();
+      renderBoard();
+      updateStatus();
+
+      const result = checkWin();
+      if (result) endGame(result);
+    }
+
+    function endGame(result) {
+      gameOver = true;
+      const modal = document.getElementById('winModal');
+      const title = document.getElementById('winTitle');
+      const stat = document.getElementById('winStat');
+      document.getElementById('status').classList.remove('waiting');
+
+      if (result.winner === 'draw') {
+        title.textContent = '🤝 НИЧЬЯ!';
+        stat.textContent = 'Оба молодцы!';
+        window.BearSound && BearSound.match();
+      } else if (result.winner === myMark) {
+        title.textContent = '🏆 ТЫ ПОБЕДИЛ!';
+        stat.textContent = `${myMark === 'X' ? '❌' : '⭕'} — чемпион!`;
+        window.BearSound && BearSound.win();
+        if (result.combo) highlightWin(result.combo);
+      } else {
+        title.textContent = '😢 ПРОИГРАЛ';
+        stat.textContent = isBot ? 'Бот оказался хитрее!' : 'Соперник победил!';
+        window.BearSound && BearSound.lose();
+        if (result.combo) highlightWin(result.combo);
+      }
+      setTimeout(() => modal.classList.add('show'), 400);
+    }
+
+    function rematch() {
+      board = Array(9).fill('');
+      gameOver = false;
+      document.getElementById('winModal').classList.remove('show');
+      // Хост всегда X, начинает первым
+      myTurn = myMark === 'X';
+      renderBoard();
+      updateStatus();
+      if (isBot && !myTurn) setTimeout(botMove, 600);
+      if (conn) conn.send({ type: 'rematch' });
+    }
+
+    /* ===== БОТ (простой, для 6-7 лет — не слишком сильный) ===== */
+    function botMove() {
+      if (gameOver) return;
+      const opMark = myMark === 'X' ? 'O' : 'X';
+      const botMark = opMark;
+
+      // 1) Выиграть если можно
+      let move = findWinning(botMark);
+      // 2) Заблокировать если противник может выиграть
+      if (move === -1) move = findWinning(myMark);
+      // 3) Центр
+      if (move === -1 && !board[4]) move = 4;
+      // 4) Случайная свободная
+      if (move === -1) {
+        const free = board.map((v,i) => v ? -1 : i).filter(i => i >= 0);
+        move = free[Math.floor(Math.random() * free.length)];
+      }
+
+      board[move] = botMark;
+      myTurn = true;
+      window.BearSound && BearSound.tap();
+      renderBoard();
+      updateStatus();
+
+      const result = checkWin();
+      if (result) endGame(result);
+    }
+
+    function findWinning(mark) {
+      for (const [a,b,c] of WINS) {
+        const line = [board[a],board[b],board[c]];
+        if (line.filter(v => v === mark).length === 2 && line.includes('')) {
+          return [a,b,c][line.indexOf('')];
+        }
+      }
+      return -1;
+    }
+
+    /* ===== PEER-TO-PEER (PeerJS) ===== */
+    function generateCode() {
+      return Math.random().toString(36).substring(2, 6).toUpperCase();
+    }
+
+    function createRoom() {
+      const code = generateCode();
+      const roomId = 'bear-ttt-' + code;
+      isHost = true;
+      myMark = 'X';
+
+      peer = new Peer(roomId);
+      peer.on('open', () => {
+        document.getElementById('lobby').innerHTML = `
+          <h2>🏠 КОМНАТА СОЗДАНА</h2>
+          <p>Скажи другу этот код:</p>
+          <div class="code-display">${code}</div>
+          <p class="waiting">Ожидание соперника...</p>
+          <p style="color:#888;font-size:0.9rem;margin-top:12px;">Друг должен нажать «Подключиться» и ввести код</p>
+        `;
+      });
+      peer.on('connection', (c) => {
+        conn = c;
+        conn.on('data', handleData);
+        conn.on('open', () => {
+          myTurn = true; // X ходит первым
+          showGame();
+          conn.send({ type: 'start', mark: 'O' });
+        });
+      });
+      peer.on('error', (e) => {
+        alert('Ошибка подключения: ' + e.message);
+      });
+    }
+
+    function joinRoom() {
+      const code = document.getElementById('joinCode').value.trim().toUpperCase();
+      if (!code) return;
+      const roomId = 'bear-ttt-' + code;
+
+      peer = new Peer();
+      peer.on('open', () => {
+        conn = peer.connect(roomId, { reliable: true });
+        conn.on('open', () => {
+          conn.on('data', handleData);
+        });
+      });
+      peer.on('error', (e) => {
+        alert('Не удалось подключиться. Проверь код! ' + e.message);
+      });
+    }
+
+    function handleData(data) {
+      if (data.type === 'start') {
+        myMark = data.mark;
+        myTurn = myMark === 'X';
+        showGame();
+      }
+      if (data.type === 'move') {
+        receiveMove(data.index);
+      }
+      if (data.type === 'rematch') {
+        board = Array(9).fill('');
+        gameOver = false;
+        document.getElementById('winModal').classList.remove('show');
+        myTurn = myMark === 'X';
+        renderBoard();
+        updateStatus();
+      }
+    }
+
+    function startBot() {
+      isBot = true;
+      myMark = 'X';
+      myTurn = true;
+      showGame();
+    }
+
+    /* Кнопки звука */
+    function refreshSoundBtns() {
+      const s = window.BearSound; if (!s) return;
+      document.getElementById('sfxBtn').classList.toggle('off', !s.sfxEnabled);
+      document.getElementById('sfxBtn').textContent = s.sfxEnabled ? '🔊' : '🔇';
+      document.getElementById('musBtn').classList.toggle('off', !s.musicEnabled);
+      document.getElementById('musBtn').textContent = s.musicEnabled ? '🎵' : '🎶';
+    }
+    document.getElementById('sfxBtn').addEventListener('click', () => { BearSound.toggleSfx(); refreshSoundBtns(); });
+    document.getElementById('musBtn').addEventListener('click', () => { BearSound.toggleMusic(); refreshSoundBtns(); });
+    window.addEventListener('load', () => setTimeout(refreshSoundBtns, 100));
+  </script>
+</body>
+</html>
