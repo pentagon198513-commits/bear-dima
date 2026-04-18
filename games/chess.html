@@ -354,6 +354,7 @@
         `;
       } catch (e) { alert(e.message); }
     }
+    let joinRetry = null;
     async function joinRoom() {
       const code = document.getElementById('joinCode').value.trim();
       if (!code || code.length < 4) { alert('Введи 4 цифры!'); return; }
@@ -361,11 +362,13 @@
       try {
         await BearMP.connect(code, 'guest', handleMsg);
         BearMP.send({ type: 'join' });
+        joinRetry = setInterval(() => BearMP.send({ type: 'join' }), 2000);
         showGame();
       } catch (e) { alert(e.message); }
     }
     function handleMsg(data) {
-      if (data.type === 'join') { showGame(); }
+      if (data.type === 'join') { showGame(); BearMP.send({ type: 'host_ack' }); }
+      if (data.type === 'host_ack') { if (joinRetry) { clearInterval(joinRetry); joinRetry = null; } }
       if (data.type === 'move') {
         const move = game.move(data.san);
         if (move) {
