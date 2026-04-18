@@ -232,9 +232,11 @@
     let isHost = false;
     let isBot = false;
     let shotsCount = 0;
+    let iConfirmed = false; // флаг: я нажал «Готов»
 
     /* Полный сброс состояния — вызывается при каждом новом подключении */
     function resetGameState() {
+      iConfirmed = false;
       myBoard = emptyBoard();
       myShips = [];
       enemyBoard = emptyBoard();
@@ -339,16 +341,21 @@
     function confirmSetup() {
       if (myShips.length === 0) { alert('Сначала расставь корабли!'); return; }
       window.BearSound && BearSound.match();
+      iConfirmed = true;
       if (isBot) {
-        // Бот расставляет
         const botBoard = emptyBoard();
         enemyShipsData = randomPlace(botBoard);
-        enemyBoard = emptyBoard(); // мой вид врага
+        enemyBoard = emptyBoard();
         startBattle();
       } else if (BearMP.connected) {
         BearMP.send({ type: 'ready' });
         document.getElementById('readyBtn').textContent = '⏳ Ждём соперника...';
         document.getElementById('readyBtn').disabled = true;
+        // Если соперник уже нажал «Готов» — начинаем
+        if (opponentReady) {
+          BearMP.send({ type: 'bothReady' });
+          startBattle();
+        }
       }
     }
 
@@ -525,6 +532,7 @@
 
       if (whose === 'enemy') renderEnemyGrid();
       else renderMyGrid();
+      saveBS();
     }
 
     function addEffect(gridId, x, y, type) {
@@ -728,7 +736,7 @@
       }
       if (data.type === 'ready') {
         opponentReady = true;
-        if (myShips.length > 0) {
+        if (iConfirmed) {
           BearMP.send({ type: 'bothReady' });
           startBattle();
         }
@@ -737,6 +745,9 @@
         startBattle();
       }
       if (data.type === 'fire') {
+        // Защита от дублей MQTT QoS 1
+        const cv = myBoard[data.y] && myBoard[data.y][data.x];
+        if (cv === 'H' || cv === 'K' || cv === 'M') return;
         const result = checkHit(data.x, data.y, myShips);
         applyShot('my', data.x, data.y, result);
         BearMP.send({ type: 'result', x: data.x, y: data.y, result: result.type, ship: result.ship ? { cells: result.ship.cells } : null, gameOver: result.gameOver || false });
