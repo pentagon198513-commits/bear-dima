@@ -212,6 +212,9 @@
     }
 
     function startGame() {
+      // Предзагружаем картинку — иначе плитки рендерятся пустыми до загрузки файла
+      const preload = new Image();
+      preload.src = getImageUrl(currentImage);
       previewImg.src = getImageUrl(currentImage);
       shuffleTiles();
       moves = 0;
@@ -222,7 +225,8 @@
       winModal.classList.remove('show');
       if (timerId) clearInterval(timerId);
       timerId = setInterval(() => { seconds++; timerEl.textContent = seconds + 'с'; }, 1000);
-      renderGrid();
+      if (preload.complete) renderGrid();
+      else preload.onload = renderGrid;
       renderPicker();
     }
 

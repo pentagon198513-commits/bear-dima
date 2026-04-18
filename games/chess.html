@@ -104,6 +104,17 @@
       return PIECES[key] || '';
     }
 
+    // Проверка, что chess.js загрузился (CDN мог упасть)
+    if (typeof Chess === 'undefined') {
+      document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('lobby').innerHTML =
+          '<h2>⚠️ Не удалось загрузить движок шахмат</h2>' +
+          '<p>Проверь интернет и обнови страницу.</p>' +
+          '<button class="lobby-btn" onclick="location.reload()">🔁 ОБНОВИТЬ</button>' +
+          '<br><a href="../" class="lobby-btn gray" style="margin-top:10px">🏠 ДОМОЙ</a>';
+      });
+      throw new Error('chess.js not loaded');
+    }
     let game = new Chess();
     let mode = ''; // 'online','bot','local'
     let myColor = 'w';

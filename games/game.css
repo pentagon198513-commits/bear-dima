@@ -73,6 +73,10 @@ body {
   margin: 0;
   text-align: center;
   flex: 1;
+  min-width: 0; /* разрешить flex-shrink, чтобы длинный заголовок не выдавливал соседей */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .game-stats {
@@ -237,6 +241,29 @@ body {
 }
 .sound-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.15); }
 .sound-btn.off { opacity: 0.4; border-color: #888; color: #888; }
+
+/* ===== Адаптив: узкий мобильный экран ===== */
+@media (max-width: 480px) {
+  .game-header { padding: 8px 10px; gap: 6px; }
+  .back-btn {
+    min-width: unset;
+    padding: 10px 14px;
+    font-size: 1.1rem;
+    gap: 0;
+  }
+  .back-btn span:last-child { display: none; } /* оставляем только стрелку ← */
+  .game-title {
+    font-size: clamp(0.95rem, 4.2vw, 1.5rem);
+    -webkit-text-stroke: 1.5px #000;
+    text-shadow: 2px 2px 0 var(--hw-red);
+    letter-spacing: 0.02em;
+    white-space: normal; /* разрешить перенос если нужно */
+    line-height: 1.05;
+  }
+  .stat-pill { padding: 4px 10px; font-size: 0.9rem; border-width: 2px; }
+  .sound-toggles { gap: 4px; margin-left: 4px; }
+  .sound-btn { min-width: 40px; min-height: 40px; font-size: 17px; border-width: 2px; }
+}
 
 /* Подсказка как играть (поверх canvas, полупрозрачная) */
 .hint {
