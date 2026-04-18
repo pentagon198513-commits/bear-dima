@@ -225,15 +225,36 @@
     /* ===== СОСТОЯНИЕ ===== */
     let myBoard = [];
     let myShips = [];
-    let enemyBoard = [];    // что я знаю о враге
-    let enemyShipsData = null; // при игре с ботом
-    let phase = 'lobby';  // lobby → setup → battle → end
+    let enemyBoard = [];
+    let enemyShipsData = null;
+    let phase = 'lobby';
     let myTurn = false;
     let isHost = false;
     let isBot = false;
-    let peer = null;
-    let conn = null;
     let shotsCount = 0;
+
+    /* Полный сброс состояния — вызывается при каждом новом подключении */
+    function resetGameState() {
+      myBoard = emptyBoard();
+      myShips = [];
+      enemyBoard = emptyBoard();
+      enemyShipsData = null;
+      phase = 'lobby';
+      myTurn = false;
+      isHost = false;
+      isBot = false;
+      shotsCount = 0;
+      opponentReady = false;
+      botHits = [];
+      if (joinRetry) { clearInterval(joinRetry); joinRetry = null; }
+      clearBS();
+      // Сброс UI
+      document.getElementById('setupView').classList.remove('show');
+      document.getElementById('battleView').classList.remove('show');
+      document.getElementById('winModal').classList.remove('show');
+      const readyBtn = document.getElementById('readyBtn');
+      if (readyBtn) { readyBtn.textContent = '✅ ГОТОВ!'; readyBtn.disabled = false; }
+    }
 
     function emptyBoard() { return Array.from({length:G}, ()=>Array(G).fill('')); }
 
@@ -656,6 +677,8 @@
     let opponentReady = false;
 
     async function createRoom() {
+      resetGameState();
+      BearMP.disconnect();
       const code = BearMP.generateCode();
       isHost = true;
       try {
@@ -677,6 +700,8 @@
     async function joinRoom() {
       const code = document.getElementById('joinCode').value.trim();
       if (!code || code.length < 4) { alert('Введи 4 цифры!'); return; }
+      resetGameState();
+      BearMP.disconnect();
       try {
         await BearMP.connect(code, 'guest', handleData);
         // Повторяем join каждые 2с пока хост не ответит
@@ -744,6 +769,8 @@
     }
 
     function startBot() {
+      resetGameState();
+      BearMP.disconnect();
       isBot = true;
       isHost = true;
       showSetup();
