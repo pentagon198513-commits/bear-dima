@@ -73,7 +73,13 @@
     send(data) {
       if (!this.client || !this.connected) return;
       data._from = this.role;
-      this.client.publish(this.topic, JSON.stringify(data), { qos: 1 });
+      const payload = JSON.stringify(data);
+      const client = this.client;
+      const topic = this.topic;
+      // setTimeout — нельзя publish синхронно изнутри on('message') callback
+      setTimeout(() => {
+        try { client.publish(topic, payload, { qos: 1 }); } catch(e) {}
+      }, 10);
     },
 
     disconnect() {
