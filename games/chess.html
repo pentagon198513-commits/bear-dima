@@ -367,7 +367,7 @@
       } catch (e) { alert(e.message); }
     }
     function handleMsg(data) {
-      if (data.type === 'join') { showGame(); BearMP.send({ type: 'host_ack' }); }
+      if (data.type === 'join') { BearMP.send({ type: 'host_ack' }); try { showGame(); } catch(e) { console.error('showGame error:', e); } }
       if (data.type === 'host_ack') { if (joinRetry) { clearInterval(joinRetry); joinRetry = null; } }
       if (data.type === 'move') {
         const move = game.move(data.san);
