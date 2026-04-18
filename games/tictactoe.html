@@ -97,7 +97,7 @@
     function showGame() {
       document.getElementById('lobby').style.display = 'none';
       document.getElementById('gameView').style.display = 'block';
-      renderBoard(); updateStatus();
+      renderBoard(); updateStatus(); saveTTT();
     }
     function setStatus(text, color) {
       const el = document.getElementById('status');
@@ -143,13 +143,13 @@
         board[i] = currentMark;
         window.BearSound && BearSound.click();
         currentMark = currentMark === 'X' ? 'O' : 'X';
-        renderBoard(); updateStatus();
+        renderBoard(); updateStatus(); saveTTT();
         const r = checkWin(); if (r) endGame(r, null);
       } else if (mode === 'bot') {
         if (!myTurn) return;
         board[i] = myMark; myTurn = false;
         window.BearSound && BearSound.click();
-        renderBoard(); updateStatus();
+        renderBoard(); updateStatus(); saveTTT();
         const r = checkWin(); if (r) return endGame(r, myMark);
         setTimeout(botMove, 400 + Math.random() * 400);
       } else { // online
@@ -157,7 +157,7 @@
         board[i] = myMark; myTurn = false;
         window.BearSound && BearSound.click();
         BearMP.send({ type: 'move', index: i });
-        renderBoard(); updateStatus();
+        renderBoard(); updateStatus(); saveTTT();
         const r = checkWin(); if (r) endGame(r, myMark);
       }
     }
@@ -166,7 +166,7 @@
       const opMark = myMark === 'X' ? 'O' : 'X';
       board[i] = opMark; myTurn = true;
       window.BearSound && BearSound.tap();
-      renderBoard(); updateStatus();
+      renderBoard(); updateStatus(); saveTTT();
       const r = checkWin(); if (r) endGame(r, myMark);
     }
 
@@ -211,10 +211,27 @@
       board = Array(9).fill('');
       gameOver = false; currentMark = 'X';
       document.getElementById('winModal').classList.remove('show');
+      localStorage.removeItem('bear_ttt');
       if (mode === 'online') { myTurn = myMark === 'X'; BearMP.send({ type: 'rematch' }); }
       else if (mode === 'bot') { myTurn = true; }
-      renderBoard(); updateStatus();
+      renderBoard(); updateStatus(); saveTTT(); saveTTT();
       if (mode === 'bot' && !myTurn) setTimeout(botMove, 500);
+    }
+
+    /* === АВТОСОХРАНЕНИЕ === */
+    function saveTTT() {
+      if (!mode || gameOver) return;
+      localStorage.setItem('bear_ttt', JSON.stringify({ board, mode, myMark, currentMark, myTurn }));
+    }
+    function loadTTT() {
+      const s = localStorage.getItem('bear_ttt');
+      if (!s) return false;
+      try {
+        const d = JSON.parse(s);
+        if (!d.mode || d.mode === 'online') { localStorage.removeItem('bear_ttt'); return false; }
+        board = d.board; mode = d.mode; myMark = d.myMark; currentMark = d.currentMark; myTurn = d.myTurn;
+        showGame(); return true;
+      } catch(e) { return false; }
     }
 
     /* === БОТ === */
@@ -227,7 +244,7 @@
       if (m===-1) { const f=board.map((v,i)=>v?-1:i).filter(i=>i>=0); m=f[Math.floor(Math.random()*f.length)]; }
       board[m] = op; myTurn = true;
       window.BearSound && BearSound.tap();
-      renderBoard(); updateStatus();
+      renderBoard(); updateStatus(); saveTTT();
       const r = checkWin(); if (r) endGame(r, myMark);
     }
     function findWin(mark) {
@@ -259,6 +276,7 @@
       }
     }
 
+    let joinRetry = null;
     async function joinRoom() {
       const code = document.getElementById('joinCode').value.trim();
       if (!code || code.length < 4) { alert('Введи 4 цифры!'); return; }
@@ -267,6 +285,7 @@
       try {
         await BearMP.connect(code, 'guest', handleMsg);
         BearMP.send({ type: 'join' });
+        joinRetry = setInterval(() => BearMP.send({ type: 'join' }), 2000);
         setConnStatus('✅ Подключено! Начинаем...', 'ok');
         showGame();
       } catch (e) {
@@ -275,13 +294,14 @@
     }
 
     function handleMsg(data) {
-      if (data.type === 'join') { showGame(); }
+      if (data.type === 'join') { showGame(); BearMP.send({ type: 'host_ack' }); }
+      if (data.type === 'host_ack') { if (joinRetry) { clearInterval(joinRetry); joinRetry = null; } }
       if (data.type === 'move') { receiveMove(data.index); }
       if (data.type === 'rematch') {
         board = Array(9).fill(''); gameOver = false; currentMark = 'X';
         document.getElementById('winModal').classList.remove('show');
         myTurn = myMark === 'X';
-        renderBoard(); updateStatus();
+        renderBoard(); updateStatus(); saveTTT();
       }
     }
 
@@ -293,7 +313,10 @@
     function refreshSoundBtns(){const s=window.BearSound;if(!s)return;document.getElementById('sfxBtn').classList.toggle('off',!s.sfxEnabled);document.getElementById('sfxBtn').textContent=s.sfxEnabled?'🔊':'🔇';document.getElementById('musBtn').classList.toggle('off',!s.musicEnabled);document.getElementById('musBtn').textContent=s.musicEnabled?'🎵':'🎶'}
     document.getElementById('sfxBtn').addEventListener('click',()=>{BearSound.toggleSfx();refreshSoundBtns()});
     document.getElementById('musBtn').addEventListener('click',()=>{BearSound.toggleMusic();refreshSoundBtns()});
-    window.addEventListener('load',()=>setTimeout(refreshSoundBtns,100));
+    window.addEventListener('load',()=>{
+      setTimeout(refreshSoundBtns,100);
+      loadTTT();
+    });
   </script>
 </body>
 </html>
