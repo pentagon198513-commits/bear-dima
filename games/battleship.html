@@ -338,6 +338,8 @@
       document.getElementById('battleView').classList.add('show');
       shotsCount = 0;
       myTurn = isHost || isBot;
+      // Инициализируем вражескую доску если ещё не было
+      if (!enemyBoard.length || enemyBoard.length !== G) enemyBoard = emptyBoard();
       renderMyGrid();
       renderEnemyGrid();
       updateStatus();
