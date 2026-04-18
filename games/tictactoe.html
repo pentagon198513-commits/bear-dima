@@ -27,8 +27,8 @@
     .waiting{animation:pulse 1.5s ease-in-out infinite}
     @keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}
     .status-bar{text-align:center;font-family:'Bangers',sans-serif;font-size:clamp(1.2rem,4vw,1.8rem);padding:10px;color:#fff;text-shadow:2px 2px 0 #000}
-    .board{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(6px,2vw,12px);width:min(88vw,420px);aspect-ratio:1/1;margin:0 auto;padding:8px}
-    .cell{background:#fff;border:4px solid var(--hw-yellow);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:clamp(3rem,15vw,6rem);cursor:pointer;user-select:none;transition:transform .15s,background .15s;box-shadow:0 4px 10px rgba(0,0,0,.15)}
+    .board{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:clamp(6px,2vw,12px);width:min(88vw,420px);height:min(88vw,420px);margin:0 auto;padding:8px}
+    .cell{background:#fff;border:4px solid var(--hw-yellow);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:clamp(3rem,15vw,6rem);cursor:pointer;user-select:none;transition:transform .15s,background .15s;box-shadow:0 4px 10px rgba(0,0,0,.15);overflow:hidden}
     .cell:hover:not(.taken){background:#fff9c4;transform:scale(1.05)}
     .cell:active:not(.taken){transform:scale(.95)}
     .cell.taken{cursor:default}
