@@ -690,11 +690,12 @@
 
     function handleData(data) {
       if (data.type === 'join') {
-        if (phase === 'lobby' || !document.getElementById('setupView').classList.contains('show')) {
-          showSetup();
-        }
-        // Подтверждаем гостю что получили
         BearMP.send({ type: 'host_ack' });
+        try {
+          if (phase === 'lobby' || !document.getElementById('setupView').classList.contains('show')) {
+            showSetup();
+          }
+        } catch(e) { console.error(e); }
       }
       if (data.type === 'host_ack') {
         // Гость: хост подтвердил — прекращаем retry
