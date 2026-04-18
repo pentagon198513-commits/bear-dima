@@ -233,6 +233,7 @@
     let isBot = false;
     let shotsCount = 0;
     let iConfirmed = false; // флаг: я нажал «Готов»
+    let opponentReady = false;
 
     /* Полный сброс состояния — вызывается при каждом новом подключении */
     function resetGameState() {
@@ -635,22 +636,44 @@
 
     /* ===== КОНЕЦ ИГРЫ ===== */
     /* === АВТОСОХРАНЕНИЕ (бот-режим) === */
+    // Обфускация позиций вражеских кораблей, чтобы нельзя было подсмотреть в DevTools.
+    // Это не криптография — просто защита от случайного читерства.
+    function obfuscate(str) {
+      const key = 'bear-dima-2026';
+      let out = '';
+      for (let i = 0; i < str.length; i++) {
+        out += String.fromCharCode(str.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+      }
+      return btoa(unescape(encodeURIComponent(out)));
+    }
+    function deobfuscate(enc) {
+      const key = 'bear-dima-2026';
+      const raw = decodeURIComponent(escape(atob(enc)));
+      let out = '';
+      for (let i = 0; i < raw.length; i++) {
+        out += String.fromCharCode(raw.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+      }
+      return out;
+    }
     function saveBS() {
       if (!isBot || phase !== 'battle') return;
-      localStorage.setItem('bear_bs', JSON.stringify({
-        myBoard, myShips, enemyBoard, enemyShipsData,
+      const state = {
+        myBoard, myShips, enemyBoard,
+        enemyShipsEnc: obfuscate(JSON.stringify(enemyShipsData)),
         myTurn, shotsCount, botHits, phase,
-      }));
+      };
+      localStorage.setItem('bear_bs', JSON.stringify(state));
     }
     function loadBS() {
       const s = localStorage.getItem('bear_bs');
       if (!s) return false;
       try {
         const d = JSON.parse(s);
-        if (d.phase !== 'battle') return false;
+        if (d.phase !== 'battle' || !d.enemyShipsEnc) return false;
         isBot = true; isHost = true;
         myBoard = d.myBoard; myShips = d.myShips;
-        enemyBoard = d.enemyBoard; enemyShipsData = d.enemyShipsData;
+        enemyBoard = d.enemyBoard;
+        enemyShipsData = JSON.parse(deobfuscate(d.enemyShipsEnc));
         myTurn = d.myTurn; shotsCount = d.shotsCount; botHits = d.botHits || [];
         document.getElementById('lobby').style.display = 'none';
         document.getElementById('setupView').classList.remove('show');
@@ -658,7 +681,7 @@
         phase = 'battle';
         renderMyGrid(); renderEnemyGrid(); updateStatus(); saveBS();
         return true;
-      } catch(e) { return false; }
+      } catch(e) { localStorage.removeItem('bear_bs'); return false; }
     }
     function clearBS() { localStorage.removeItem('bear_bs'); }
 
@@ -682,8 +705,6 @@
     }
 
     /* ===== МУЛЬТИПЛЕЕР (MQTT через BearMP) ===== */
-    let opponentReady = false;
-
     async function createRoom() {
       resetGameState();
       BearMP.disconnect();

@@ -9,16 +9,18 @@
     role: null, // 'host' или 'guest'
     topic: null,
     onMessage: null,
+    onStatus: null, // колбэк для смены статуса: 'online' | 'offline' | 'reconnecting'
     connected: false,
 
     generateCode() {
       return String(Math.floor(1000 + Math.random() * 9000));
     },
 
-    connect(code, role, onMessage) {
+    connect(code, role, onMessage, onStatus) {
       this.code = code;
       this.role = role;
       this.onMessage = onMessage;
+      this.onStatus = onStatus || null;
       this.topic = 'bear-game-2026/' + code;
       this.connected = false;
 
@@ -38,31 +40,46 @@
           return;
         }
 
+        let resolved = false;
         const timeout = setTimeout(() => {
-          reject(new Error('Сервер не отвечает. Проверь интернет.'));
+          if (!resolved) reject(new Error('Сервер не отвечает. Проверь интернет.'));
         }, 10000);
 
         this.client.on('connect', () => {
           clearTimeout(timeout);
           this.client.subscribe(this.topic, { qos: 1 }, (err) => {
             if (err) {
-              reject(new Error('Не удалось подписаться на канал'));
+              if (!resolved) { resolved = true; reject(new Error('Не удалось подписаться на канал')); }
             } else {
               this.connected = true;
-              resolve();
+              if (this.onStatus) { try { this.onStatus('online'); } catch(e){} }
+              if (!resolved) { resolved = true; resolve(); }
             }
           });
         });
 
+        this.client.on('reconnect', () => {
+          if (this.onStatus) { try { this.onStatus('reconnecting'); } catch(e){} }
+        });
+
+        this.client.on('offline', () => {
+          this.connected = false;
+          if (this.onStatus) { try { this.onStatus('offline'); } catch(e){} }
+        });
+
+        this.client.on('close', () => {
+          this.connected = false;
+        });
+
         this.client.on('error', (err) => {
           clearTimeout(timeout);
-          reject(new Error('Ошибка связи: ' + (err.message || 'неизвестная')));
+          if (!resolved) { resolved = true; reject(new Error('Ошибка связи: ' + (err.message || 'неизвестная'))); }
         });
 
         this.client.on('message', (topic, payload) => {
           try {
             const msg = JSON.parse(payload.toString());
-            // Игнорируем свои сообщения
+            // Игнорируем свои сообщения (эхо от брокера)
             if (msg._from === this.role) return;
             if (this.onMessage) this.onMessage(msg);
           } catch (e) { /* плохой JSON — игнорируем */ }
@@ -76,10 +93,13 @@
       const payload = JSON.stringify(data);
       const client = this.client;
       const topic = this.topic;
-      // setTimeout — нельзя publish синхронно изнутри on('message') callback
-      setTimeout(() => {
+      // queueMicrotask — publish нельзя синхронно изнутри on('message') callback.
+      // Микротаск гарантирует порядок и выполняется сразу после текущего стека.
+      const publish = () => {
         try { client.publish(topic, payload, { qos: 1 }); } catch(e) {}
-      }, 10);
+      };
+      if (typeof queueMicrotask === 'function') queueMicrotask(publish);
+      else Promise.resolve().then(publish);
     },
 
     disconnect() {
@@ -88,6 +108,7 @@
       }
       this.client = null;
       this.connected = false;
+      this.onStatus = null;
     },
   };
 

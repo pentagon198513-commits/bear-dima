@@ -214,7 +214,7 @@
       localStorage.removeItem('bear_ttt');
       if (mode === 'online') { myTurn = myMark === 'X'; BearMP.send({ type: 'rematch' }); }
       else if (mode === 'bot') { myTurn = true; }
-      renderBoard(); updateStatus(); saveTTT(); saveTTT();
+      renderBoard(); updateStatus(); saveTTT();
       if (mode === 'bot' && !myTurn) setTimeout(botMove, 500);
     }
 

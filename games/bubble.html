@@ -246,6 +246,18 @@
     document.getElementById('musBtn').addEventListener('click', () => { BearSound.toggleMusic(); refreshSoundBtns(); });
     window.addEventListener('load', () => setTimeout(refreshSoundBtns, 100));
 
+    // Пауза при скрытии вкладки — экономия батареи и предотвращение утечек
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        running = false;
+        cancelAnimationFrame(rafId);
+      } else if (!winModal.classList.contains('show') && lives > 0) {
+        running = true;
+        lastSpawn = performance.now();
+        loop(lastSpawn);
+      }
+    });
+
     startGame();
   </script>
 </body>
