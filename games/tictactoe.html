@@ -9,110 +9,38 @@
   <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@700;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="game.css" />
   <script src="sounds.js" defer></script>
-  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
+  <script src="multiplayer.js"></script>
   <style>
-    .lobby { text-align: center; padding: 20px; }
-    .lobby h2 {
-      font-family: 'Bangers', sans-serif;
-      font-size: clamp(1.5rem, 5vw, 2.5rem);
-      color: var(--hw-red);
-      margin: 10px 0;
-    }
-    .lobby p {
-      font-family: 'Nunito', sans-serif;
-      font-weight: 700;
-      font-size: clamp(1rem, 3vw, 1.2rem);
-      color: #333;
-      margin: 6px 0;
-    }
-    .lobby-btn {
-      display: inline-block;
-      margin: 10px 8px;
-      padding: 16px 28px;
-      min-height: 64px;
-      background: linear-gradient(135deg, var(--hw-orange), var(--hw-red));
-      border: 4px solid #fff;
-      border-radius: 28px;
-      color: #fff;
-      font-family: 'Bangers', sans-serif;
-      font-size: clamp(1.2rem, 4vw, 1.6rem);
-      cursor: pointer;
-      box-shadow: 0 5px 0 rgba(0,0,0,0.25);
-      transition: transform 0.15s;
-    }
-    .lobby-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,0.25); }
-    .lobby-btn.green { background: linear-gradient(135deg, #39ff14, #0d7a00); }
-    .code-display {
-      font-family: 'Bangers', sans-serif;
-      font-size: clamp(2rem, 8vw, 3.5rem);
-      color: var(--hw-blue);
-      letter-spacing: 0.15em;
-      background: #fff;
-      border: 4px solid var(--hw-blue);
-      border-radius: 16px;
-      padding: 10px 24px;
-      display: inline-block;
-      margin: 12px 0;
-      user-select: all;
-    }
-    .code-input {
-      font-family: 'Bangers', sans-serif;
-      font-size: clamp(1.5rem, 6vw, 2.5rem);
-      text-align: center;
-      letter-spacing: 0.15em;
-      border: 4px solid var(--hw-blue);
-      border-radius: 16px;
-      padding: 10px 20px;
-      width: 200px;
-      outline: none;
-      color: var(--hw-blue);
-    }
-    .code-input:focus { border-color: var(--hw-orange); }
-    .status-bar {
-      text-align: center;
-      font-family: 'Bangers', sans-serif;
-      font-size: clamp(1.2rem, 4vw, 1.8rem);
-      padding: 10px;
-      color: #fff;
-      text-shadow: 2px 2px 0 #000;
-    }
-    .board {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: clamp(6px, 2vw, 12px);
-      width: min(88vw, 420px);
-      aspect-ratio: 1 / 1;
-      margin: 0 auto;
-      padding: 8px;
-    }
-    .cell {
-      background: #fff;
-      border: 4px solid var(--hw-yellow);
-      border-radius: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: clamp(3rem, 15vw, 6rem);
-      cursor: pointer;
-      user-select: none;
-      transition: transform 0.15s, background 0.15s;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-    }
-    .cell:hover:not(.taken) { background: #fff9c4; transform: scale(1.05); }
-    .cell:active:not(.taken) { transform: scale(0.95); }
-    .cell.taken { cursor: default; }
-    .cell.win-cell { background: #c8e6c9; border-color: #39ff14; box-shadow: 0 0 20px #39ff14; }
-    .cell .x { color: var(--hw-red); }
-    .cell .o { color: var(--hw-blue); }
-    .or-divider {
-      font-family: 'Nunito', sans-serif;
-      font-weight: 900;
-      color: #999;
-      font-size: 1.2rem;
-      margin: 8px 0;
-    }
-    .waiting { animation: pulse 1.5s ease-in-out infinite; }
-    @keyframes pulse { 0%,100%{opacity:0.6} 50%{opacity:1} }
+    .lobby{text-align:center;padding:20px}
+    .lobby h2{font-family:'Bangers',sans-serif;font-size:clamp(1.5rem,5vw,2.5rem);color:var(--hw-red);margin:10px 0}
+    .lobby p{font-family:'Nunito',sans-serif;font-weight:700;font-size:clamp(.95rem,3vw,1.15rem);color:#333;margin:6px 0}
+    .lobby-btn{display:inline-block;margin:8px 6px;padding:14px 24px;min-height:56px;background:linear-gradient(135deg,var(--hw-orange),var(--hw-red));border:4px solid #fff;border-radius:24px;color:#fff;font-family:'Bangers',sans-serif;font-size:clamp(1.1rem,3.5vw,1.4rem);cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.25);transition:transform .15s}
+    .lobby-btn:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.25)}
+    .lobby-btn.green{background:linear-gradient(135deg,#39ff14,#0d7a00)}
+    .lobby-btn.gray{background:linear-gradient(135deg,#888,#555)}
+    .lobby-btn.blue{background:linear-gradient(135deg,#0066ff,#00c6ff)}
+    .code-display{font-family:'Bangers',sans-serif;font-size:clamp(2rem,8vw,3.5rem);color:var(--hw-blue);letter-spacing:.15em;background:#fff;border:4px solid var(--hw-blue);border-radius:16px;padding:10px 24px;display:inline-block;margin:12px 0;user-select:all}
+    .code-input{font-family:'Bangers',sans-serif;font-size:clamp(1.5rem,6vw,2.5rem);text-align:center;letter-spacing:.15em;border:4px solid var(--hw-blue);border-radius:16px;padding:10px 20px;width:180px;outline:none;color:var(--hw-blue)}
+    .code-input:focus{border-color:var(--hw-orange)}
+    .or-divider{font-family:'Nunito',sans-serif;font-weight:900;color:#999;font-size:1rem;margin:8px 0}
+    .waiting{animation:pulse 1.5s ease-in-out infinite}
+    @keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}
+    .status-bar{text-align:center;font-family:'Bangers',sans-serif;font-size:clamp(1.2rem,4vw,1.8rem);padding:10px;color:#fff;text-shadow:2px 2px 0 #000}
+    .board{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(6px,2vw,12px);width:min(88vw,420px);aspect-ratio:1/1;margin:0 auto;padding:8px}
+    .cell{background:#fff;border:4px solid var(--hw-yellow);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:clamp(3rem,15vw,6rem);cursor:pointer;user-select:none;transition:transform .15s,background .15s;box-shadow:0 4px 10px rgba(0,0,0,.15)}
+    .cell:hover:not(.taken){background:#fff9c4;transform:scale(1.05)}
+    .cell:active:not(.taken){transform:scale(.95)}
+    .cell.taken{cursor:default}
+    .cell.win-cell{background:#c8e6c9;border-color:#39ff14;box-shadow:0 0 20px #39ff14}
+    .cell .x{color:var(--hw-red)}.cell .o{color:var(--hw-blue)}
+    .howto{background:#fff;border-radius:16px;padding:12px 16px;margin:10px auto;max-width:340px;text-align:left;border:3px solid #ffcc00;box-shadow:0 4px 12px rgba(0,0,0,.15)}
+    .howto p{margin:0 0 4px;font-size:.9rem}
+    .howto b{color:var(--hw-red)}
+    .conn-status{font-family:'Nunito',sans-serif;font-weight:700;font-size:.85rem;padding:4px 12px;border-radius:12px;display:inline-block;margin:4px 0}
+    .conn-ok{background:#c8e6c9;color:#1b5e20}
+    .conn-wait{background:#fff9c4;color:#f57f17}
+    .conn-err{background:#ffcdd2;color:#b71c1c}
   </style>
 </head>
 <body>
@@ -120,43 +48,36 @@
     <a href="../" class="back-btn"><span>←</span><span>НАЗАД</span></a>
     <h1 class="game-title">❌⭕ КРЕСТИКИ-НОЛИКИ</h1>
     <div class="sound-toggles">
-      <button class="sound-btn" id="sfxBtn" aria-label="Звук">🔊</button>
-      <button class="sound-btn" id="musBtn" aria-label="Музыка">🎵</button>
+      <button class="sound-btn" id="sfxBtn">🔊</button>
+      <button class="sound-btn" id="musBtn">🎵</button>
     </div>
   </header>
 
-  <!-- Лобби -->
   <div id="lobby" class="lobby">
     <h2>🎮 ИГРАЙ С ДРУГОМ</h2>
-    <p>Каждый со своего телефона или планшета!</p>
-    <div style="background:#fff;border-radius:16px;padding:12px 16px;margin:10px auto;max-width:340px;text-align:left;border:3px solid #ffcc00;box-shadow:0 4px 12px rgba(0,0,0,0.15);">
-      <p style="margin:0 0 6px;font-size:0.95rem;"><b>Как играть вдвоём:</b></p>
-      <p style="margin:0 0 4px;font-size:0.9rem;">1️⃣ Игрок 1 нажимает <b>«Создать игру»</b></p>
-      <p style="margin:0 0 4px;font-size:0.9rem;">2️⃣ Появятся 4 цифры — скажи их другу</p>
-      <p style="margin:0;font-size:0.9rem;">3️⃣ Игрок 2 вводит цифры и жмёт <b>«Подключиться»</b></p>
+    <div class="howto">
+      <p><b>Онлайн (2 устройства):</b></p>
+      <p>1️⃣ Игрок 1 → <b>«Создать»</b> → получит 4 цифры</p>
+      <p>2️⃣ Игрок 2 → вводит цифры → <b>«Подключиться»</b></p>
+      <p style="margin-top:6px"><b>На одном устройстве:</b></p>
+      <p>Просто играйте по очереди!</p>
     </div>
-    <div>
-      <button class="lobby-btn" onclick="createRoom()">🏠 СОЗДАТЬ ИГРУ</button>
-    </div>
+    <button class="lobby-btn" onclick="createRoom()">🏠 СОЗДАТЬ ИГРУ</button>
     <div class="or-divider">— ИЛИ —</div>
-    <div>
-      <p>Введи 4 цифры от друга:</p>
-      <input class="code-input" id="joinCode" maxlength="4" placeholder="1234" inputmode="numeric" pattern="[0-9]*" autocomplete="off" />
-      <br />
-      <button class="lobby-btn green" onclick="joinRoom()">🚀 ПОДКЛЮЧИТЬСЯ</button>
-    </div>
-    <div style="margin-top:20px;">
-      <button class="lobby-btn" style="background:linear-gradient(135deg,#888,#555);" onclick="startBot()">🤖 ИГРАТЬ С БОТОМ</button>
-    </div>
+    <p>Введи 4 цифры от друга:</p>
+    <input class="code-input" id="joinCode" maxlength="4" placeholder="1234" inputmode="numeric" pattern="[0-9]*" autocomplete="off" />
+    <br /><button class="lobby-btn green" onclick="joinRoom()">🚀 ПОДКЛЮЧИТЬСЯ</button>
+    <div class="or-divider">— ИЛИ —</div>
+    <button class="lobby-btn blue" onclick="startLocal()">🤝 ВДВОЁМ НА ОДНОМ</button>
+    <button class="lobby-btn gray" onclick="startBot()">🤖 С БОТОМ</button>
+    <div id="connStatus"></div>
   </div>
 
-  <!-- Игровое поле (скрыто до подключения) -->
   <div id="gameView" style="display:none;">
     <div class="status-bar" id="status">Ожидание...</div>
     <div class="board" id="board"></div>
   </div>
 
-  <!-- Модалка результата -->
   <div class="win-modal" id="winModal">
     <div class="win-box">
       <h2 class="win-title" id="winTitle">🏆 ПОБЕДА!</h2>
@@ -167,277 +88,212 @@
   </div>
 
   <script>
-    /* ===== СОСТОЯНИЕ ===== */
     let board = Array(9).fill('');
-    let myMark = '';    // 'X' или 'O'
-    let myTurn = false;
-    let gameOver = false;
-    let peer = null;
-    let conn = null;
-    let isHost = false;
-    let isBot = false;
+    let myMark = '', currentMark = 'X';
+    let myTurn = false, gameOver = false;
+    let mode = ''; // 'online','bot','local'
+    const WINS = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
 
-    const WINS = [
-      [0,1,2],[3,4,5],[6,7,8], // ряды
-      [0,3,6],[1,4,7],[2,5,8], // колонки
-      [0,4,8],[2,4,6]          // диагонали
-    ];
-
-    /* ===== UI ===== */
     function showGame() {
       document.getElementById('lobby').style.display = 'none';
       document.getElementById('gameView').style.display = 'block';
-      renderBoard();
-      updateStatus();
+      renderBoard(); updateStatus();
+    }
+    function setStatus(text, color) {
+      const el = document.getElementById('status');
+      el.textContent = text;
+      el.style.color = color || '#fff';
+      el.classList.remove('waiting');
+    }
+    function setConnStatus(text, type) {
+      document.getElementById('connStatus').innerHTML =
+        `<div class="conn-status conn-${type}">${text}</div>`;
     }
 
     function renderBoard() {
-      const el = document.getElementById('board');
-      el.innerHTML = '';
+      const el = document.getElementById('board'); el.innerHTML = '';
       board.forEach((val, i) => {
         const cell = document.createElement('div');
         cell.className = 'cell' + (val ? ' taken' : '');
         if (val) {
-          const span = document.createElement('span');
-          span.className = val === 'X' ? 'x' : 'o';
-          span.textContent = val === 'X' ? '❌' : '⭕';
-          cell.appendChild(span);
+          const s = document.createElement('span');
+          s.className = val === 'X' ? 'x' : 'o';
+          s.textContent = val === 'X' ? '❌' : '⭕';
+          cell.appendChild(s);
         }
-        cell.onclick = () => makeMove(i);
+        cell.onclick = () => onCellClick(i);
         el.appendChild(cell);
       });
     }
 
     function updateStatus() {
-      const el = document.getElementById('status');
       if (gameOver) return;
-      if (myTurn) {
-        el.textContent = `Твой ход! Ты — ${myMark === 'X' ? '❌' : '⭕'}`;
-        el.style.color = '#39ff14';
+      if (mode === 'local') {
+        setStatus(`Ход: ${currentMark === 'X' ? '❌' : '⭕'}`, '#39ff14');
+      } else if (myTurn) {
+        setStatus(`Твой ход! Ты — ${myMark === 'X' ? '❌' : '⭕'}`, '#39ff14');
       } else {
-        el.textContent = isBot ? '🤖 Бот думает...' : '⏳ Ход соперника...';
-        el.style.color = '#ffcc00';
-        el.classList.add('waiting');
+        setStatus(mode === 'bot' ? '🤖 Бот думает...' : '⏳ Ход соперника...', '#ffcc00');
       }
     }
 
-    function highlightWin(combo) {
-      const cells = document.querySelectorAll('.cell');
-      combo.forEach(i => cells[i].classList.add('win-cell'));
-    }
-
-    /* ===== ЛОГИКА ИГРЫ ===== */
-    function checkWin() {
-      for (const combo of WINS) {
-        const [a,b,c] = combo;
-        if (board[a] && board[a] === board[b] && board[b] === board[c]) {
-          return { winner: board[a], combo };
-        }
+    function onCellClick(i) {
+      if (board[i] || gameOver) return;
+      if (mode === 'local') {
+        board[i] = currentMark;
+        window.BearSound && BearSound.click();
+        currentMark = currentMark === 'X' ? 'O' : 'X';
+        renderBoard(); updateStatus();
+        const r = checkWin(); if (r) endGame(r, null);
+      } else if (mode === 'bot') {
+        if (!myTurn) return;
+        board[i] = myMark; myTurn = false;
+        window.BearSound && BearSound.click();
+        renderBoard(); updateStatus();
+        const r = checkWin(); if (r) return endGame(r, myMark);
+        setTimeout(botMove, 400 + Math.random() * 400);
+      } else { // online
+        if (!myTurn) return;
+        board[i] = myMark; myTurn = false;
+        window.BearSound && BearSound.click();
+        BearMP.send({ type: 'move', index: i });
+        renderBoard(); updateStatus();
+        const r = checkWin(); if (r) endGame(r, myMark);
       }
-      if (board.every(c => c)) return { winner: 'draw', combo: null };
-      return null;
-    }
-
-    function makeMove(i) {
-      if (!myTurn || board[i] || gameOver) return;
-      board[i] = myMark;
-      myTurn = false;
-      window.BearSound && BearSound.click();
-      renderBoard();
-      updateStatus();
-
-      // Отправить ход
-      if (conn) conn.send({ type: 'move', index: i });
-
-      const result = checkWin();
-      if (result) return endGame(result);
-
-      // Если бот — его ход
-      if (isBot) setTimeout(botMove, 500 + Math.random() * 400);
     }
 
     function receiveMove(i) {
-      const opponentMark = myMark === 'X' ? 'O' : 'X';
-      board[i] = opponentMark;
-      myTurn = true;
+      const opMark = myMark === 'X' ? 'O' : 'X';
+      board[i] = opMark; myTurn = true;
       window.BearSound && BearSound.tap();
-      renderBoard();
-      updateStatus();
-
-      const result = checkWin();
-      if (result) endGame(result);
+      renderBoard(); updateStatus();
+      const r = checkWin(); if (r) endGame(r, myMark);
     }
 
-    function endGame(result) {
+    function checkWin() {
+      for (const [a,b,c] of WINS) {
+        if (board[a] && board[a]===board[b] && board[b]===board[c])
+          return { winner: board[a], combo: [a,b,c] };
+      }
+      if (board.every(c=>c)) return { winner: 'draw', combo: null };
+      return null;
+    }
+
+    function endGame(result, perspective) {
       gameOver = true;
-      const modal = document.getElementById('winModal');
       const title = document.getElementById('winTitle');
       const stat = document.getElementById('winStat');
-      document.getElementById('status').classList.remove('waiting');
-
       if (result.winner === 'draw') {
         title.textContent = '🤝 НИЧЬЯ!';
         stat.textContent = 'Оба молодцы!';
         window.BearSound && BearSound.match();
-      } else if (result.winner === myMark) {
-        title.textContent = '🏆 ТЫ ПОБЕДИЛ!';
-        stat.textContent = `${myMark === 'X' ? '❌' : '⭕'} — чемпион!`;
+      } else if (mode === 'local') {
+        title.textContent = `${result.winner === 'X' ? '❌' : '⭕'} ПОБЕДИЛ!`;
+        stat.textContent = '';
         window.BearSound && BearSound.win();
-        if (result.combo) highlightWin(result.combo);
+      } else if (result.winner === perspective) {
+        title.textContent = '🏆 ТЫ ПОБЕДИЛ!';
+        stat.textContent = `${perspective === 'X' ? '❌' : '⭕'} — чемпион!`;
+        window.BearSound && BearSound.win();
       } else {
         title.textContent = '😢 ПРОИГРАЛ';
-        stat.textContent = isBot ? 'Бот оказался хитрее!' : 'Соперник победил!';
+        stat.textContent = mode === 'bot' ? 'Бот оказался хитрее!' : 'Соперник победил!';
         window.BearSound && BearSound.lose();
-        if (result.combo) highlightWin(result.combo);
       }
-      setTimeout(() => modal.classList.add('show'), 400);
+      if (result.combo) {
+        const cells = document.querySelectorAll('.cell');
+        result.combo.forEach(i => cells[i].classList.add('win-cell'));
+      }
+      setTimeout(() => document.getElementById('winModal').classList.add('show'), 400);
     }
 
     function rematch() {
       board = Array(9).fill('');
-      gameOver = false;
+      gameOver = false; currentMark = 'X';
       document.getElementById('winModal').classList.remove('show');
-      // Хост всегда X, начинает первым
-      myTurn = myMark === 'X';
-      renderBoard();
-      updateStatus();
-      if (isBot && !myTurn) setTimeout(botMove, 600);
-      if (conn) conn.send({ type: 'rematch' });
+      if (mode === 'online') { myTurn = myMark === 'X'; BearMP.send({ type: 'rematch' }); }
+      else if (mode === 'bot') { myTurn = true; }
+      renderBoard(); updateStatus();
+      if (mode === 'bot' && !myTurn) setTimeout(botMove, 500);
     }
 
-    /* ===== БОТ (простой, для 6-7 лет — не слишком сильный) ===== */
+    /* === БОТ === */
     function botMove() {
       if (gameOver) return;
-      const opMark = myMark === 'X' ? 'O' : 'X';
-      const botMark = opMark;
-
-      // 1) Выиграть если можно
-      let move = findWinning(botMark);
-      // 2) Заблокировать если противник может выиграть
-      if (move === -1) move = findWinning(myMark);
-      // 3) Центр
-      if (move === -1 && !board[4]) move = 4;
-      // 4) Случайная свободная
-      if (move === -1) {
-        const free = board.map((v,i) => v ? -1 : i).filter(i => i >= 0);
-        move = free[Math.floor(Math.random() * free.length)];
-      }
-
-      board[move] = botMark;
-      myTurn = true;
+      const op = myMark === 'X' ? 'O' : 'X';
+      let m = findWin(op);
+      if (m===-1) m = findWin(myMark);
+      if (m===-1 && !board[4]) m = 4;
+      if (m===-1) { const f=board.map((v,i)=>v?-1:i).filter(i=>i>=0); m=f[Math.floor(Math.random()*f.length)]; }
+      board[m] = op; myTurn = true;
       window.BearSound && BearSound.tap();
-      renderBoard();
-      updateStatus();
-
-      const result = checkWin();
-      if (result) endGame(result);
+      renderBoard(); updateStatus();
+      const r = checkWin(); if (r) endGame(r, myMark);
     }
-
-    function findWinning(mark) {
+    function findWin(mark) {
       for (const [a,b,c] of WINS) {
-        const line = [board[a],board[b],board[c]];
-        if (line.filter(v => v === mark).length === 2 && line.includes('')) {
-          return [a,b,c][line.indexOf('')];
-        }
+        const l=[board[a],board[b],board[c]];
+        if (l.filter(v=>v===mark).length===2 && l.includes(''))
+          return [a,b,c][l.indexOf('')];
       }
       return -1;
     }
 
-    /* ===== PEER-TO-PEER (PeerJS) ===== */
-    function generateCode() {
-      return String(Math.floor(1000 + Math.random() * 9000));
-    }
-
-    function createRoom() {
-      const code = generateCode();
-      const roomId = 'bear-ttt-' + code;
-      isHost = true;
-      myMark = 'X';
-
-      peer = new Peer(roomId);
-      peer.on('open', () => {
+    /* === ОНЛАЙН (MQTT) === */
+    async function createRoom() {
+      mode = 'online'; myMark = 'X'; myTurn = true;
+      const code = BearMP.generateCode();
+      setConnStatus('Подключаюсь к серверу...', 'wait');
+      try {
+        await BearMP.connect(code, 'host', handleMsg);
         document.getElementById('lobby').innerHTML = `
           <h2>🏠 КОМНАТА СОЗДАНА</h2>
-          <p>Скажи другу этот код:</p>
+          <p>Скажи другу эти цифры:</p>
           <div class="code-display">${code}</div>
-          <p class="waiting">Ожидание соперника...</p>
-          <p style="color:#888;font-size:0.9rem;margin-top:12px;">Друг должен нажать «Подключиться» и ввести код</p>
+          <p class="waiting">Ожидание игрока 2...</p>
+          <div class="conn-status conn-ok">✅ Подключено к серверу</div>
+          <p style="color:#888;font-size:.85rem;margin-top:10px">Друг вводит эти цифры и нажимает «Подключиться»</p>
         `;
-      });
-      peer.on('connection', (c) => {
-        conn = c;
-        conn.on('data', handleData);
-        conn.on('open', () => {
-          myTurn = true; // X ходит первым
-          showGame();
-          conn.send({ type: 'start', mark: 'O' });
-        });
-      });
-      peer.on('error', (e) => {
-        alert('Ошибка подключения: ' + e.message);
-      });
+      } catch (e) {
+        setConnStatus('❌ ' + e.message, 'err');
+      }
     }
 
-    function joinRoom() {
+    async function joinRoom() {
       const code = document.getElementById('joinCode').value.trim();
-      if (!code) return;
-      const roomId = 'bear-ttt-' + code;
-
-      peer = new Peer();
-      peer.on('open', () => {
-        conn = peer.connect(roomId, { reliable: true });
-        conn.on('open', () => {
-          conn.on('data', handleData);
-        });
-      });
-      peer.on('error', (e) => {
-        if (e.type === 'peer-unavailable') {
-          alert('Такой комнаты нет! Попроси друга нажать «Создать игру» и скажи тебе 4 цифры.');
-        } else if (e.type === 'network' || e.type === 'server-error') {
-          alert('Нет связи с сервером. Проверь интернет и попробуй снова.');
-        } else {
-          alert('Не получилось подключиться. Попробуй ещё раз!');
-        }
-      });
+      if (!code || code.length < 4) { alert('Введи 4 цифры!'); return; }
+      mode = 'online'; myMark = 'O'; myTurn = false;
+      setConnStatus('Подключаюсь...', 'wait');
+      try {
+        await BearMP.connect(code, 'guest', handleMsg);
+        BearMP.send({ type: 'join' });
+        setConnStatus('✅ Подключено! Начинаем...', 'ok');
+        showGame();
+      } catch (e) {
+        setConnStatus('❌ ' + e.message, 'err');
+      }
     }
 
-    function handleData(data) {
-      if (data.type === 'start') {
-        myMark = data.mark;
-        myTurn = myMark === 'X';
-        showGame();
-      }
-      if (data.type === 'move') {
-        receiveMove(data.index);
-      }
+    function handleMsg(data) {
+      if (data.type === 'join') { showGame(); }
+      if (data.type === 'move') { receiveMove(data.index); }
       if (data.type === 'rematch') {
-        board = Array(9).fill('');
-        gameOver = false;
+        board = Array(9).fill(''); gameOver = false; currentMark = 'X';
         document.getElementById('winModal').classList.remove('show');
         myTurn = myMark === 'X';
-        renderBoard();
-        updateStatus();
+        renderBoard(); updateStatus();
       }
     }
 
-    function startBot() {
-      isBot = true;
-      myMark = 'X';
-      myTurn = true;
-      showGame();
-    }
+    /* === ЛОКАЛЬНЫЙ (Hot Seat) === */
+    function startLocal() { mode = 'local'; currentMark = 'X'; showGame(); }
+    function startBot() { mode = 'bot'; myMark = 'X'; myTurn = true; showGame(); }
 
-    /* Кнопки звука */
-    function refreshSoundBtns() {
-      const s = window.BearSound; if (!s) return;
-      document.getElementById('sfxBtn').classList.toggle('off', !s.sfxEnabled);
-      document.getElementById('sfxBtn').textContent = s.sfxEnabled ? '🔊' : '🔇';
-      document.getElementById('musBtn').classList.toggle('off', !s.musicEnabled);
-      document.getElementById('musBtn').textContent = s.musicEnabled ? '🎵' : '🎶';
-    }
-    document.getElementById('sfxBtn').addEventListener('click', () => { BearSound.toggleSfx(); refreshSoundBtns(); });
-    document.getElementById('musBtn').addEventListener('click', () => { BearSound.toggleMusic(); refreshSoundBtns(); });
-    window.addEventListener('load', () => setTimeout(refreshSoundBtns, 100));
+    /* Звук */
+    function refreshSoundBtns(){const s=window.BearSound;if(!s)return;document.getElementById('sfxBtn').classList.toggle('off',!s.sfxEnabled);document.getElementById('sfxBtn').textContent=s.sfxEnabled?'🔊':'🔇';document.getElementById('musBtn').classList.toggle('off',!s.musicEnabled);document.getElementById('musBtn').textContent=s.musicEnabled?'🎵':'🎶'}
+    document.getElementById('sfxBtn').addEventListener('click',()=>{BearSound.toggleSfx();refreshSoundBtns()});
+    document.getElementById('musBtn').addEventListener('click',()=>{BearSound.toggleMusic();refreshSoundBtns()});
+    window.addEventListener('load',()=>setTimeout(refreshSoundBtns,100));
   </script>
 </body>
 </html>
