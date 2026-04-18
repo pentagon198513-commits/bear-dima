@@ -605,7 +605,36 @@
     }
 
     /* ===== КОНЕЦ ИГРЫ ===== */
+    /* === АВТОСОХРАНЕНИЕ (бот-режим) === */
+    function saveBS() {
+      if (!isBot || phase !== 'battle') return;
+      localStorage.setItem('bear_bs', JSON.stringify({
+        myBoard, myShips, enemyBoard, enemyShipsData,
+        myTurn, shotsCount, botHits, phase,
+      }));
+    }
+    function loadBS() {
+      const s = localStorage.getItem('bear_bs');
+      if (!s) return false;
+      try {
+        const d = JSON.parse(s);
+        if (d.phase !== 'battle') return false;
+        isBot = true; isHost = true;
+        myBoard = d.myBoard; myShips = d.myShips;
+        enemyBoard = d.enemyBoard; enemyShipsData = d.enemyShipsData;
+        myTurn = d.myTurn; shotsCount = d.shotsCount; botHits = d.botHits || [];
+        document.getElementById('lobby').style.display = 'none';
+        document.getElementById('setupView').classList.remove('show');
+        document.getElementById('battleView').classList.add('show');
+        phase = 'battle';
+        renderMyGrid(); renderEnemyGrid(); updateStatus(); saveBS();
+        return true;
+      } catch(e) { return false; }
+    }
+    function clearBS() { localStorage.removeItem('bear_bs'); }
+
     function endGame(iWon) {
+      clearBS();
       phase = 'end';
       const title = document.getElementById('winTitle');
       const stat = document.getElementById('winStat');
@@ -644,12 +673,15 @@
       }
     }
 
+    let joinRetry = null;
     async function joinRoom() {
       const code = document.getElementById('joinCode').value.trim();
       if (!code || code.length < 4) { alert('Введи 4 цифры!'); return; }
       try {
         await BearMP.connect(code, 'guest', handleData);
+        // Повторяем join каждые 2с пока хост не ответит
         BearMP.send({ type: 'join' });
+        joinRetry = setInterval(() => BearMP.send({ type: 'join' }), 2000);
         showSetup();
       } catch (e) {
         alert('❌ ' + e.message);
@@ -658,7 +690,15 @@
 
     function handleData(data) {
       if (data.type === 'join') {
-        showSetup();
+        if (phase === 'lobby' || !document.getElementById('setupView').classList.contains('show')) {
+          showSetup();
+        }
+        // Подтверждаем гостю что получили
+        BearMP.send({ type: 'host_ack' });
+      }
+      if (data.type === 'host_ack') {
+        // Гость: хост подтвердил — прекращаем retry
+        if (joinRetry) { clearInterval(joinRetry); joinRetry = null; }
       }
       if (data.type === 'ready') {
         opponentReady = true;
@@ -718,7 +758,10 @@
     }
     document.getElementById('sfxBtn').addEventListener('click', () => { BearSound.toggleSfx(); refreshSoundBtns(); });
     document.getElementById('musBtn').addEventListener('click', () => { BearSound.toggleMusic(); refreshSoundBtns(); });
-    window.addEventListener('load', () => setTimeout(refreshSoundBtns, 100));
+    window.addEventListener('load', () => {
+      setTimeout(refreshSoundBtns, 100);
+      loadBS();
+    });
   </script>
 </body>
 </html>
