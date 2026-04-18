@@ -110,7 +110,7 @@
     function showGame() {
       document.getElementById('lobby').style.display = 'none';
       document.getElementById('gameView').style.display = 'block';
-      renderBoard(); updateStatus();
+      renderBoard(); updateStatus(); saveGame();
     }
 
     function isMyTurn() {
@@ -222,7 +222,7 @@
           }
           lastMove = { from: {row: selected.row, col: selected.col}, to: {row, col} };
           selected = null; possibleMoves = [];
-          renderBoard(); updateStatus();
+          renderBoard(); updateStatus(); saveGame();
           // Отправить ход
           if (mode === 'online') BearMP.send({ type: 'move', san: move.san });
           if (mode === 'bot' && !game.game_over()) setTimeout(botMove, 400 + Math.random() * 600);
@@ -282,7 +282,37 @@
       capturedW = []; capturedB = [];
       document.getElementById('winModal').classList.remove('show');
       if (mode === 'online') BearMP.send({ type: 'restart' });
-      renderBoard(); updateStatus();
+      localStorage.removeItem('bear_chess');
+      renderBoard(); updateStatus(); saveGame();
+    }
+
+    /* === АВТОСОХРАНЕНИЕ (localStorage) === */
+    function saveGame() {
+      if (!mode || game.game_over()) return;
+      localStorage.setItem('bear_chess', JSON.stringify({
+        fen: game.fen(),
+        mode, myColor, flipped,
+        capturedW, capturedB, lastMove,
+      }));
+    }
+    function loadGame() {
+      const s = localStorage.getItem('bear_chess');
+      if (!s) return false;
+      try {
+        const d = JSON.parse(s);
+        if (!d.fen || !d.mode) return false;
+        // Онлайн-игру восстановить нельзя (MQTT соединение потеряно)
+        if (d.mode === 'online') { localStorage.removeItem('bear_chess'); return false; }
+        game = new Chess(d.fen);
+        mode = d.mode;
+        myColor = d.myColor || 'w';
+        flipped = d.flipped || false;
+        capturedW = d.capturedW || [];
+        capturedB = d.capturedB || [];
+        lastMove = d.lastMove || null;
+        showGame();
+        return true;
+      } catch (e) { return false; }
     }
 
     /* === БОТ (случайные ходы — для 6 лет нормально) === */
@@ -306,7 +336,7 @@
       const fromCol = chosen.from.charCodeAt(0) - 97, fromRow = 8 - parseInt(chosen.from[1]);
       const toCol = chosen.to.charCodeAt(0) - 97, toRow = 8 - parseInt(chosen.to[1]);
       lastMove = { from: {row:fromRow,col:fromCol}, to: {row:toRow,col:toCol} };
-      renderBoard(); updateStatus();
+      renderBoard(); updateStatus(); saveGame();
     }
 
     /* === ОНЛАЙН (MQTT) === */
@@ -348,14 +378,14 @@
           const fromCol = move.from.charCodeAt(0) - 97, fromRow = 8 - parseInt(move.from[1]);
           const toCol = move.to.charCodeAt(0) - 97, toRow = 8 - parseInt(move.to[1]);
           lastMove = { from:{row:fromRow,col:fromCol}, to:{row:toRow,col:toCol} };
-          renderBoard(); updateStatus();
+          renderBoard(); updateStatus(); saveGame();
         }
       }
       if (data.type === 'restart') {
         game = new Chess(); selected = null; possibleMoves = []; lastMove = null;
         capturedW = []; capturedB = [];
         document.getElementById('winModal').classList.remove('show');
-        renderBoard(); updateStatus();
+        renderBoard(); updateStatus(); saveGame();
       }
     }
 
@@ -366,7 +396,13 @@
     function refreshSoundBtns(){const s=window.BearSound;if(!s)return;document.getElementById('sfxBtn').classList.toggle('off',!s.sfxEnabled);document.getElementById('sfxBtn').textContent=s.sfxEnabled?'🔊':'🔇';document.getElementById('musBtn').classList.toggle('off',!s.musicEnabled);document.getElementById('musBtn').textContent=s.musicEnabled?'🎵':'🎶'}
     document.getElementById('sfxBtn').addEventListener('click',()=>{BearSound.toggleSfx();refreshSoundBtns()});
     document.getElementById('musBtn').addEventListener('click',()=>{BearSound.toggleMusic();refreshSoundBtns()});
-    window.addEventListener('load',()=>setTimeout(refreshSoundBtns,100));
+    window.addEventListener('load',()=>{
+      setTimeout(refreshSoundBtns,100);
+      // Восстановить сохранённую партию
+      if (!loadGame()) {
+        // нет сохранения — показать лобби
+      }
+    });
   </script>
 </body>
 </html>
