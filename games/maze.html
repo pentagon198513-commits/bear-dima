@@ -79,6 +79,7 @@
     let finish = { x: 0, y: 0 };
     let level = parseInt(localStorage.getItem('bear_maze_level') || '1', 10);
     if (!Number.isFinite(level) || level < 1) level = 1;
+    if (level > 15) level = 15;
     let seconds = 0;
     let timerId = null;
     let won = false;
@@ -133,7 +134,7 @@
     }
 
     function nextLevel() {
-      level++;
+      level = Math.min(level + 1, 15);
       localStorage.setItem('bear_maze_level', String(level));
       startLevel();
     }

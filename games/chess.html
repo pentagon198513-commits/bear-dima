@@ -42,6 +42,10 @@
     .sq.check{background:#ff4444!important}
     .piece{filter:drop-shadow(1px 1px 1px rgba(0,0,0,.4));line-height:1;pointer-events:none}
     .captured{display:flex;flex-wrap:wrap;gap:2px;padding:4px 8px;height:36px;font-size:clamp(1rem,3.5vw,1.5rem);background:rgba(0,0,0,.1);border-radius:8px;margin:4px 0;width:min(92vw,440px);overflow:hidden;align-items:center}
+    .net-toast{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:1000;padding:8px 16px;border-radius:16px;font-family:'Nunito',sans-serif;font-weight:900;font-size:.9rem;box-shadow:0 4px 14px rgba(0,0,0,.3);display:none}
+    .net-toast.show{display:block}
+    .net-toast.wait{background:#fff9c4;color:#f57f17}
+    .net-toast.err{background:#ffcdd2;color:#b71c1c}
   </style>
 </head>
 <body>
@@ -80,6 +84,8 @@
       <div class="captured" id="capturedBottom"></div>
     </div>
   </div>
+
+  <div id="netToast" class="net-toast"></div>
 
   <div class="win-modal" id="winModal">
     <div class="win-box">
@@ -340,11 +346,18 @@
     }
 
     /* === ОНЛАЙН (MQTT) === */
+    function onNetStatus(s) {
+      const t = document.getElementById('netToast');
+      if (!t) return;
+      if (s === 'reconnecting') { t.className = 'net-toast wait show'; t.textContent = '⏳ Связь потеряна, восстанавливаю...'; }
+      else if (s === 'offline') { t.className = 'net-toast err show'; t.textContent = '📡 Нет связи с сервером'; }
+      else if (s === 'online') { t.className = 'net-toast'; t.textContent = ''; }
+    }
     async function createRoom() {
       mode = 'online'; myColor = 'w'; flipped = false;
       const code = BearMP.generateCode();
       try {
-        await BearMP.connect(code, 'host', handleMsg);
+        await BearMP.connect(code, 'host', handleMsg, onNetStatus);
         document.getElementById('lobby').innerHTML = `
           <h2>🏠 КОМНАТА СОЗДАНА</h2>
           <p>Скажи другу эти цифры:</p>
@@ -360,7 +373,7 @@
       if (!code || code.length < 4) { alert('Введи 4 цифры!'); return; }
       mode = 'online'; myColor = 'b'; flipped = true;
       try {
-        await BearMP.connect(code, 'guest', handleMsg);
+        await BearMP.connect(code, 'guest', handleMsg, onNetStatus);
         BearMP.send({ type: 'join' });
         joinRetry = setInterval(() => BearMP.send({ type: 'join' }), 2000);
         showGame();

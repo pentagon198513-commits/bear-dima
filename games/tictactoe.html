@@ -41,6 +41,10 @@
     .conn-ok{background:#c8e6c9;color:#1b5e20}
     .conn-wait{background:#fff9c4;color:#f57f17}
     .conn-err{background:#ffcdd2;color:#b71c1c}
+    .net-toast{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:1000;padding:8px 16px;border-radius:16px;font-family:'Nunito',sans-serif;font-weight:900;font-size:.9rem;box-shadow:0 4px 14px rgba(0,0,0,.3);display:none}
+    .net-toast.show{display:block}
+    .net-toast.wait{background:#fff9c4;color:#f57f17}
+    .net-toast.err{background:#ffcdd2;color:#b71c1c}
   </style>
 </head>
 <body>
@@ -78,6 +82,8 @@
     <div class="board" id="board"></div>
   </div>
 
+  <div id="netToast" class="net-toast"></div>
+
   <div class="win-modal" id="winModal">
     <div class="win-box">
       <h2 class="win-title" id="winTitle">🏆 ПОБЕДА!</h2>
@@ -108,6 +114,12 @@
     function setConnStatus(text, type) {
       document.getElementById('connStatus').innerHTML =
         `<div class="conn-status conn-${type}">${text}</div>`;
+    }
+    function onNetStatus(s) {
+      const t = document.getElementById('netToast');
+      if (s === 'reconnecting') { t.className = 'net-toast wait show'; t.textContent = '⏳ Связь потеряна, восстанавливаю...'; }
+      else if (s === 'offline') { t.className = 'net-toast err show'; t.textContent = '📡 Нет связи с сервером'; }
+      else if (s === 'online') { t.className = 'net-toast'; t.textContent = ''; }
     }
 
     function renderBoard() {
@@ -262,7 +274,7 @@
       const code = BearMP.generateCode();
       setConnStatus('Подключаюсь к серверу...', 'wait');
       try {
-        await BearMP.connect(code, 'host', handleMsg);
+        await BearMP.connect(code, 'host', handleMsg, onNetStatus);
         document.getElementById('lobby').innerHTML = `
           <h2>🏠 КОМНАТА СОЗДАНА</h2>
           <p>Скажи другу эти цифры:</p>
@@ -283,7 +295,7 @@
       mode = 'online'; myMark = 'O'; myTurn = false;
       setConnStatus('Подключаюсь...', 'wait');
       try {
-        await BearMP.connect(code, 'guest', handleMsg);
+        await BearMP.connect(code, 'guest', handleMsg, onNetStatus);
         BearMP.send({ type: 'join' });
         joinRetry = setInterval(() => BearMP.send({ type: 'join' }), 2000);
         setConnStatus('✅ Подключено! Начинаем...', 'ok');

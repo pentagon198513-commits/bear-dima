@@ -150,6 +150,10 @@
       pointer-events:none;
       z-index:10;
     }
+    .net-toast{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:1000;padding:8px 16px;border-radius:16px;font-family:'Nunito',sans-serif;font-weight:900;font-size:.9rem;box-shadow:0 4px 14px rgba(0,0,0,.3);display:none}
+    .net-toast.show{display:block}
+    .net-toast.wait{background:#fff9c4;color:#f57f17}
+    .net-toast.err{background:#ffcdd2;color:#b71c1c}
   </style>
 </head>
 <body>
@@ -205,6 +209,8 @@
       </div>
     </div>
   </div>
+
+  <div id="netToast" class="net-toast"></div>
 
   <!-- Результат -->
   <div class="win-modal" id="winModal">
@@ -606,7 +612,11 @@
       applyShot('my', x, y, result);
 
       if (result.type === 'hit') botHits.push({x, y});
-      if (result.type === 'sunk') botHits = []; // сбрасываем после потопления
+      if (result.type === 'sunk' && result.ship) {
+        // Убираем только клетки потопленного корабля, чтобы не забыть про хиты на других раненых кораблях
+        const sunkCells = new Set(result.ship.cells.map(c => `${c.x},${c.y}`));
+        botHits = botHits.filter(h => !sunkCells.has(`${h.x},${h.y}`));
+      }
 
       if (result.gameOver) return endGame(false);
 
@@ -705,13 +715,20 @@
     }
 
     /* ===== МУЛЬТИПЛЕЕР (MQTT через BearMP) ===== */
+    function onNetStatus(s) {
+      const t = document.getElementById('netToast');
+      if (!t) return;
+      if (s === 'reconnecting') { t.className = 'net-toast wait show'; t.textContent = '⏳ Связь потеряна, восстанавливаю...'; }
+      else if (s === 'offline') { t.className = 'net-toast err show'; t.textContent = '📡 Нет связи с сервером'; }
+      else if (s === 'online') { t.className = 'net-toast'; t.textContent = ''; }
+    }
     async function createRoom() {
       resetGameState();
       BearMP.disconnect();
       const code = BearMP.generateCode();
       isHost = true;
       try {
-        await BearMP.connect(code, 'host', handleData);
+        await BearMP.connect(code, 'host', handleData, onNetStatus);
         document.getElementById('lobby').innerHTML = `
           <h2>🏠 КОМНАТА СОЗДАНА</h2>
           <p>Скажи другу эти цифры:</p>
@@ -732,7 +749,7 @@
       resetGameState();
       BearMP.disconnect();
       try {
-        await BearMP.connect(code, 'guest', handleData);
+        await BearMP.connect(code, 'guest', handleData, onNetStatus);
         // Повторяем join каждые 2с пока хост не ответит
         BearMP.send({ type: 'join' });
         joinRetry = setInterval(() => BearMP.send({ type: 'join' }), 2000);

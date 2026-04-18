@@ -42,19 +42,21 @@
 
         let resolved = false;
         const timeout = setTimeout(() => {
-          if (!resolved) reject(new Error('Сервер не отвечает. Проверь интернет.'));
+          if (!resolved) { resolved = true; reject(new Error('Сервер не отвечает. Проверь интернет.')); }
         }, 10000);
 
+        // Каждый reconnect — новая сессия на брокере (clean:true),
+        // поэтому подписываемся заново при каждом 'connect'.
         this.client.on('connect', () => {
           clearTimeout(timeout);
           this.client.subscribe(this.topic, { qos: 1 }, (err) => {
             if (err) {
               if (!resolved) { resolved = true; reject(new Error('Не удалось подписаться на канал')); }
-            } else {
-              this.connected = true;
-              if (this.onStatus) { try { this.onStatus('online'); } catch(e){} }
-              if (!resolved) { resolved = true; resolve(); }
+              return;
             }
+            this.connected = true;
+            if (this.onStatus) { try { this.onStatus('online'); } catch(e){} }
+            if (!resolved) { resolved = true; resolve(); }
           });
         });
 
