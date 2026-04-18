@@ -9,7 +9,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@700;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="game.css" />
   <script src="sounds.js" defer></script>
-  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
+  <script src="multiplayer.js"></script>
   <style>
     .lobby { text-align:center; padding:16px; }
     .lobby h2 { font-family:'Bangers',sans-serif; font-size:clamp(1.4rem,5vw,2.2rem); color:var(--hw-red); margin:8px 0; }
@@ -323,8 +324,8 @@
         enemyShipsData = randomPlace(botBoard);
         enemyBoard = emptyBoard(); // мой вид врага
         startBattle();
-      } else if (conn) {
-        conn.send({ type: 'ready' });
+      } else if (BearMP.connected) {
+        BearMP.send({ type: 'ready' });
         document.getElementById('readyBtn').textContent = '⏳ Ждём соперника...';
         document.getElementById('readyBtn').disabled = true;
       }
@@ -454,7 +455,7 @@
         }
         // При попадании — стреляем снова
       } else {
-        conn.send({ type: 'fire', x, y });
+        BearMP.send({ type: 'fire', x, y });
         myTurn = false;
         updateStatus();
       }
@@ -620,61 +621,47 @@
       setTimeout(() => document.getElementById('winModal').classList.add('show'), 500);
     }
 
-    /* ===== PEER-TO-PEER ===== */
+    /* ===== МУЛЬТИПЛЕЕР (MQTT через BearMP) ===== */
     let opponentReady = false;
 
-    function generateCode() { return String(Math.floor(1000 + Math.random() * 9000)); }
-
-    function createRoom() {
-      const code = generateCode();
+    async function createRoom() {
+      const code = BearMP.generateCode();
       isHost = true;
-      peer = new Peer('bear-bs-' + code);
-      peer.on('open', () => {
+      try {
+        await BearMP.connect(code, 'host', handleData);
         document.getElementById('lobby').innerHTML = `
           <h2>🏠 КОМНАТА СОЗДАНА</h2>
-          <p>Код для друга:</p>
+          <p>Скажи другу эти цифры:</p>
           <div class="code-display">${code}</div>
-          <p class="waiting">Ожидание соперника...</p>
+          <p class="waiting">Ожидание игрока 2...</p>
+          <div style="background:#c8e6c9;color:#1b5e20;padding:4px 12px;border-radius:12px;display:inline-block;margin:6px 0;font-family:Nunito,sans-serif;font-weight:700;font-size:.85rem">✅ Подключено к серверу</div>
+          <p style="color:#888;font-size:.85rem;margin-top:8px">Друг вводит цифры и нажимает «Подключиться»</p>
         `;
-      });
-      peer.on('connection', (c) => {
-        conn = c;
-        conn.on('data', handleData);
-        conn.on('open', () => {
-          showSetup();
-          conn.send({ type: 'joined' });
-        });
-      });
+      } catch (e) {
+        alert('❌ ' + e.message);
+      }
     }
 
-    function joinRoom() {
+    async function joinRoom() {
       const code = document.getElementById('joinCode').value.trim();
-      if (!code) return;
-      peer = new Peer();
-      peer.on('open', () => {
-        conn = peer.connect('bear-bs-' + code, { reliable: true });
-        conn.on('open', () => { conn.on('data', handleData); });
-      });
-      peer.on('error', (e) => {
-        if (e.type === 'peer-unavailable') {
-          alert('Такой комнаты нет! Попроси друга нажать «Создать игру» и скажи тебе 4 цифры.');
-        } else if (e.type === 'network' || e.type === 'server-error') {
-          alert('Нет связи с сервером. Проверь интернет и попробуй снова.');
-        } else {
-          alert('Не получилось подключиться. Попробуй ещё раз!');
-        }
-      });
+      if (!code || code.length < 4) { alert('Введи 4 цифры!'); return; }
+      try {
+        await BearMP.connect(code, 'guest', handleData);
+        BearMP.send({ type: 'join' });
+        showSetup();
+      } catch (e) {
+        alert('❌ ' + e.message);
+      }
     }
 
     function handleData(data) {
-      if (data.type === 'joined') {
+      if (data.type === 'join') {
         showSetup();
       }
       if (data.type === 'ready') {
         opponentReady = true;
         if (myShips.length > 0) {
-          // Оба готовы
-          conn.send({ type: 'bothReady' });
+          BearMP.send({ type: 'bothReady' });
           startBattle();
         }
       }
@@ -684,15 +671,13 @@
       if (data.type === 'fire') {
         const result = checkHit(data.x, data.y, myShips);
         applyShot('my', data.x, data.y, result);
-        conn.send({ type: 'result', x: data.x, y: data.y, result: result.type, ship: result.ship ? { cells: result.ship.cells } : null, gameOver: result.gameOver || false });
+        BearMP.send({ type: 'result', x: data.x, y: data.y, result: result.type, ship: result.ship ? { cells: result.ship.cells } : null, gameOver: result.gameOver || false });
         if (result.gameOver) {
           endGame(false);
         } else if (result.type === 'miss') {
           myTurn = true;
           updateStatus();
-          // оба поля видны одновременно
         }
-        // При попадании — ход остаётся у соперника
       }
       if (data.type === 'result') {
         const r = { type: data.result, ship: data.ship };
@@ -702,7 +687,6 @@
         } else if (data.result === 'miss') {
           // Промах — ход переходит
         } else {
-          // Попадание — стреляем ещё
           myTurn = true;
           updateStatus();
         }
