@@ -1,0 +1,37 @@
+# MTProto proxy via Docker — simplest path if Docker is available.
+#
+# Setup:
+#   1) Generate secret (once):
+#        docker run --rm ghcr.io/9seconds/mtg:2 generate-secret --hex www.cloudflare.com
+#      Copy the ee... string.
+#   2) Create .env next to this file with:
+#        MTG_SECRET=ee...<generated>
+#        MTG_PORT=443
+#   3) Start:
+#        docker compose up -d
+#   4) Get link:
+#        docker compose exec mtg /mtg access /dev/null 2>/dev/null || true
+#        # or build manually:
+#        echo "tg://proxy?server=<PUBLIC_IP>&port=${MTG_PORT}&secret=${MTG_SECRET}"
+#
+# network_mode: host keeps real client IPs in mtg's counters and avoids NAT;
+# drop it and uncomment "ports:" if host networking is not available.
+
+services:
+  mtg:
+    image: ghcr.io/9seconds/mtg:2
+    container_name: mtg
+    restart: unless-stopped
+    network_mode: host
+    # ports:
+    #   - "${MTG_PORT:-443}:443/tcp"
+    command: >
+      simple-run
+      -b 0.0.0.0:${MTG_PORT:-443}
+      -n 2
+      ${MTG_SECRET}
+    healthcheck:
+      test: ["CMD", "/mtg", "access", "/dev/null"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
