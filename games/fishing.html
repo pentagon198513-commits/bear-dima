@@ -23,7 +23,29 @@
       animation:bgshift 60s ease-in-out infinite alternate;
     }
     @keyframes bgshift{from{transform:scale(1.0)}to{transform:scale(1.04)}}
-    .bg-loading{position:absolute;inset:0;background:linear-gradient(180deg,#5fa9d6 0%,#a4d2ed 40%,#3a78a8 60%,#1a4878 100%);z-index:0}
+    .bg-loading{position:absolute;inset:0;z-index:0;
+      background:
+        radial-gradient(ellipse 60% 30% at 78% 18%, rgba(255,250,200,.7) 0%, rgba(255,250,200,0) 70%),
+        linear-gradient(180deg,
+          #5fa9d6 0%,
+          #a4d2ed 30%,
+          #cae0ed 45%,
+          #6ea8c8 53%,
+          #3a78a8 65%,
+          #1f5582 85%,
+          #163d63 100%);
+    }
+    .bg-loading::before{
+      content:'';position:absolute;left:0;right:0;top:30%;height:18%;
+      background:linear-gradient(180deg,#5d8a6a 0%,#3d6e4a 40%,#2c4f37 60%,transparent 100%);
+      filter:blur(3px);opacity:.85;
+    }
+    .bg-loading::after{
+      content:'';position:absolute;left:0;right:0;top:25%;height:12%;
+      background:linear-gradient(180deg,#7a8aa3 0%,#5d6b85 60%,transparent 100%);
+      clip-path:polygon(0% 100%, 5% 60%, 12% 80%, 20% 50%, 30% 70%, 42% 40%, 55% 65%, 68% 45%, 80% 70%, 92% 50%, 100% 75%, 100% 100%);
+      opacity:.7;
+    }
 
     canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;z-index:5}
 
@@ -478,23 +500,22 @@
   'use strict';
 
   // ============== POLLINATIONS IMAGE HELPERS ==============
-  // Use seeds for deterministic photos that match our scene layout
-  const PROMPT_BG = 'photorealistic+beautiful+lake+from+wooden+dock+perspective+sunny+summer+day+pine+forest+mountains+blue+water+calm+lake+highly+detailed+8k';
-  const BG_URL = `https://image.pollinations.ai/prompt/${PROMPT_BG}?width=1280&height=720&seed=44288&nologo=true&model=flux`;
+  // Turbo model - much faster (~3-5s vs 20-30s for flux)
+  const PROMPT_BG = 'photorealistic+beautiful+lake+from+wooden+dock+pine+forest+mountains+blue+water+sunny+day';
+  const BG_URL = `https://image.pollinations.ai/prompt/${PROMPT_BG}?width=1024&height=576&seed=44288&nologo=true&model=turbo`;
 
-  // Fish images via pollinations
   function fishImageURL(name, seed){
     const map = {
-      'Карась': 'photorealistic+crucian+carp+fish+shiny+wet+golden+side+view+isolated+plain+dark+background',
-      'Окунь': 'photorealistic+european+perch+fish+green+orange+stripes+side+view+isolated+plain+dark+background',
-      'Лещ': 'photorealistic+silver+bream+fish+side+view+isolated+plain+dark+background',
-      'Щука': 'photorealistic+northern+pike+fish+long+toothy+side+view+isolated+plain+dark+background',
-      'Сом': 'photorealistic+wels+catfish+big+grey+barbels+side+view+isolated+plain+dark+background',
-      'Золотая': 'photorealistic+goldfish+golden+sparkly+wet+side+view+isolated+plain+dark+background',
-      'Старый сапог': 'photorealistic+old+brown+leather+boot+wet+covered+with+algae+isolated+plain+dark+background'
+      'Карась': 'realistic+crucian+carp+fish+golden+side+view',
+      'Окунь': 'realistic+european+perch+fish+green+orange+stripes+side+view',
+      'Лещ': 'realistic+silver+bream+fish+side+view',
+      'Щука': 'realistic+northern+pike+fish+long+side+view',
+      'Сом': 'realistic+wels+catfish+barbels+side+view',
+      'Золотая': 'realistic+goldfish+golden+side+view',
+      'Старый сапог': 'old+brown+leather+boot+wet+algae'
     };
     const p = map[name] || map['Карась'];
-    return `https://image.pollinations.ai/prompt/${p}?width=512&height=512&seed=${seed}&nologo=true&model=flux`;
+    return `https://image.pollinations.ai/prompt/${p}?width=400&height=400&seed=${seed}&nologo=true&model=turbo`;
   }
 
   // ============== STATE ==============
@@ -592,25 +613,21 @@
   window.addEventListener('resize', resize);
   resize();
 
-  // ============== LOAD BG IMAGE ==============
+  // ============== LOAD BG IMAGE (async, non-blocking) ==============
   const bgPhoto = document.getElementById('bgPhoto');
   const bgLoading = document.getElementById('bgLoading');
   const loadingOverlay = document.getElementById('loadingOverlay');
+  // Hide loading immediately - game works on gradient
+  loadingOverlay.classList.add('hide');
   bgPhoto.onload = ()=>{
     bgPhoto.style.display = 'block';
-    bgLoading.style.display = 'none';
-    loadingOverlay.classList.add('hide');
+    bgPhoto.style.opacity = '0';
+    bgPhoto.style.transition = 'opacity 1.2s ease';
+    requestAnimationFrame(()=>{ bgPhoto.style.opacity = '1'; });
   };
   bgPhoto.onerror = ()=>{
-    // Use gradient fallback
-    bgLoading.style.display = 'block';
-    loadingOverlay.classList.add('hide');
+    // Stay on gradient - looks fine
   };
-  // Auto-fallback after 8s if image still loading
-  setTimeout(()=>{
-    if(loadingOverlay.classList.contains('hide')) return;
-    loadingOverlay.classList.add('hide');
-  }, 8000);
   bgPhoto.src = BG_URL;
 
   // ============== SOUNDS ==============
@@ -927,18 +944,25 @@
       ? 'linear-gradient(180deg,#ffe066,#ff9800)'
       : 'linear-gradient(180deg,#888,#444)';
 
-    // Try load real fish image (pollinations) - fallback to emoji
+    // Show emoji immediately - real fish image loads in background
     const img = document.getElementById('catchFishImg');
+    const emoji = document.getElementById('catchEmoji');
     img.style.display = 'none';
-    document.getElementById('catchEmoji').style.display = 'flex';
+    img.style.opacity = '0';
+    emoji.style.display = 'flex';
     const seed = Math.abs(hashStr(fish.name))%100000;
     img.onload = ()=>{
       img.style.display = 'block';
-      document.getElementById('catchEmoji').style.display = 'none';
+      img.style.transition = 'opacity 0.6s ease';
+      requestAnimationFrame(()=>{
+        img.style.opacity = '1';
+        emoji.style.display = 'none';
+      });
     };
     img.onerror = ()=>{
+      // keep emoji
       img.style.display = 'none';
-      document.getElementById('catchEmoji').style.display = 'flex';
+      emoji.style.display = 'flex';
     };
     img.src = fishImageURL(fish.name, seed);
 
