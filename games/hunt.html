@@ -195,22 +195,50 @@
           d.x += d.vx * 0.3;
           if (d.y > GROUND_Y - 10) ducks.splice(i, 1);
         } else if (d.alive) {
-          // Дразнящаяся утка летит медленнее и покачивается сильнее
-          const speedMult = d.taunting ? 0.35 : 1.0;
+          const speedMult = d.taunting ? 0.5 : 1.0;
           d.x += d.vx * speedMult;
-          d.y += Math.sin(d.x * d.freq + d.phase) * (d.taunting ? 1.4 : 0.6);
-          d.wing += d.taunting ? 0.15 : 0.25;
+          if (d.taunting) {
+            // === ХАОТИЧНАЯ ТРАЕКТОРИЯ ===
+            // Случайный импульс по вертикали каждые ~5-8 кадров
+            if (Math.random() < 0.07) {
+              d.vy = (Math.random() - 0.5) * 10;
+            }
+            // Редкий разворот на 180° (внезапный обман)
+            if (Math.random() < 0.012) {
+              d.vx *= -1;
+              d.vy += (Math.random() - 0.5) * 6;
+            }
+            // Иногда — резкий рывок вбок (изменение скорости X)
+            if (Math.random() < 0.04) {
+              d.vx *= (1 + (Math.random() - 0.5) * 0.6);
+              // Ограничиваем чтобы не разогналась слишком сильно
+              const maxV = 4 * (1 + (round-1) * 0.18);
+              if (Math.abs(d.vx) > maxV) d.vx = Math.sign(d.vx) * maxV;
+            }
+            // Применяем импульс + лёгкое покачивание
+            d.y += d.vy + Math.sin(d.tauntPhase * 1.8) * 1.2;
+            d.vy *= 0.88;
+            // Границы (отскок от верха неба и низа)
+            if (d.y < 50) { d.y = 50; d.vy = Math.abs(d.vy) * 0.6; }
+            if (d.y > GROUND_Y - 90) { d.y = GROUND_Y - 90; d.vy = -Math.abs(d.vy) * 0.8; }
+          } else {
+            // Обычная утка — плавная синусоида
+            d.y += Math.sin(d.x * d.freq + d.phase) * 0.6;
+          }
+          d.wing += d.taunting ? 0.32 : 0.25;
           // Запуск дразнилки
           if (d.willTaunt && !d.taunting && now >= d.tauntStartAt) {
             d.taunting = true;
-            d.tauntEndAt = now + 1400;
+            d.tauntEndAt = now + 1800;
             d.tauntPhase = 0;
+            d.vy = (Math.random() - 0.5) * 4;
             playDuckLaugh();
           }
-          // Окончание дразнилки
+          // Окончание дразнилки — возвращаемся к плавному полёту
           if (d.taunting && now > d.tauntEndAt) {
             d.taunting = false;
             d.willTaunt = false;
+            d.vy = 0; // сброс импульса
           }
           if (d.taunting) d.tauntPhase += 0.18;
           if (d.x < -80 || d.x > W + 80) {
