@@ -488,11 +488,6 @@
     </div>
   </div>
 
-  <!-- Loading -->
-  <div class="loading-overlay" id="loadingOverlay">
-    <div class="loading-spinner"></div>
-    <div class="loading-text">🌊 Загружаем озеро...</div>
-  </div>
 </div>
 
 <script>
@@ -616,18 +611,13 @@
   // ============== LOAD BG IMAGE (async, non-blocking) ==============
   const bgPhoto = document.getElementById('bgPhoto');
   const bgLoading = document.getElementById('bgLoading');
-  const loadingOverlay = document.getElementById('loadingOverlay');
-  // Hide loading immediately - game works on gradient
-  loadingOverlay.classList.add('hide');
   bgPhoto.onload = ()=>{
     bgPhoto.style.display = 'block';
     bgPhoto.style.opacity = '0';
     bgPhoto.style.transition = 'opacity 1.2s ease';
     requestAnimationFrame(()=>{ bgPhoto.style.opacity = '1'; });
   };
-  bgPhoto.onerror = ()=>{
-    // Stay on gradient - looks fine
-  };
+  bgPhoto.onerror = ()=>{ /* stay on gradient */ };
   bgPhoto.src = BG_URL;
 
   // ============== SOUNDS ==============
@@ -1679,9 +1669,6 @@
   requestAnimationFrame(loop);
 
   toMenu();
-
-  // Hide loading once menu is up (image may still be loading in BG)
-  setTimeout(()=>{ loadingOverlay.classList.add('hide'); }, 2000);
 })();
 </script>
 </body>
