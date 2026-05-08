@@ -19,35 +19,20 @@
       border-radius:16px;
       box-shadow:0 12px 30px rgba(0,0,0,.45);
       display:block;
-      touch-action:manipulation;
-      cursor:crosshair;
+      touch-action:none;
+      cursor:none;
       background:#87ceeb;
     }
-    .hud{
-      display:flex;flex-wrap:wrap;justify-content:center;gap:6px;width:100%;
-    }
+    .hud{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;width:100%}
     .hud .stat-pill{font-family:'Bangers',sans-serif;font-size:clamp(.95rem,3vw,1.2rem)}
     .ammo-display{display:inline-flex;gap:3px;align-items:center}
     .shell{width:14px;height:18px;background:linear-gradient(180deg,#ffcc00 0%,#ff6b00 60%,#b71c1c 100%);border:2px solid #5d3a1a;border-radius:3px 3px 0 0;display:inline-block}
     .shell.empty{background:#ccc;border-color:#888;opacity:.4}
-    .start-overlay,.round-overlay{
-      position:fixed;inset:0;background:rgba(0,0,0,.65);
-      display:flex;align-items:center;justify-content:center;z-index:500;
-    }
+    .start-overlay,.round-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;z-index:500}
     .start-overlay.hide,.round-overlay.hide{display:none}
-    .start-box,.round-box{
-      background:linear-gradient(180deg,#ffcc00,#ff6b00);
-      border:6px solid #fff;border-radius:28px;padding:24px 36px;
-      text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.5);max-width:92vw;
-    }
-    .start-box h2,.round-box h2{
-      font-family:'Bangers',sans-serif;font-size:clamp(1.8rem,7vw,3rem);
-      color:#fff;-webkit-text-stroke:2px #000;text-shadow:3px 3px 0 var(--hw-red);margin:0 0 12px;
-    }
-    .start-box p,.round-box p{
-      font-family:'Nunito',sans-serif;font-weight:900;color:#fff;
-      font-size:clamp(.95rem,3.5vw,1.2rem);text-shadow:2px 2px 0 #000;margin:6px 0;
-    }
+    .start-box,.round-box{background:linear-gradient(180deg,#ffcc00,#ff6b00);border:6px solid #fff;border-radius:28px;padding:24px 36px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.5);max-width:92vw}
+    .start-box h2,.round-box h2{font-family:'Bangers',sans-serif;font-size:clamp(1.8rem,7vw,3rem);color:#fff;-webkit-text-stroke:2px #000;text-shadow:3px 3px 0 var(--hw-red);margin:0 0 12px}
+    .start-box p,.round-box p{font-family:'Nunito',sans-serif;font-weight:900;color:#fff;font-size:clamp(.95rem,3.5vw,1.2rem);text-shadow:2px 2px 0 #000;margin:6px 0}
     .duck-key{display:inline-flex;gap:4px;align-items:center;margin:0 8px}
     .duck-emoji{font-size:1.4em;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))}
   </style>
@@ -87,8 +72,8 @@
         <span class="duck-key"><span class="duck-emoji" style="filter:hue-rotate(30deg) saturate(2)">🦆</span> = 3</span>
         <span class="duck-key"><span class="duck-emoji" style="filter:hue-rotate(-50deg) saturate(2) brightness(1.2)">🦆</span> = 5</span>
       </p>
-      <p>📱 Тапай по утке — выстрел!</p>
-      <p>🔫 2 патрона → нажми <b>R</b> или жди перезарядки</p>
+      <p>📱 Веди пальцем — ствол целится</p>
+      <p>🔫 Тап = выстрел!  R = перезарядка</p>
       <p>🏆 Рекорд: <span id="recordEl">0</span></p>
       <button class="win-btn" onclick="startGame()">🎯 НАЧАТЬ ОХОТУ</button>
     </div>
@@ -121,7 +106,6 @@
     const W = canvas.width, H = canvas.height;
     const GROUND_Y = H * 0.78;
 
-    // UI elements
     const roundEl = document.getElementById('round');
     const scoreEl = document.getElementById('score');
     const hitEl = document.getElementById('hit');
@@ -134,24 +118,16 @@
     const winModal = document.getElementById('winModal');
 
     // State
-    let round = 1;
-    let score = 0;
-    let ammo = 2;
-    let reloading = false;
-    let ducksLeft = 10;
-    let ducksHit = 0;
-    let ducksGone = 0;
-    let ducksTotalThisRound = 10;
-    let phase = 'menu'; // menu, playing, roundEnd, gameOver
-    let ducks = [];
-    let particles = [];
-    let flash = null; // {x,y,age}
-    let bearMood = 'neutral'; // neutral, cheer, laugh
-    let bearMoodUntil = 0;
-    let lastSpawn = 0;
-    let spawnInterval = 1800;
-    let cloudOffset = 0;
-    let totalScore = 0;
+    let round = 1, score = 0, ammo = 2, reloading = false;
+    let ducksLeft = 10, ducksHit = 0, ducksGone = 0, ducksTotalThisRound = 10;
+    let phase = 'menu';
+    let ducks = [], particles = [], smoke = [];
+    let flash = null, recoil = 0, screenShake = 0;
+    let aim = { x: W/2, y: H/2 };
+    let aimSmooth = { x: W/2, y: H/2 };
+    let activeBarrel = 0; // какой ствол стрелял (0/1)
+    let lastSpawn = 0, spawnInterval = 1800, cloudOffset = 0;
+    let bearMood = 'neutral', bearMoodUntil = 0;
 
     let best = parseInt(localStorage.getItem('bear_hunt_best') || '0', 10);
     document.getElementById('recordEl').textContent = best;
@@ -159,17 +135,15 @@
     /* ========== Утки ========== */
     function spawnDuck() {
       const dirRight = Math.random() < 0.5;
-      // Тип утки
       const r = Math.random();
       let type, color, points, speed;
       if (r < 0.65) { type='regular'; color='#5d3a1a'; points=1; speed=2.0; }
       else if (r < 0.92) { type='bronze'; color='#cd7f32'; points=3; speed=2.6; }
       else { type='gold'; color='#ffcc00'; points=5; speed=3.4; }
-
       const baseSpeed = (1 + (round-1) * 0.18);
       ducks.push({
         x: dirRight ? -50 : W + 50,
-        y: 80 + Math.random() * (GROUND_Y - 200),
+        y: 60 + Math.random() * (GROUND_Y - 220),
         vx: (dirRight ? 1 : -1) * speed * baseSpeed,
         vy: 0,
         amp: 30 + Math.random() * 50,
@@ -178,10 +152,7 @@
         wing: 0,
         type, color, points,
         size: type === 'gold' ? 28 : 26,
-        alive: true,
-        falling: false,
-        gone: false,
-        spawnTime: performance.now(),
+        alive: true, falling: false,
       });
     }
 
@@ -192,7 +163,7 @@
       const dt = Math.min(50, now - lastFrame);
       lastFrame = now;
 
-      // Спавн уток
+      // Спавн
       if (phase === 'playing' && ducks.length < (1 + Math.floor(round/3)) && ducksLeft > 0) {
         if (now - lastSpawn > spawnInterval) {
           spawnDuck();
@@ -201,8 +172,15 @@
           spawnInterval = Math.max(800, 1800 - round * 60);
         }
       }
-
       cloudOffset = (cloudOffset + 0.2) % W;
+
+      // Сглаживание прицела
+      aimSmooth.x += (aim.x - aimSmooth.x) * 0.25;
+      aimSmooth.y += (aim.y - aimSmooth.y) * 0.25;
+
+      // Отдача затухает
+      recoil *= 0.85;
+      screenShake *= 0.85;
 
       // Update ducks
       for (let i = ducks.length - 1; i >= 0; i--) {
@@ -211,18 +189,14 @@
           d.vy += 0.4;
           d.y += d.vy;
           d.x += d.vx * 0.3;
-          if (d.y > GROUND_Y - 10) {
-            ducks.splice(i, 1);
-          }
+          if (d.y > GROUND_Y - 10) ducks.splice(i, 1);
         } else if (d.alive) {
           d.x += d.vx;
           d.y += Math.sin(d.x * d.freq + d.phase) * 0.6;
           d.wing += 0.25;
-          // Ушла
           if (d.x < -80 || d.x > W + 80) {
             ducks.splice(i, 1);
             ducksGone++;
-            // Медведь смеётся
             bearMood = 'laugh';
             bearMoodUntil = now + 1200;
             playLaugh();
@@ -237,20 +211,18 @@
         p.life--;
         if (p.life <= 0) particles.splice(i, 1);
       }
-
-      // Update flash
-      if (flash) {
-        flash.age++;
-        if (flash.age > 5) flash = null;
+      // Update smoke
+      for (let i = smoke.length - 1; i >= 0; i--) {
+        const s = smoke[i];
+        s.x += s.vx; s.y += s.vy;
+        s.size += 0.4;
+        s.life--;
+        if (s.life <= 0) smoke.splice(i, 1);
       }
-
-      // Mood timeout
+      if (flash) { flash.age++; if (flash.age > 4) flash = null; }
       if (now > bearMoodUntil) bearMood = 'neutral';
 
-      // Проверка конца раунда
-      if (phase === 'playing' && ducksLeft === 0 && ducks.length === 0) {
-        endRound();
-      }
+      if (phase === 'playing' && ducksLeft === 0 && ducks.length === 0) endRound();
 
       draw(now);
       requestAnimationFrame(loop);
@@ -258,7 +230,15 @@
 
     /* ========== Отрисовка ========== */
     function draw(now) {
-      // Небо градиент
+      ctx.save();
+      // Камера-shake
+      if (screenShake > 0.01) {
+        const sx = (Math.random() - 0.5) * screenShake * 12;
+        const sy = (Math.random() - 0.5) * screenShake * 12;
+        ctx.translate(sx, sy);
+      }
+
+      // Небо
       const sky = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
       sky.addColorStop(0, '#5db8ff');
       sky.addColorStop(0.6, '#a3d9ff');
@@ -274,7 +254,7 @@
         cloud(cx, cy, 28 + (i % 3) * 8);
       }
 
-      // Лес на горизонте
+      // Лес
       ctx.fillStyle = '#1f4d1f';
       for (let x = 0; x < W; x += 24) {
         const h = 50 + Math.sin(x * 0.05) * 12 + (x * 0.013 % 1) * 18;
@@ -284,7 +264,6 @@
         ctx.lineTo(x + 24, GROUND_Y);
         ctx.fill();
       }
-      // Дальний лес
       ctx.fillStyle = '#2d6b2d';
       for (let x = 0; x < W; x += 30) {
         const h = 30 + Math.sin(x * 0.07 + 2) * 8;
@@ -299,8 +278,6 @@
       grass.addColorStop(1, '#2d5022');
       ctx.fillStyle = grass;
       ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
-
-      // Кусты
       ctx.fillStyle = '#1f5e1f';
       [80, 220, 360, 510, 580].forEach(x => {
         ctx.beginPath();
@@ -311,7 +288,7 @@
       // Утки
       ducks.forEach(d => drawDuck(d));
 
-      // Частицы (перья)
+      // Частицы перья / дробь
       particles.forEach(p => {
         ctx.fillStyle = p.color;
         ctx.globalAlpha = Math.min(1, p.life / 40);
@@ -321,21 +298,26 @@
       });
       ctx.globalAlpha = 1;
 
-      // Вспышка
-      if (flash) {
-        const a = (5 - flash.age) / 5;
-        const grad = ctx.createRadialGradient(flash.x, flash.y, 0, flash.x, flash.y, 80);
-        grad.addColorStop(0, `rgba(255,220,100,${a})`);
-        grad.addColorStop(0.5, `rgba(255,107,0,${a * 0.7})`);
-        grad.addColorStop(1, 'rgba(255,107,0,0)');
-        ctx.fillStyle = grad;
+      // Дым
+      smoke.forEach(s => {
+        ctx.globalAlpha = Math.min(0.5, s.life / 60);
+        ctx.fillStyle = '#aaa';
         ctx.beginPath();
-        ctx.arc(flash.x, flash.y, 80, 0, Math.PI * 2);
+        ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
         ctx.fill();
-      }
+      });
+      ctx.globalAlpha = 1;
 
-      // Мишка-охотник
-      drawBear(now);
+      ctx.restore();
+
+      // === ОТ ПЕРВОГО ЛИЦА: руки мишки + двустволка ===
+      drawFirstPerson(now);
+
+      // Прицел поверх всего
+      drawCrosshair(aimSmooth.x, aimSmooth.y);
+
+      // Вспышка из ствола (последний слой)
+      if (flash) drawMuzzleFlash();
     }
 
     function cloud(x, y, r) {
@@ -353,247 +335,361 @@
       const facingLeft = d.vx < 0;
       if (facingLeft) ctx.scale(-1, 1);
       const s = d.size;
-      // Тень
-      if (!d.falling) {
-        ctx.fillStyle = 'rgba(0,0,0,0.15)';
-        ctx.beginPath();
-        ctx.ellipse(0, GROUND_Y - d.y - 5, s * 0.6, s * 0.15, 0, 0, Math.PI * 2);
-        ctx.fill();
-      }
       if (d.falling) {
-        // X-glint
         ctx.fillStyle = '#fff';
         ctx.font = 'bold 16px sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('💥', 0, -s * 0.5);
       }
-      // Тело
       ctx.fillStyle = d.color;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, s, s * 0.65, 0, 0, Math.PI * 2);
-      ctx.fill();
-      // Грудь светлее
+      ctx.beginPath(); ctx.ellipse(0, 0, s, s * 0.65, 0, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = d.type === 'gold' ? '#fff59d' : (d.type === 'bronze' ? '#f4c980' : '#a0826d');
-      ctx.beginPath();
-      ctx.ellipse(s * 0.3, s * 0.15, s * 0.55, s * 0.35, 0, 0, Math.PI * 2);
-      ctx.fill();
-      // Голова
+      ctx.beginPath(); ctx.ellipse(s * 0.3, s * 0.15, s * 0.55, s * 0.35, 0, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = d.type === 'gold' ? '#fff176' : (d.type === 'bronze' ? '#cd7f32' : '#2d5a2a');
-      ctx.beginPath();
-      ctx.arc(s * 0.7, -s * 0.3, s * 0.45, 0, Math.PI * 2);
-      ctx.fill();
-      // Глаз
+      ctx.beginPath(); ctx.arc(s * 0.7, -s * 0.3, s * 0.45, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#fff';
-      ctx.beginPath();
-      ctx.arc(s * 0.85, -s * 0.4, s * 0.12, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.beginPath(); ctx.arc(s * 0.85, -s * 0.4, s * 0.12, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#000';
-      ctx.beginPath();
-      ctx.arc(s * 0.88, -s * 0.4, s * 0.06, 0, Math.PI * 2);
-      ctx.fill();
-      // Клюв
+      ctx.beginPath(); ctx.arc(s * 0.88, -s * 0.4, s * 0.06, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#ff8c00';
-      ctx.beginPath();
-      ctx.moveTo(s * 1.0, -s * 0.3);
-      ctx.lineTo(s * 1.4, -s * 0.25);
-      ctx.lineTo(s * 1.0, -s * 0.15);
-      ctx.fill();
-      // Крыло (анимированное)
+      ctx.beginPath(); ctx.moveTo(s * 1.0, -s * 0.3); ctx.lineTo(s * 1.4, -s * 0.25); ctx.lineTo(s * 1.0, -s * 0.15); ctx.fill();
       const wingY = Math.sin(d.wing) * s * 0.3;
       ctx.fillStyle = d.type === 'gold' ? '#ffa726' : (d.type === 'bronze' ? '#8b5a2b' : '#3d2817');
-      ctx.beginPath();
-      ctx.ellipse(-s * 0.2, -s * 0.2 + wingY, s * 0.7, s * 0.3, -0.3, 0, Math.PI * 2);
-      ctx.fill();
-      // Хвост
+      ctx.beginPath(); ctx.ellipse(-s * 0.2, -s * 0.2 + wingY, s * 0.7, s * 0.3, -0.3, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = d.color;
-      ctx.beginPath();
-      ctx.moveTo(-s * 0.9, 0);
-      ctx.lineTo(-s * 1.3, -s * 0.2);
-      ctx.lineTo(-s * 1.3, s * 0.2);
-      ctx.fill();
+      ctx.beginPath(); ctx.moveTo(-s * 0.9, 0); ctx.lineTo(-s * 1.3, -s * 0.2); ctx.lineTo(-s * 1.3, s * 0.2); ctx.fill();
       ctx.restore();
     }
 
-    function drawBear(now) {
-      const bx = 50, by = GROUND_Y + 30;
+    /* ========== ОТ ПЕРВОГО ЛИЦА — двустволка с лапами мишки ========== */
+    function drawFirstPerson(now) {
+      // Опорная точка ружья — по центру нижней части экрана
+      const baseX = W / 2;
+      const baseY = H + 80 + recoil * 40; // отдача — приклад уходит вниз и обратно
+      // Угол к прицелу
+      const dx = aimSmooth.x - baseX;
+      const dy = aimSmooth.y - baseY;
+      const angle = Math.atan2(dy, dx);
+
       ctx.save();
-      ctx.translate(bx, by);
-      // Тело
-      ctx.fillStyle = '#8B4513';
-      ctx.beginPath();
-      ctx.ellipse(0, 30, 28, 32, 0, 0, Math.PI * 2);
-      ctx.fill();
-      // Уши
-      ctx.beginPath();
-      ctx.arc(-22, -5, 9, 0, Math.PI * 2);
-      ctx.arc(22, -5, 9, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#D2691E';
-      ctx.beginPath();
-      ctx.arc(-22, -5, 5, 0, Math.PI * 2);
-      ctx.arc(22, -5, 5, 0, Math.PI * 2);
-      ctx.fill();
-      // Голова
-      ctx.fillStyle = '#A0522D';
-      ctx.beginPath();
-      ctx.arc(0, 0, 25, 0, Math.PI * 2);
-      ctx.fill();
-      // Морда
-      ctx.fillStyle = '#F4D8A8';
-      ctx.beginPath();
-      ctx.ellipse(0, 8, 12, 9, 0, 0, Math.PI * 2);
-      ctx.fill();
-      // Нос
-      ctx.fillStyle = '#2b1810';
-      ctx.beginPath();
-      ctx.ellipse(0, 5, 3, 2, 0, 0, Math.PI * 2);
-      ctx.fill();
-      // Глаза в зависимости от настроения
-      ctx.fillStyle = '#fff';
-      const eyeY = bearMood === 'cheer' ? -5 : -3;
-      ctx.beginPath();
-      ctx.arc(-7, eyeY, 3, 0, Math.PI * 2);
-      ctx.arc(7, eyeY, 3, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.translate(baseX, baseY);
+      ctx.rotate(angle);
+
+      // === Тень за ружьём ===
+      ctx.fillStyle = 'rgba(0,0,0,0.25)';
+      ctx.fillRect(-20, -45, 320, 90);
+
+      // === Двустволка ===
+      const barrelLen = 280;
+      const barrelW = 18;
+
+      // Стволы (двойные)
+      // Верхний ствол
+      const barrelGrad = ctx.createLinearGradient(0, -22, 0, -4);
+      barrelGrad.addColorStop(0, '#444');
+      barrelGrad.addColorStop(0.3, '#1a1a1a');
+      barrelGrad.addColorStop(1, '#2a2a2a');
+      ctx.fillStyle = barrelGrad;
+      ctx.fillRect(0, -22, barrelLen, barrelW);
+      // Нижний ствол
+      const barrelGrad2 = ctx.createLinearGradient(0, 4, 0, 22);
+      barrelGrad2.addColorStop(0, '#2a2a2a');
+      barrelGrad2.addColorStop(0.7, '#1a1a1a');
+      barrelGrad2.addColorStop(1, '#444');
+      ctx.fillStyle = barrelGrad2;
+      ctx.fillRect(0, 4, barrelLen, barrelW);
+
+      // Соединительная планка между стволами
+      ctx.fillStyle = '#3a3a3a';
+      ctx.fillRect(0, -3, barrelLen, 7);
+
+      // Кончики стволов (отверстия)
       ctx.fillStyle = '#000';
-      if (bearMood === 'cheer') {
-        // Закрытые глаза от радости
-        ctx.lineWidth = 1.5;
-        ctx.strokeStyle = '#000';
-        ctx.beginPath();
-        ctx.arc(-7, -3, 3, 0, Math.PI);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(7, -3, 3, 0, Math.PI);
-        ctx.stroke();
-      } else {
-        ctx.beginPath();
-        ctx.arc(-7, eyeY, 1.5, 0, Math.PI * 2);
-        ctx.arc(7, eyeY, 1.5, 0, Math.PI * 2);
-        ctx.fill();
+      ctx.beginPath(); ctx.arc(barrelLen, -13, 7, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(barrelLen, 13, 7, 0, Math.PI * 2); ctx.fill();
+      // Блик на кончиках
+      ctx.fillStyle = '#666';
+      ctx.beginPath(); ctx.arc(barrelLen - 1, -14, 2, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(barrelLen - 1, 14, 2, 0, Math.PI * 2); ctx.fill();
+
+      // Мушка на конце
+      ctx.fillStyle = '#ff6b00';
+      ctx.beginPath();
+      ctx.moveTo(barrelLen - 5, -28);
+      ctx.lineTo(barrelLen + 2, -28);
+      ctx.lineTo(barrelLen - 1, -32);
+      ctx.fill();
+
+      // === Цевьё (деревянное) ===
+      ctx.fillStyle = '#8B4513';
+      ctx.fillRect(-15, -25, 90, 50);
+      // Текстура дерева
+      ctx.strokeStyle = 'rgba(60,30,10,0.4)';
+      ctx.lineWidth = 1;
+      for (let i = -15; i < 75; i += 4) {
+        ctx.beginPath(); ctx.moveTo(i, -25); ctx.lineTo(i + 2, 25); ctx.stroke();
       }
-      // Рот в зависимости от настроения
-      ctx.strokeStyle = '#2b1810';
+      // Скоба для пальцев
+      ctx.strokeStyle = '#3a2410';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(-30, 28, 18, -Math.PI/4, Math.PI/2, false);
+      ctx.stroke();
+
+      // === Приклад ===
+      ctx.fillStyle = '#5d3a1a';
+      ctx.beginPath();
+      ctx.moveTo(-15, -25);
+      ctx.lineTo(-90, -15);
+      ctx.lineTo(-90, 30);
+      ctx.lineTo(-15, 25);
+      ctx.fill();
+      // Тёмная обводка приклада
+      ctx.strokeStyle = '#2a1408';
       ctx.lineWidth = 2;
       ctx.beginPath();
-      if (bearMood === 'laugh') {
-        // Открытый смеющийся рот
-        ctx.fillStyle = '#ff4d6d';
-        ctx.beginPath();
-        ctx.ellipse(0, 13, 5, 3, 0, 0, Math.PI * 2);
-        ctx.fill();
-        // Текст "ХА-ХА!"
-        ctx.fillStyle = '#fff';
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 3;
-        ctx.font = 'bold 18px Bangers, sans-serif';
-        ctx.textAlign = 'left';
-        ctx.strokeText('ХА-ХА!', 35, -10);
-        ctx.fillText('ХА-ХА!', 35, -10);
-      } else if (bearMood === 'cheer') {
-        ctx.beginPath();
-        ctx.arc(0, 12, 5, 0, Math.PI);
-        ctx.stroke();
-      } else {
-        ctx.beginPath();
-        ctx.moveTo(-3, 13);
-        ctx.lineTo(3, 13);
-        ctx.stroke();
-      }
+      ctx.moveTo(-15, -25);
+      ctx.lineTo(-90, -15);
+      ctx.lineTo(-90, 30);
+      ctx.lineTo(-15, 25);
+      ctx.stroke();
 
-      // Шапка-ушанка с красным верхом
-      ctx.fillStyle = '#e11d48';
-      ctx.beginPath();
-      ctx.arc(0, -18, 22, Math.PI, 0);
-      ctx.fill();
+      // === Лапы мишки ===
+      // Правая лапа держит цевьё (на стволах)
       ctx.fillStyle = '#8B4513';
-      ctx.fillRect(-22, -22, 44, 6);
+      ctx.beginPath();
+      ctx.ellipse(40, 25, 30, 22, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#A0522D';
+      ctx.beginPath();
+      ctx.ellipse(40, 30, 28, 18, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // Когти
+      ctx.fillStyle = '#2b1810';
+      [25, 35, 45, 55].forEach(cx => {
+        ctx.beginPath();
+        ctx.arc(cx, 12, 2, 0, Math.PI * 2);
+        ctx.fill();
+      });
 
-      // Двустволка справа от мишки
-      ctx.translate(35, 25);
-      ctx.rotate(-0.4);
-      // Приклад
-      ctx.fillStyle = '#5d3a1a';
-      ctx.fillRect(0, 0, 22, 16);
-      ctx.fillStyle = '#3a2410';
-      ctx.fillRect(0, 0, 22, 4);
-      // Стволы (двойные)
-      ctx.fillStyle = '#1a1a1a';
-      ctx.fillRect(22, 2, 60, 5);
-      ctx.fillRect(22, 9, 60, 5);
-      // Кончики стволов
-      ctx.fillStyle = '#444';
-      ctx.fillRect(78, 1, 4, 14);
+      // Левая лапа на спусковом крючке
+      ctx.fillStyle = '#8B4513';
+      ctx.beginPath();
+      ctx.ellipse(-25, 30, 26, 20, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#A0522D';
+      ctx.beginPath();
+      ctx.ellipse(-25, 35, 24, 16, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // Палец на крючке
+      ctx.fillStyle = '#A0522D';
+      ctx.beginPath();
+      ctx.ellipse(-15, 38, 8, 6, 0.3, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+
+      // === Уголок мишки внизу-слева для настроения ===
+      drawBearMood(now);
+    }
+
+    function drawBearMood(now) {
+      // Маленькая морда мишки в углу — реагирует на события
+      const bx = 40, by = H - 30;
+      ctx.save();
+      ctx.translate(bx, by);
+      // Кружок-морда
+      ctx.fillStyle = '#A0522D';
+      ctx.beginPath(); ctx.arc(0, 0, 22, 0, Math.PI * 2); ctx.fill();
+      // Уши
+      ctx.fillStyle = '#8B4513';
+      ctx.beginPath(); ctx.arc(-18, -16, 8, 0, Math.PI * 2); ctx.arc(18, -16, 8, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#D2691E';
+      ctx.beginPath(); ctx.arc(-18, -16, 4, 0, Math.PI * 2); ctx.arc(18, -16, 4, 0, Math.PI * 2); ctx.fill();
+      // Шапка-ушанка
+      ctx.fillStyle = '#e11d48';
+      ctx.beginPath(); ctx.arc(0, -15, 18, Math.PI, 0); ctx.fill();
+      ctx.fillStyle = '#8B4513';
+      ctx.fillRect(-18, -18, 36, 5);
+      // Морда
+      ctx.fillStyle = '#F4D8A8';
+      ctx.beginPath(); ctx.ellipse(0, 6, 11, 8, 0, 0, Math.PI * 2); ctx.fill();
+      // Глаза
+      const eyeY = bearMood === 'cheer' ? -3 : -2;
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.arc(-7, eyeY, 3, 0, Math.PI * 2); ctx.arc(7, eyeY, 3, 0, Math.PI * 2); ctx.fill();
+      if (bearMood === 'cheer') {
+        ctx.strokeStyle = '#000'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(-7, -2, 3, 0, Math.PI); ctx.stroke();
+        ctx.beginPath(); ctx.arc(7, -2, 3, 0, Math.PI); ctx.stroke();
+      } else {
+        ctx.fillStyle = '#000';
+        ctx.beginPath(); ctx.arc(-7, eyeY, 1.5, 0, Math.PI * 2); ctx.arc(7, eyeY, 1.5, 0, Math.PI * 2); ctx.fill();
+      }
+      // Нос
+      ctx.fillStyle = '#2b1810';
+      ctx.beginPath(); ctx.ellipse(0, 3, 2.5, 1.5, 0, 0, Math.PI * 2); ctx.fill();
+      // Рот
+      ctx.strokeStyle = '#2b1810'; ctx.lineWidth = 1.5;
+      if (bearMood === 'laugh') {
+        ctx.fillStyle = '#ff4d6d';
+        ctx.beginPath(); ctx.ellipse(0, 11, 4, 2, 0, 0, Math.PI * 2); ctx.fill();
+        // ХА-ХА
+        ctx.fillStyle = '#fff'; ctx.strokeStyle = '#000'; ctx.lineWidth = 3;
+        ctx.font = 'bold 16px Bangers, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.strokeText('ХА-ХА!', 28, -8); ctx.fillText('ХА-ХА!', 28, -8);
+      } else if (bearMood === 'cheer') {
+        ctx.beginPath(); ctx.arc(0, 10, 4, 0, Math.PI); ctx.stroke();
+      } else {
+        ctx.beginPath(); ctx.moveTo(-3, 11); ctx.lineTo(3, 11); ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawCrosshair(x, y) {
+      // Прицел: круг + крест
+      const r = 22;
+      // Проверка наведения на утку
+      let onDuck = ducks.some(d => d.alive && !d.falling && Math.hypot(d.x - x, d.y - y) < d.size * 1.5);
+      ctx.strokeStyle = onDuck ? '#ff003c' : '#fff';
+      ctx.lineWidth = 3;
+      ctx.shadowColor = '#000';
+      ctx.shadowBlur = 4;
+      // Внешний круг
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.stroke();
+      // Внутренний круг
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(x, y, r * 0.4, 0, Math.PI * 2); ctx.stroke();
+      // Крест
+      ctx.beginPath();
+      ctx.moveTo(x - r - 6, y); ctx.lineTo(x - r * 0.5, y);
+      ctx.moveTo(x + r * 0.5, y); ctx.lineTo(x + r + 6, y);
+      ctx.moveTo(x, y - r - 6); ctx.lineTo(x, y - r * 0.5);
+      ctx.moveTo(x, y + r * 0.5); ctx.lineTo(x, y + r + 6);
+      ctx.stroke();
+      // Точка в центре
+      ctx.fillStyle = onDuck ? '#ff003c' : '#fff';
+      ctx.beginPath(); ctx.arc(x, y, 2, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+
+    function drawMuzzleFlash() {
+      // Вспышка на конце ствола
+      const baseX = W / 2;
+      const baseY = H + 80 + recoil * 40;
+      const dx = aimSmooth.x - baseX;
+      const dy = aimSmooth.y - baseY;
+      const angle = Math.atan2(dy, dx);
+      const barrelLen = 280;
+      // Координаты конца ствола
+      const tipX = baseX + Math.cos(angle) * barrelLen;
+      const tipY = baseY + Math.sin(angle) * barrelLen;
+      // Смещение перпендикулярно для верхнего/нижнего ствола
+      const perpX = Math.cos(angle + Math.PI/2);
+      const perpY = Math.sin(angle + Math.PI/2);
+      const offset = activeBarrel === 0 ? -13 : 13;
+      const flashX = tipX + perpX * offset;
+      const flashY = tipY + perpY * offset;
+
+      const a = (4 - flash.age) / 4;
+      // Большая вспышка
+      const grad = ctx.createRadialGradient(flashX, flashY, 0, flashX, flashY, 60);
+      grad.addColorStop(0, `rgba(255,255,180,${a})`);
+      grad.addColorStop(0.3, `rgba(255,200,80,${a * 0.9})`);
+      grad.addColorStop(0.7, `rgba(255,107,0,${a * 0.5})`);
+      grad.addColorStop(1, 'rgba(255,107,0,0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(flashX, flashY, 60, 0, Math.PI * 2);
+      ctx.fill();
+      // "Лучи" вспышки
+      ctx.save();
+      ctx.translate(flashX, flashY);
+      ctx.rotate(angle);
+      ctx.fillStyle = `rgba(255,220,100,${a})`;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(50, -20);
+      ctx.lineTo(80, 0);
+      ctx.lineTo(50, 20);
+      ctx.closePath();
+      ctx.fill();
       ctx.restore();
     }
 
     /* ========== Выстрел ========== */
     function shoot(clickX, clickY) {
       if (phase !== 'playing') return;
-      if (ammo <= 0 || reloading) {
-        playClick();
-        return;
-      }
+      if (ammo <= 0 || reloading) { playClick(); return; }
+      // Прицел перепрыгивает в точку выстрела (для тача)
+      aim.x = clickX; aim.y = clickY;
       ammo--;
+      activeBarrel = ammo === 1 ? 0 : 1; // первым стреляем правый, потом левый
       updateAmmo();
       flash = { x: clickX, y: clickY, age: 0 };
-      playBang();
+      recoil = 1;
+      screenShake = 1;
+      playRealisticBang();
 
-      // Проверяем попадания (радиус дроби)
+      // Дым из ствола
+      const baseX = W / 2;
+      const baseY = H + 80;
+      const dx = clickX - baseX, dy = clickY - baseY;
+      const len = Math.hypot(dx, dy);
+      const dirX = dx / len, dirY = dy / len;
+      const tipX = baseX + dirX * 280;
+      const tipY = baseY + dirY * 280;
+      for (let k = 0; k < 14; k++) {
+        smoke.push({
+          x: tipX + (Math.random() - 0.5) * 20,
+          y: tipY + (Math.random() - 0.5) * 20,
+          vx: dirX * (1 + Math.random() * 2) + (Math.random() - 0.5) * 1,
+          vy: dirY * (1 + Math.random() * 2) - 0.5,
+          size: 5 + Math.random() * 5,
+          life: 50 + Math.random() * 30,
+        });
+      }
+
+      // Проверяем попадания
       let anyHit = false;
       ducks.forEach(d => {
         if (!d.alive || d.falling) return;
-        const dx = d.x - clickX, dy = d.y - clickY;
-        const dist = Math.sqrt(dx*dx + dy*dy);
+        const dist = Math.hypot(d.x - clickX, d.y - clickY);
         if (dist < d.size * 1.5 + 10) {
-          // Попадание!
-          d.alive = false;
-          d.falling = true;
-          d.vy = -2;
-          d.vx *= 0.4;
-          score += d.points;
-          ducksHit++;
-          anyHit = true;
+          d.alive = false; d.falling = true;
+          d.vy = -2; d.vx *= 0.4;
+          score += d.points; ducksHit++; anyHit = true;
           updateHUD();
-          // Перья
-          for (let k = 0; k < 12; k++) {
+          for (let k = 0; k < 14; k++) {
             particles.push({
               x: d.x, y: d.y,
               vx: (Math.random() - 0.5) * 6,
               vy: (Math.random() - 0.5) * 6 - 1,
               size: 3 + Math.random() * 2,
               color: d.color,
-              life: 50,
-              g: 0.1,
+              life: 50, g: 0.1,
             });
           }
-          // Медведь радуется
           bearMood = 'cheer';
           bearMoodUntil = performance.now() + 1500;
           playHit();
         }
       });
 
-      // Дробь — частицы дробин по радиусу
+      // Дробинки
       for (let k = 0; k < 8; k++) {
         const a = Math.random() * Math.PI * 2;
         particles.push({
           x: clickX, y: clickY,
           vx: Math.cos(a) * (3 + Math.random() * 3),
           vy: Math.sin(a) * (3 + Math.random() * 3),
-          size: 1.5,
-          color: '#444',
-          life: 15,
-          g: 0.3,
+          size: 1.5, color: '#444',
+          life: 15, g: 0.3,
         });
       }
-
       if (!anyHit) playMiss();
-
-      // Авто-перезарядка через 1.5с
-      if (ammo === 0) {
-        setTimeout(() => reload(), 1500);
-      }
+      if (ammo === 0) setTimeout(() => reload(), 1500);
     }
 
     function reload() {
@@ -602,8 +698,7 @@
       reloadPill.style.display = 'inline-block';
       playReload();
       setTimeout(() => {
-        ammo = 2;
-        reloading = false;
+        ammo = 2; reloading = false;
         reloadPill.style.display = 'none';
         updateAmmo();
       }, 1400);
@@ -613,40 +708,26 @@
       shell1.classList.toggle('empty', ammo < 1);
       shell2.classList.toggle('empty', ammo < 2);
     }
-
     function updateHUD() {
-      roundEl.textContent = round;
-      scoreEl.textContent = score;
-      hitEl.textContent = ducksHit;
-      totalEl.textContent = ducksTotalThisRound;
+      roundEl.textContent = round; scoreEl.textContent = score;
+      hitEl.textContent = ducksHit; totalEl.textContent = ducksTotalThisRound;
     }
 
     /* ========== Раунды ========== */
     function startGame() {
-      round = 1;
-      score = 0;
-      totalScore = 0;
-      ducksHit = 0;
-      ducksGone = 0;
-      ducksLeft = 10;
-      ducksTotalThisRound = 10;
-      ammo = 2;
-      reloading = false;
-      ducks = [];
-      particles = [];
-      flash = null;
+      round = 1; score = 0;
+      ducksHit = 0; ducksGone = 0; ducksLeft = 10; ducksTotalThisRound = 10;
+      ammo = 2; reloading = false;
+      ducks = []; particles = []; smoke = []; flash = null;
       phase = 'playing';
-      lastSpawn = 0;
-      spawnInterval = 1800;
+      lastSpawn = 0; spawnInterval = 1800;
       startOverlay.classList.add('hide');
       winModal.classList.remove('show');
       roundOverlay.classList.add('hide');
-      updateAmmo();
-      updateHUD();
+      updateAmmo(); updateHUD();
       lastFrame = performance.now();
       requestAnimationFrame(loop);
     }
-
     function endRound() {
       phase = 'roundEnd';
       const passed = ducksHit >= 6;
@@ -656,9 +737,8 @@
       const bonus = document.getElementById('roundBonus');
       if (perfect) {
         title.textContent = '🌟 ИДЕАЛЬНО!';
-        const b = 50;
-        score += b;
-        bonus.textContent = `+${b} бонус за всех уток!`;
+        score += 50;
+        bonus.textContent = `+50 бонус за всех уток!`;
         playWinFanfare();
       } else if (passed) {
         title.textContent = '🎉 РАУНД ПРОЙДЕН!';
@@ -673,25 +753,17 @@
       stat.textContent = `Сбил ${ducksHit} из 10. Очки: ${score}`;
       setTimeout(() => roundOverlay.classList.remove('hide'), 600);
     }
-
     function nextRound() {
       round++;
-      ducksHit = 0;
-      ducksGone = 0;
-      ducksLeft = 10;
-      ducksTotalThisRound = 10;
+      ducksHit = 0; ducksGone = 0; ducksLeft = 10; ducksTotalThisRound = 10;
       phase = 'playing';
-      ducks = [];
-      particles = [];
-      ammo = 2;
-      reloading = false;
+      ducks = []; particles = [];
+      ammo = 2; reloading = false;
       reloadPill.style.display = 'none';
       roundOverlay.classList.add('hide');
-      updateAmmo();
-      updateHUD();
+      updateAmmo(); updateHUD();
       lastSpawn = 0;
     }
-
     function gameOver() {
       phase = 'gameOver';
       if (score > best) {
@@ -708,72 +780,152 @@
       window.BearSound && BearSound.lose();
       setTimeout(() => winModal.classList.add('show'), 800);
     }
+    function restart() { winModal.classList.remove('show'); startGame(); }
 
-    function restart() {
-      winModal.classList.remove('show');
-      startGame();
-    }
-
-    /* ========== Звуки ========== */
-    function playBang() {
+    /* ========== РЕАЛИСТИЧНЫЙ ЗВУК РУЖЬЯ ========== */
+    function playRealisticBang() {
       if (!window.BearSound || !BearSound.sfxEnabled) return;
-      const ctx = BearSound._ctx();
-      // Белый шум
-      const buf = ctx.createBuffer(1, ctx.sampleRate * 0.25, ctx.sampleRate);
-      const data = buf.getChannelData(0);
-      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 1.5);
-      const src = ctx.createBufferSource();
-      src.buffer = buf;
-      const gain = ctx.createGain();
-      gain.gain.setValueAtTime(0.4, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
-      const filter = ctx.createBiquadFilter();
-      filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(2500, ctx.currentTime);
-      filter.frequency.exponentialRampToValueAtTime(150, ctx.currentTime + 0.25);
-      src.connect(filter).connect(gain).connect(ctx.destination);
-      src.start();
-      // Низкий "бум"
-      BearSound._tone(60, 0.18, 'sine', 0.35);
+      const audioCtx = BearSound._ctx();
+      const t = audioCtx.currentTime;
+
+      // 1. INITIAL CRACK — резкий хлопок (high-pass white noise)
+      const crackBuf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.04, audioCtx.sampleRate);
+      const crackData = crackBuf.getChannelData(0);
+      for (let i = 0; i < crackData.length; i++) {
+        crackData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / crackData.length, 0.3);
+      }
+      const crackSrc = audioCtx.createBufferSource();
+      crackSrc.buffer = crackBuf;
+      const crackHP = audioCtx.createBiquadFilter();
+      crackHP.type = 'highpass';
+      crackHP.frequency.value = 1500;
+      const crackGain = audioCtx.createGain();
+      crackGain.gain.setValueAtTime(0.8, t);
+      crackGain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+      crackSrc.connect(crackHP).connect(crackGain).connect(audioCtx.destination);
+      crackSrc.start(t);
+
+      // 2. BODY — основной грохот (brown noise + sweeping lowpass)
+      const bodyBuf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.35, audioCtx.sampleRate);
+      const bodyData = bodyBuf.getChannelData(0);
+      let last = 0;
+      for (let i = 0; i < bodyData.length; i++) {
+        const w = (Math.random() * 2 - 1) * 0.5;
+        last = (last + w) * 0.96;
+        bodyData[i] = last * Math.pow(1 - i / bodyData.length, 1.2) * 5;
+      }
+      const bodySrc = audioCtx.createBufferSource();
+      bodySrc.buffer = bodyBuf;
+      const bodyLP = audioCtx.createBiquadFilter();
+      bodyLP.type = 'lowpass';
+      bodyLP.frequency.setValueAtTime(1200, t);
+      bodyLP.frequency.exponentialRampToValueAtTime(80, t + 0.3);
+      const bodyGain = audioCtx.createGain();
+      bodyGain.gain.setValueAtTime(0.9, t);
+      bodyGain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+      bodySrc.connect(bodyLP).connect(bodyGain).connect(audioCtx.destination);
+      bodySrc.start(t);
+
+      // 3. SUB-BASS THUMP — низкий бум
+      const sub = audioCtx.createOscillator();
+      sub.type = 'sine';
+      sub.frequency.setValueAtTime(90, t);
+      sub.frequency.exponentialRampToValueAtTime(35, t + 0.2);
+      const subGain = audioCtx.createGain();
+      subGain.gain.setValueAtTime(0.6, t);
+      subGain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+      sub.connect(subGain).connect(audioCtx.destination);
+      sub.start(t);
+      sub.stop(t + 0.3);
+
+      // 4. ECHO — эхо от леса (через 250мс)
+      setTimeout(() => playGunEcho(), 250);
+      setTimeout(() => playGunEcho(0.5), 500);
     }
+    function playGunEcho(intensity = 1) {
+      const ctxA = BearSound._ctx();
+      const buf = ctxA.createBuffer(1, ctxA.sampleRate * 0.4, ctxA.sampleRate);
+      const data = buf.getChannelData(0);
+      let last = 0;
+      for (let i = 0; i < data.length; i++) {
+        const w = (Math.random() * 2 - 1) * 0.3;
+        last = (last + w) * 0.97;
+        data[i] = last * Math.pow(1 - i / data.length, 2);
+      }
+      const src = ctxA.createBufferSource();
+      src.buffer = buf;
+      const filt = ctxA.createBiquadFilter();
+      filt.type = 'lowpass';
+      filt.frequency.value = 350;
+      const gain = ctxA.createGain();
+      gain.gain.value = 0.18 * intensity;
+      src.connect(filt).connect(gain).connect(ctxA.destination);
+      src.start();
+    }
+
     function playReload() {
       if (!window.BearSound) return;
-      [0, 200, 700, 1100].forEach((d, i) => {
-        setTimeout(() => BearSound._tone(i % 2 ? 600 : 800, 0.05, 'square', 0.15), d);
+      // Звуки затвора
+      [0, 180, 700, 1050].forEach((d, i) => {
+        setTimeout(() => {
+          const ctxA = BearSound._ctx();
+          const buf = ctxA.createBuffer(1, ctxA.sampleRate * 0.05, ctxA.sampleRate);
+          const data = buf.getChannelData(0);
+          for (let j = 0; j < data.length; j++) data[j] = (Math.random() * 2 - 1) * Math.pow(1 - j / data.length, 0.5);
+          const src = ctxA.createBufferSource();
+          src.buffer = buf;
+          const filt = ctxA.createBiquadFilter();
+          filt.type = 'bandpass';
+          filt.frequency.value = i % 2 ? 1500 : 800;
+          const gain = ctxA.createGain();
+          gain.gain.value = 0.25;
+          src.connect(filt).connect(gain).connect(ctxA.destination);
+          src.start();
+        }, d);
       });
     }
-    function playHit() {
-      if (!window.BearSound) return;
-      [800, 1000, 1200].forEach((f, i) => setTimeout(() => BearSound._tone(f, 0.08, 'square', 0.18), i * 50));
-    }
-    function playMiss() {
-      if (!window.BearSound) return;
-      BearSound._tone(150, 0.1, 'sawtooth', 0.15);
-    }
-    function playLaugh() {
-      if (!window.BearSound) return;
-      [400, 350, 400, 350, 400].forEach((f, i) => setTimeout(() => BearSound._tone(f, 0.1, 'square', 0.12), i * 100));
-    }
-    function playClick() {
-      if (!window.BearSound) return;
-      BearSound._tone(200, 0.04, 'square', 0.08);
-    }
-    function playWinFanfare() {
-      if (!window.BearSound) return;
-      [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => setTimeout(() => BearSound._tone(f, 0.15, 'square', 0.22), i * 100));
-    }
+    function playHit() { if (window.BearSound) [800, 1000, 1200].forEach((f, i) => setTimeout(() => BearSound._tone(f, 0.08, 'square', 0.18), i * 50)); }
+    function playMiss() { if (window.BearSound) BearSound._tone(150, 0.1, 'sawtooth', 0.15); }
+    function playLaugh() { if (window.BearSound) [400, 350, 400, 350, 400].forEach((f, i) => setTimeout(() => BearSound._tone(f, 0.1, 'square', 0.12), i * 100)); }
+    function playClick() { if (window.BearSound) BearSound._tone(200, 0.04, 'square', 0.08); }
+    function playWinFanfare() { if (window.BearSound) [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => setTimeout(() => BearSound._tone(f, 0.15, 'square', 0.22), i * 100)); }
 
-    /* ========== Управление ========== */
-    function handleClick(e) {
-      e.preventDefault();
+    /* ========== Управление: прицел движется за пальцем/мышкой ========== */
+    function getCanvasPoint(clientX, clientY) {
       const rect = canvas.getBoundingClientRect();
-      const t = e.touches ? e.touches[0] : e;
-      const x = (t.clientX - rect.left) * (W / rect.width);
-      const y = (t.clientY - rect.top) * (H / rect.height);
-      shoot(x, y);
+      return {
+        x: (clientX - rect.left) * (W / rect.width),
+        y: (clientY - rect.top) * (H / rect.height),
+      };
     }
-    canvas.addEventListener('click', handleClick);
-    canvas.addEventListener('touchstart', handleClick, { passive: false });
+    canvas.addEventListener('mousemove', (e) => {
+      const p = getCanvasPoint(e.clientX, e.clientY);
+      aim.x = p.x; aim.y = p.y;
+    });
+    canvas.addEventListener('click', (e) => {
+      e.preventDefault();
+      const p = getCanvasPoint(e.clientX, e.clientY);
+      shoot(p.x, p.y);
+    });
+    // Touch — палец двигает прицел, отпускание = выстрел
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const t = e.touches[0];
+      const p = getCanvasPoint(t.clientX, t.clientY);
+      aim.x = p.x; aim.y = p.y;
+    }, { passive: false });
+    canvas.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      const t = e.touches[0];
+      const p = getCanvasPoint(t.clientX, t.clientY);
+      aim.x = p.x; aim.y = p.y;
+    }, { passive: false });
+    canvas.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      const t = e.changedTouches[0];
+      const p = getCanvasPoint(t.clientX, t.clientY);
+      shoot(p.x, p.y);
+    }, { passive: false });
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'r' || e.key === 'R' || e.code === 'KeyR') {
@@ -781,12 +933,10 @@
       }
       if (e.code === 'Space') {
         e.preventDefault();
-        // Пробел = выстрел в центр
-        if (phase === 'playing') shoot(W/2, H/2);
+        if (phase === 'playing') shoot(aimSmooth.x, aimSmooth.y);
       }
     });
 
-    /* ========== Звук кнопки ========== */
     function refreshSoundBtns(){const s=window.BearSound;if(!s)return;document.getElementById('sfxBtn').classList.toggle('off',!s.sfxEnabled);document.getElementById('sfxBtn').textContent=s.sfxEnabled?'🔊':'🔇';document.getElementById('musBtn').classList.toggle('off',!s.musicEnabled);document.getElementById('musBtn').textContent=s.musicEnabled?'🎵':'🎶'}
     document.getElementById('sfxBtn').addEventListener('click',()=>{BearSound.toggleSfx();refreshSoundBtns()});
     document.getElementById('musBtn').addEventListener('click',()=>{BearSound.toggleMusic();refreshSoundBtns()});
