@@ -277,9 +277,7 @@
       0%,100%{transform:translateY(0) rotate(-6deg) scale(1)}
       50%{transform:translateY(-18px) rotate(6deg) scale(1.04)}
     }
-    .reveal-fish .emoji{font-size:clamp(8rem,30vw,16rem);line-height:1}
-    .reveal-fish img{width:100%;height:100%;object-fit:contain;position:absolute;inset:0;display:none}
-    .reveal-fish img.loaded{display:block}
+    .reveal-fish canvas{width:100%;height:100%;display:block}
     .reveal-name{
       font-family:'Bangers',cursive;
       font-size:clamp(2rem,8vw,3.4rem);
@@ -382,8 +380,7 @@
 
   <div class="reveal" id="reveal">
     <div class="reveal-fish">
-      <span class="emoji" id="revealEmoji">🐟</span>
-      <img id="revealImg" alt="" />
+      <canvas id="revealCv" width="400" height="400"></canvas>
     </div>
     <div class="reveal-name" id="revealName">Карась</div>
     <div class="reveal-stats">
@@ -446,6 +443,12 @@ let lastTime=performance.now(), waterTime=0;
 let splashTime=-999, splashX=0, splashY=0;
 let castFlightStart=0, castFlightDur=700;
 let castStartX=0, castStartY=0;
+// Pulling phase (fish on hook coming out of water)
+let pullStart=0, pullDur=2400;
+let pullStartX=0, pullStartY=0;
+let pullEndX=0, pullEndY=0;
+let pullSplashed=false;
+let fishWag = 0;
 
 // ============== FISH ==============
 const FISH = [
@@ -698,7 +701,19 @@ function reelTap(){
   tensionPct += 4 + Math.random()*3;
   if(tensionPct>100) tensionPct=100;
   pReel();
-  if(fishHP<=0) doCatch();
+  if(fishHP<=0) startPulling();
+}
+function startPulling(){
+  phase='pulling';
+  tensionMeter.classList.remove('show');
+  hideAction(); showCancel(false);
+  setBanner('🎣 Вытаскиваем!', 'success');
+  // Start at current float pos, end at rod tip
+  const tip = getRodTip();
+  pullStartX = floatX; pullStartY = floatY;
+  pullEndX = tip.x - 20; pullEndY = tip.y + 60; // hang below tip
+  pullStart = performance.now();
+  pullSplashed = false;
 }
 function doCatch(){
   phase='catch';
@@ -719,7 +734,6 @@ function doCatch(){
   showReveal(currentFish);
 }
 function showReveal(f){
-  document.getElementById('revealEmoji').textContent = f.emoji;
   document.getElementById('revealName').textContent = f.name;
   document.getElementById('revealWeight').textContent = f.weight+' кг';
   const pt = f.points>=0 ? '+'+f.points+' очков' : f.points+' очков';
@@ -727,27 +741,28 @@ function showReveal(f){
   document.getElementById('revealPoints').style.background = f.points>=0
     ? 'linear-gradient(180deg,#ffe066,#ff9800)'
     : 'linear-gradient(180deg,#888,#444)';
-  // Try real fish photo - non-blocking
-  const img = document.getElementById('revealImg');
-  img.classList.remove('loaded');
-  img.onload = ()=>{ img.classList.add('loaded'); };
-  img.onerror = ()=>{ img.classList.remove('loaded'); };
-  img.src = fishImageURL(f.name);
+  // Draw fish on reveal canvas
+  drawRevealFish(f);
   reveal.classList.add('show');
 }
-function fishImageURL(name){
-  const map = {
-    'Карась':'realistic+crucian+carp+golden+side+view',
-    'Окунь':'realistic+european+perch+green+orange+stripes+side+view',
-    'Лещ':'realistic+silver+bream+side+view',
-    'Щука':'realistic+northern+pike+long+side+view',
-    'Сом':'realistic+catfish+barbels+side+view',
-    'Золотая':'realistic+goldfish+golden+side+view',
-    'Сапог':'old+brown+leather+boot+wet+algae'
-  };
-  const p = map[name] || map['Карась'];
-  let h=0; for(let i=0;i<name.length;i++){h=((h<<5)-h)+name.charCodeAt(i);h|=0}
-  return `https://image.pollinations.ai/prompt/${p}?width=400&height=400&seed=${Math.abs(h)%99999}&nologo=true&model=turbo`;
+let revealAnimRunning = false;
+function drawRevealFish(f){
+  const cv2 = document.getElementById('revealCv');
+  if(!cv2) return;
+  const c2 = cv2.getContext('2d');
+  cv2.width = 400; cv2.height = 400;
+  let frame = 0;
+  if(revealAnimRunning) return;
+  revealAnimRunning = true;
+  function step(){
+    if(!reveal.classList.contains('show')){ revealAnimRunning=false; return; }
+    c2.clearRect(0,0,400,400);
+    const wag = frame*0.08;
+    drawFishByName(c2, f.name, 200, 200, 110, Math.sin(frame*0.04)*0.1, wag);
+    frame++;
+    requestAnimationFrame(step);
+  }
+  step();
 }
 function reelIn(){
   phase='ready';
@@ -816,6 +831,33 @@ function getRodTip(){
 // ============== UPDATE ==============
 function update(dt){
   waterTime += dt;
+  fishWag += dt*8;
+  if(phase==='pulling'){
+    const t = (performance.now()-pullStart)/pullDur;
+    if(t >= 1){
+      // Fish reached top - hold for a moment then show reveal
+      doCatch();
+      return;
+    }
+    // Easing - slow start, fast pull, hang at end
+    let p;
+    if(t < 0.7){
+      p = (t/0.7)*0.85; // pull up to 85% during first 70% of time
+    } else {
+      p = 0.85 + (t-0.7)/0.3 * 0.15; // settle last 15%
+    }
+    floatX = pullStartX + (pullEndX-pullStartX)*p;
+    floatY = pullStartY + (pullEndY-pullStartY)*p;
+    // Splash when crossing water surface
+    const waterY = H*0.55;
+    if(!pullSplashed && floatY < waterY){
+      pullSplashed = true;
+      splashTime = performance.now();
+      splashX = floatX; splashY = waterY;
+      pSplash();
+    }
+    return;
+  }
   if(charging){
     const el = performance.now() - chargeStart;
     const cyc = 1500;
@@ -1158,15 +1200,466 @@ function drawDock(){
     ctx.beginPath(); ctx.moveTo(x,H-dh); ctx.lineTo(x,H); ctx.stroke();
   }
 }
+
+// ============== FISH DRAWERS ==============
+function drawCarp(c, sz, wag){
+  // Карась — round golden body
+  const bg = c.createLinearGradient(0,-sz*0.5,0,sz*0.5);
+  bg.addColorStop(0,'#f4d030'); bg.addColorStop(0.5,'#daa520'); bg.addColorStop(1,'#8b6914');
+  c.fillStyle=bg; c.strokeStyle='#5c4709'; c.lineWidth=Math.max(1,sz*0.04);
+  // Body
+  c.beginPath(); c.ellipse(0,0,sz,sz*0.55,0,0,Math.PI*2); c.fill(); c.stroke();
+  // Tail
+  c.fillStyle='#b58a18';
+  c.beginPath();
+  c.moveTo(-sz*0.95,0);
+  c.lineTo(-sz*1.5+Math.sin(wag)*sz*0.06,-sz*0.45);
+  c.lineTo(-sz*1.4+Math.sin(wag+0.4)*sz*0.05,0);
+  c.lineTo(-sz*1.5+Math.sin(wag)*sz*0.06,sz*0.45);
+  c.closePath(); c.fill(); c.stroke();
+  // Dorsal
+  c.fillStyle='#a07810';
+  c.beginPath();
+  c.moveTo(-sz*0.05,-sz*0.55);
+  c.lineTo(-sz*0.2,-sz*0.85);
+  c.lineTo(-sz*0.45,-sz*0.5);
+  c.closePath(); c.fill(); c.stroke();
+  // Belly fin
+  c.fillStyle='#a07810';
+  c.beginPath();
+  c.moveTo(sz*0.1,sz*0.5);
+  c.lineTo(sz*0.0,sz*0.7);
+  c.lineTo(-sz*0.2,sz*0.5);
+  c.closePath(); c.fill(); c.stroke();
+  // Gill curve
+  c.beginPath();
+  c.moveTo(sz*0.42,-sz*0.3);
+  c.quadraticCurveTo(sz*0.55,0,sz*0.42,sz*0.3);
+  c.stroke();
+  // Eye
+  c.fillStyle='#fff';
+  c.beginPath(); c.arc(sz*0.6,-sz*0.18,sz*0.09,0,Math.PI*2); c.fill();
+  c.fillStyle='#000';
+  c.beginPath(); c.arc(sz*0.62,-sz*0.18,sz*0.05,0,Math.PI*2); c.fill();
+  c.fillStyle='#fff';
+  c.beginPath(); c.arc(sz*0.63,-sz*0.2,sz*0.02,0,Math.PI*2); c.fill();
+  // Mouth
+  c.strokeStyle='#5c4709'; c.lineWidth=Math.max(1,sz*0.04);
+  c.beginPath();
+  c.moveTo(sz*0.92,sz*0.02); c.lineTo(sz*0.83,sz*0.08); c.stroke();
+  // Scales
+  c.strokeStyle='rgba(92,71,9,.35)'; c.lineWidth=Math.max(0.6,sz*0.015);
+  for(let i=-3;i<=3;i++){
+    for(let j=-1;j<=1;j++){
+      c.beginPath();
+      c.arc(i*sz*0.18, j*sz*0.18, sz*0.12, Math.PI*1.15, Math.PI*1.85);
+      c.stroke();
+    }
+  }
+}
+function drawPerch(c, sz, wag){
+  // Окунь — green/yellow with vertical stripes
+  const bg = c.createLinearGradient(0,-sz*0.5,0,sz*0.5);
+  bg.addColorStop(0,'#9bb96d'); bg.addColorStop(0.5,'#5e8038'); bg.addColorStop(1,'#3a5520');
+  c.fillStyle=bg; c.strokeStyle='#1a3010'; c.lineWidth=Math.max(1,sz*0.04);
+  // Body (more elongated)
+  c.beginPath(); c.ellipse(0,0,sz*1.05,sz*0.45,0,0,Math.PI*2); c.fill(); c.stroke();
+  // Tail (orange)
+  c.fillStyle='#ff8800';
+  c.beginPath();
+  c.moveTo(-sz*1.0,0);
+  c.lineTo(-sz*1.55+Math.sin(wag)*sz*0.06,-sz*0.4);
+  c.lineTo(-sz*1.45+Math.sin(wag+0.3)*sz*0.05,0);
+  c.lineTo(-sz*1.55+Math.sin(wag)*sz*0.06,sz*0.4);
+  c.closePath(); c.fill(); c.stroke();
+  // Spiny dorsal
+  c.fillStyle='#5e8038';
+  c.beginPath();
+  c.moveTo(-sz*0.5,-sz*0.45);
+  for(let i=0;i<6;i++){
+    const x = -sz*0.5 + i*sz*0.18;
+    c.lineTo(x+sz*0.08,-sz*0.85);
+    c.lineTo(x+sz*0.16,-sz*0.45);
+  }
+  c.closePath(); c.fill(); c.stroke();
+  // Vertical stripes
+  c.fillStyle='rgba(20,40,15,.55)';
+  for(let i=0;i<5;i++){
+    const sx = -sz*0.7 + i*sz*0.32;
+    c.beginPath();
+    c.moveTo(sx,-sz*0.4);
+    c.quadraticCurveTo(sx+sz*0.04,0,sx,sz*0.4);
+    c.lineTo(sx+sz*0.08,sz*0.4);
+    c.quadraticCurveTo(sx+sz*0.12,0,sx+sz*0.08,-sz*0.4);
+    c.closePath(); c.fill();
+  }
+  // Belly fin orange
+  c.fillStyle='#ff8800';
+  c.beginPath();
+  c.moveTo(sz*0.1,sz*0.4);
+  c.lineTo(-sz*0.05,sz*0.65);
+  c.lineTo(-sz*0.25,sz*0.4);
+  c.closePath(); c.fill(); c.stroke();
+  // Pectoral fin
+  c.fillStyle='#daa520';
+  c.beginPath();
+  c.moveTo(sz*0.35,sz*0.15);
+  c.lineTo(sz*0.25,sz*0.5);
+  c.lineTo(sz*0.05,sz*0.25);
+  c.closePath(); c.fill(); c.stroke();
+  // Gill
+  c.strokeStyle='#1a3010';
+  c.beginPath();
+  c.moveTo(sz*0.45,-sz*0.25); c.quadraticCurveTo(sz*0.55,0,sz*0.45,sz*0.25); c.stroke();
+  // Eye
+  c.fillStyle='#fff';
+  c.beginPath(); c.arc(sz*0.65,-sz*0.13,sz*0.09,0,Math.PI*2); c.fill();
+  c.fillStyle='#000';
+  c.beginPath(); c.arc(sz*0.67,-sz*0.13,sz*0.05,0,Math.PI*2); c.fill();
+  c.fillStyle='#fff';
+  c.beginPath(); c.arc(sz*0.68,-sz*0.15,sz*0.02,0,Math.PI*2); c.fill();
+  // Mouth
+  c.strokeStyle='#1a3010';
+  c.beginPath();
+  c.moveTo(sz*0.95,sz*0.02); c.lineTo(sz*0.85,sz*0.1); c.stroke();
+}
+function drawBream(c, sz, wag){
+  // Лещ — tall narrow silver body
+  const bg = c.createLinearGradient(0,-sz*0.7,0,sz*0.7);
+  bg.addColorStop(0,'#e8eaed'); bg.addColorStop(0.5,'#9aa0a8'); bg.addColorStop(1,'#5a606a');
+  c.fillStyle=bg; c.strokeStyle='#3a3e44'; c.lineWidth=Math.max(1,sz*0.04);
+  // Body (tall, diamond-ish)
+  c.beginPath();
+  c.moveTo(sz*0.95,0);
+  c.quadraticCurveTo(sz*0.6,-sz*0.7,-sz*0.2,-sz*0.75);
+  c.quadraticCurveTo(-sz*0.7,-sz*0.5,-sz*0.95,0);
+  c.quadraticCurveTo(-sz*0.7,sz*0.5,-sz*0.2,sz*0.75);
+  c.quadraticCurveTo(sz*0.6,sz*0.7,sz*0.95,0);
+  c.closePath(); c.fill(); c.stroke();
+  // Tail forked
+  c.fillStyle='#7a808a';
+  c.beginPath();
+  c.moveTo(-sz*0.95,-sz*0.05);
+  c.lineTo(-sz*1.5+Math.sin(wag)*sz*0.07,-sz*0.5);
+  c.lineTo(-sz*1.25,0);
+  c.lineTo(-sz*1.5+Math.sin(wag)*sz*0.07,sz*0.5);
+  c.lineTo(-sz*0.95,sz*0.05);
+  c.closePath(); c.fill(); c.stroke();
+  // Dorsal fin
+  c.fillStyle='#7a808a';
+  c.beginPath();
+  c.moveTo(-sz*0.1,-sz*0.65);
+  c.lineTo(-sz*0.45,-sz*1.0);
+  c.lineTo(-sz*0.5,-sz*0.7);
+  c.closePath(); c.fill(); c.stroke();
+  // Belly fin
+  c.beginPath();
+  c.moveTo(sz*0.0,sz*0.65);
+  c.lineTo(-sz*0.2,sz*0.95);
+  c.lineTo(-sz*0.4,sz*0.7);
+  c.closePath(); c.fill(); c.stroke();
+  // Eye
+  c.fillStyle='#fff';
+  c.beginPath(); c.arc(sz*0.55,-sz*0.18,sz*0.1,0,Math.PI*2); c.fill();
+  c.fillStyle='#000';
+  c.beginPath(); c.arc(sz*0.56,-sz*0.18,sz*0.06,0,Math.PI*2); c.fill();
+  c.fillStyle='#fff';
+  c.beginPath(); c.arc(sz*0.58,-sz*0.2,sz*0.02,0,Math.PI*2); c.fill();
+  // Gill
+  c.strokeStyle='#3a3e44';
+  c.beginPath(); c.moveTo(sz*0.42,-sz*0.4); c.quadraticCurveTo(sz*0.55,0,sz*0.42,sz*0.4); c.stroke();
+  // Mouth
+  c.beginPath(); c.moveTo(sz*0.92,sz*0.0); c.lineTo(sz*0.85,sz*0.08); c.stroke();
+  // Silver scales shimmer
+  c.strokeStyle='rgba(255,255,255,.4)'; c.lineWidth=Math.max(0.5,sz*0.012);
+  for(let i=-3;i<=3;i++) for(let j=-2;j<=2;j++){
+    c.beginPath();
+    c.arc(i*sz*0.18,j*sz*0.2,sz*0.1,Math.PI*1.15,Math.PI*1.85);
+    c.stroke();
+  }
+}
+function drawPike(c, sz, wag){
+  // Щука — long, toothy, dark green with stripes
+  const bg = c.createLinearGradient(0,-sz*0.4,0,sz*0.4);
+  bg.addColorStop(0,'#7a9050'); bg.addColorStop(0.5,'#3d5a25'); bg.addColorStop(1,'#1a2a10');
+  c.fillStyle=bg; c.strokeStyle='#0d1a08'; c.lineWidth=Math.max(1,sz*0.04);
+  // Long body
+  c.beginPath();
+  c.moveTo(sz*1.1,sz*0.05); // pointed snout
+  c.quadraticCurveTo(sz*0.9,-sz*0.4,sz*0.3,-sz*0.4);
+  c.quadraticCurveTo(-sz*0.8,-sz*0.35,-sz*1.1,-sz*0.1);
+  c.quadraticCurveTo(-sz*1.0,sz*0.0,-sz*1.1,sz*0.1);
+  c.quadraticCurveTo(-sz*0.8,sz*0.35,sz*0.3,sz*0.4);
+  c.quadraticCurveTo(sz*0.9,sz*0.4,sz*1.1,sz*0.05);
+  c.closePath(); c.fill(); c.stroke();
+  // Tail
+  c.fillStyle='#3d5a25';
+  c.beginPath();
+  c.moveTo(-sz*1.1,-sz*0.05);
+  c.lineTo(-sz*1.6+Math.sin(wag)*sz*0.08,-sz*0.45);
+  c.lineTo(-sz*1.4+Math.sin(wag+0.3)*sz*0.06,0);
+  c.lineTo(-sz*1.6+Math.sin(wag)*sz*0.08,sz*0.45);
+  c.lineTo(-sz*1.1,sz*0.05);
+  c.closePath(); c.fill(); c.stroke();
+  // Vertical pale stripes
+  c.fillStyle='rgba(220,220,150,.4)';
+  for(let i=0;i<6;i++){
+    const sx = -sz*0.8 + i*sz*0.25;
+    c.beginPath();
+    c.moveTo(sx,-sz*0.35);
+    c.lineTo(sx+sz*0.05,sz*0.35);
+    c.lineTo(sx+sz*0.13,sz*0.35);
+    c.lineTo(sx+sz*0.08,-sz*0.35);
+    c.closePath(); c.fill();
+  }
+  // Dorsal back near tail
+  c.fillStyle='#3d5a25';
+  c.beginPath();
+  c.moveTo(-sz*0.5,-sz*0.35);
+  c.lineTo(-sz*0.7,-sz*0.7);
+  c.lineTo(-sz*0.95,-sz*0.4);
+  c.closePath(); c.fill(); c.stroke();
+  // Belly fin
+  c.beginPath();
+  c.moveTo(-sz*0.6,sz*0.35);
+  c.lineTo(-sz*0.8,sz*0.65);
+  c.lineTo(-sz*0.95,sz*0.4);
+  c.closePath(); c.fill(); c.stroke();
+  // Mouth open with teeth
+  c.fillStyle='#400';
+  c.beginPath();
+  c.moveTo(sz*1.1,sz*0.05);
+  c.lineTo(sz*0.85,sz*0.18);
+  c.quadraticCurveTo(sz*0.95,sz*0.05,sz*1.1,sz*0.05);
+  c.closePath(); c.fill();
+  // Teeth
+  c.fillStyle='#fff';
+  for(let i=0;i<4;i++){
+    const tx = sz*0.85+i*sz*0.06;
+    c.beginPath();
+    c.moveTo(tx,sz*0.12);
+    c.lineTo(tx+sz*0.025,sz*0.18);
+    c.lineTo(tx+sz*0.05,sz*0.12);
+    c.closePath(); c.fill();
+  }
+  // Eye
+  c.fillStyle='#fff';
+  c.beginPath(); c.arc(sz*0.7,-sz*0.18,sz*0.08,0,Math.PI*2); c.fill();
+  c.fillStyle='#000';
+  c.beginPath(); c.arc(sz*0.72,-sz*0.18,sz*0.05,0,Math.PI*2); c.fill();
+  c.fillStyle='#fff';
+  c.beginPath(); c.arc(sz*0.73,-sz*0.2,sz*0.018,0,Math.PI*2); c.fill();
+  // Gill
+  c.strokeStyle='#0d1a08';
+  c.beginPath(); c.moveTo(sz*0.4,-sz*0.3); c.quadraticCurveTo(sz*0.5,0,sz*0.4,sz*0.3); c.stroke();
+}
+function drawCatfish(c, sz, wag){
+  // Сом — long dark grey with whiskers and flat head
+  const bg = c.createLinearGradient(0,-sz*0.4,0,sz*0.4);
+  bg.addColorStop(0,'#5a6068'); bg.addColorStop(0.5,'#3a3e44'); bg.addColorStop(1,'#1a1c20');
+  c.fillStyle=bg; c.strokeStyle='#101216'; c.lineWidth=Math.max(1,sz*0.04);
+  // Body - elongated, rounder belly
+  c.beginPath();
+  c.moveTo(sz*1.0,sz*0.0);
+  c.quadraticCurveTo(sz*0.85,-sz*0.35,sz*0.2,-sz*0.4);
+  c.quadraticCurveTo(-sz*0.7,-sz*0.35,-sz*1.0,-sz*0.1);
+  c.lineTo(-sz*1.0,sz*0.1);
+  c.quadraticCurveTo(-sz*0.7,sz*0.5,sz*0.2,sz*0.5);
+  c.quadraticCurveTo(sz*0.85,sz*0.4,sz*1.0,sz*0.0);
+  c.closePath(); c.fill(); c.stroke();
+  // Tail
+  c.fillStyle='#3a3e44';
+  c.beginPath();
+  c.moveTo(-sz*1.0,-sz*0.05);
+  c.lineTo(-sz*1.5+Math.sin(wag)*sz*0.08,-sz*0.4);
+  c.lineTo(-sz*1.35,0);
+  c.lineTo(-sz*1.5+Math.sin(wag)*sz*0.08,sz*0.4);
+  c.lineTo(-sz*1.0,sz*0.05);
+  c.closePath(); c.fill(); c.stroke();
+  // Whiskers (barbels) - 4 of them, top and bottom
+  c.strokeStyle='#101216'; c.lineWidth=Math.max(1.2,sz*0.04);
+  c.lineCap='round';
+  // Top whiskers
+  c.beginPath();
+  c.moveTo(sz*0.95,-sz*0.1);
+  c.quadraticCurveTo(sz*1.3,-sz*0.3,sz*1.5,-sz*0.4);
+  c.stroke();
+  c.beginPath();
+  c.moveTo(sz*0.92,-sz*0.05);
+  c.quadraticCurveTo(sz*1.25,-sz*0.15,sz*1.45,-sz*0.2);
+  c.stroke();
+  // Bottom whiskers (longer)
+  c.beginPath();
+  c.moveTo(sz*0.92,sz*0.15);
+  c.quadraticCurveTo(sz*1.4,sz*0.4,sz*1.7,sz*0.55);
+  c.stroke();
+  c.beginPath();
+  c.moveTo(sz*0.88,sz*0.2);
+  c.quadraticCurveTo(sz*1.35,sz*0.55,sz*1.6,sz*0.7);
+  c.stroke();
+  // Mouth (wide flat)
+  c.strokeStyle='#101216'; c.lineWidth=Math.max(1,sz*0.05);
+  c.beginPath();
+  c.moveTo(sz*0.98,sz*0.05); c.lineTo(sz*0.78,sz*0.18); c.stroke();
+  // Small belly fins (pectoral)
+  c.fillStyle='#3a3e44';
+  c.beginPath();
+  c.moveTo(sz*0.4,sz*0.4);
+  c.lineTo(sz*0.2,sz*0.7);
+  c.lineTo(sz*0.0,sz*0.4);
+  c.closePath(); c.fill(); c.stroke();
+  // Eye (small)
+  c.fillStyle='#fff';
+  c.beginPath(); c.arc(sz*0.7,-sz*0.18,sz*0.06,0,Math.PI*2); c.fill();
+  c.fillStyle='#000';
+  c.beginPath(); c.arc(sz*0.71,-sz*0.18,sz*0.04,0,Math.PI*2); c.fill();
+}
+function drawGoldfish(c, sz, wag){
+  // Золотая — fancy goldfish with bright gold body and flowing fins
+  const bg = c.createRadialGradient(0,0,0,0,0,sz*1.1);
+  bg.addColorStop(0,'#fff5a0'); bg.addColorStop(0.5,'#ffd700'); bg.addColorStop(1,'#cc8800');
+  c.fillStyle=bg; c.strokeStyle='#7a4a00'; c.lineWidth=Math.max(1,sz*0.04);
+  // Plump body
+  c.beginPath(); c.ellipse(0,0,sz*0.95,sz*0.7,0,0,Math.PI*2); c.fill(); c.stroke();
+  // Flowing tail (multiple layers)
+  c.fillStyle='rgba(255,215,0,.7)';
+  c.beginPath();
+  c.moveTo(-sz*0.85,0);
+  c.quadraticCurveTo(-sz*1.4,-sz*0.7,-sz*1.6+Math.sin(wag)*sz*0.1,-sz*0.4);
+  c.quadraticCurveTo(-sz*1.3,-sz*0.1,-sz*1.5+Math.sin(wag+0.5)*sz*0.08,sz*0.3);
+  c.quadraticCurveTo(-sz*1.4,sz*0.7,-sz*0.85,sz*0.05);
+  c.closePath(); c.fill(); c.stroke();
+  // Dorsal flowing fin
+  c.fillStyle='rgba(255,215,0,.7)';
+  c.beginPath();
+  c.moveTo(-sz*0.1,-sz*0.65);
+  c.quadraticCurveTo(-sz*0.4,-sz*1.2,-sz*0.7,-sz*0.7);
+  c.quadraticCurveTo(-sz*0.5,-sz*0.4,-sz*0.1,-sz*0.65);
+  c.closePath(); c.fill(); c.stroke();
+  // Belly fins
+  c.beginPath();
+  c.moveTo(sz*0.1,sz*0.6);
+  c.quadraticCurveTo(-sz*0.1,sz*1.0,-sz*0.4,sz*0.7);
+  c.closePath(); c.fill(); c.stroke();
+  // Sparkles
+  c.fillStyle='#fff';
+  for(let i=0;i<5;i++){
+    const ang = i*Math.PI*0.4 + waterTime;
+    const x = Math.cos(ang)*sz*0.5;
+    const y = Math.sin(ang)*sz*0.3;
+    c.beginPath(); c.arc(x,y,sz*0.04,0,Math.PI*2); c.fill();
+  }
+  // Big eye
+  c.fillStyle='#fff';
+  c.beginPath(); c.arc(sz*0.55,-sz*0.2,sz*0.13,0,Math.PI*2); c.fill();
+  c.strokeStyle='#7a4a00'; c.lineWidth=Math.max(1,sz*0.03); c.stroke();
+  c.fillStyle='#000';
+  c.beginPath(); c.arc(sz*0.57,-sz*0.2,sz*0.07,0,Math.PI*2); c.fill();
+  c.fillStyle='#fff';
+  c.beginPath(); c.arc(sz*0.59,-sz*0.22,sz*0.025,0,Math.PI*2); c.fill();
+  // Mouth
+  c.strokeStyle='#7a4a00';
+  c.beginPath(); c.arc(sz*0.85,sz*0.05,sz*0.06,0,Math.PI*2); c.stroke();
+}
+function drawBoot(c, sz, wag){
+  // Сапог — old leather boot
+  c.fillStyle='#5b3a18'; c.strokeStyle='#2a1a08'; c.lineWidth=Math.max(1,sz*0.04);
+  // Boot shape (sole + upper)
+  c.beginPath();
+  c.moveTo(-sz*0.8,sz*0.5);
+  c.lineTo(sz*1.0,sz*0.5);
+  c.lineTo(sz*1.0,sz*0.3);
+  c.lineTo(sz*0.0,sz*0.3);
+  c.lineTo(sz*0.0,-sz*0.7);
+  c.lineTo(-sz*0.6,-sz*0.7);
+  c.lineTo(-sz*0.8,sz*0.5);
+  c.closePath(); c.fill(); c.stroke();
+  // Heel
+  c.fillStyle='#3a2208';
+  c.fillRect(-sz*0.85,sz*0.3,sz*0.25,sz*0.2);
+  c.strokeRect(-sz*0.85,sz*0.3,sz*0.25,sz*0.2);
+  // Boot opening
+  c.fillStyle='#1a0d04';
+  c.beginPath(); c.ellipse(-sz*0.3,-sz*0.7,sz*0.3,sz*0.1,0,0,Math.PI*2); c.fill();
+  // Algae/moss patches
+  c.fillStyle='rgba(60,120,40,.7)';
+  c.beginPath(); c.arc(-sz*0.3,sz*0.35,sz*0.15,0,Math.PI*2); c.fill();
+  c.beginPath(); c.arc(sz*0.4,sz*0.42,sz*0.12,0,Math.PI*2); c.fill();
+  c.beginPath(); c.arc(-sz*0.5,-sz*0.2,sz*0.1,0,Math.PI*2); c.fill();
+  // Drips of water
+  c.fillStyle='rgba(150,200,230,.6)';
+  for(let i=0;i<4;i++){
+    const x = -sz*0.6 + i*sz*0.4;
+    c.beginPath(); c.ellipse(x,sz*0.55,sz*0.04,sz*0.08,0,0,Math.PI*2); c.fill();
+  }
+  // Laces
+  c.strokeStyle='#1a0d04'; c.lineWidth=Math.max(1,sz*0.025);
+  for(let i=0;i<4;i++){
+    const y = -sz*0.5 + i*sz*0.18;
+    c.beginPath();
+    c.moveTo(-sz*0.45,y); c.lineTo(-sz*0.05,y+sz*0.08);
+    c.stroke();
+  }
+}
+function drawFishByName(c, name, x, y, sz, angle, wag){
+  c.save();
+  c.translate(x,y);
+  c.rotate(angle||0);
+  if(name==='Карась') drawCarp(c,sz,wag);
+  else if(name==='Окунь') drawPerch(c,sz,wag);
+  else if(name==='Лещ') drawBream(c,sz,wag);
+  else if(name==='Щука') drawPike(c,sz,wag);
+  else if(name==='Сом') drawCatfish(c,sz,wag);
+  else if(name==='Золотая') drawGoldfish(c,sz,wag);
+  else if(name==='Сапог') drawBoot(c,sz,wag);
+  else drawCarp(c,sz,wag);
+  c.restore();
+}
+// Fish on hook - drawn in canvas during pulling phase
+function drawFishOnHook(){
+  if(!currentFish) return;
+  // Compute size based on fish weight
+  const baseSz = Math.min(W,H)*0.06;
+  const maxW = currentFish.weight;
+  const sz = baseSz * (0.7 + Math.min(1, maxW/3)*0.6);
+  // Hook fish at floatX, floatY
+  // Fish hangs vertically with tail down (rotated 90deg)
+  // Fish wags during pulling
+  let angle = Math.PI/2; // hanging down
+  // Slight sway
+  angle += Math.sin(performance.now()/180)*0.15;
+  // Water drops if recently came out of water
+  const t = phase==='pulling'?(performance.now()-pullStart)/pullDur:0;
+  if(phase==='pulling' && pullSplashed){
+    const sinceSplash = (performance.now()-splashTime)/1000;
+    if(sinceSplash < 0.8){
+      // Drip drops
+      ctx.fillStyle='rgba(150,200,230,.7)';
+      for(let i=0;i<3;i++){
+        const dx = floatX + (Math.random()-0.5)*sz*1.5;
+        const dy = floatY + sz*0.5 + sinceSplash*60 + i*15;
+        ctx.beginPath();
+        ctx.ellipse(dx,dy,2,5,0,0,Math.PI*2); ctx.fill();
+      }
+    }
+  }
+  drawFishByName(ctx, currentFish.name, floatX, floatY, sz, angle, fishWag);
+  // Hook visible at mouth of fish
+  ctx.strokeStyle='#888'; ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.arc(floatX, floatY-sz*0.85, sz*0.12, 0, Math.PI);
+  ctx.stroke();
+}
 function render(){
   ctx.clearRect(0,0,W,H);
   drawShimmer();
   drawFishUnder();
   if(performance.now()-splashTime<600) drawSplash();
   drawDock();
-  drawFloat();
+  if(phase!=='pulling') drawFloat();
   drawLine();
   drawRod();
+  if(phase==='pulling') drawFishOnHook();
 }
 
 // ============== LOOP ==============
