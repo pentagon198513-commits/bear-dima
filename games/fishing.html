@@ -27,13 +27,32 @@
     .hud .stat-pill{font-family:'Bangers',sans-serif;font-size:clamp(.95rem,3vw,1.2rem)}
     .start-overlay,.catch-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;z-index:500;pointer-events:auto}
     .start-overlay.hide,.catch-overlay.hide{display:none}
-    .start-box,.catch-box{background:linear-gradient(180deg,#5db8ff,#0066ff);border:6px solid #fff;border-radius:28px;padding:24px 36px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.5);max-width:92vw}
-    .start-box h2,.catch-box h2{font-family:'Bangers',sans-serif;font-size:clamp(1.8rem,7vw,3rem);color:#fff;-webkit-text-stroke:2px #000;text-shadow:3px 3px 0 var(--hw-red);margin:0 0 12px}
-    .start-box p,.catch-box p{font-family:'Nunito',sans-serif;font-weight:900;color:#fff;font-size:clamp(.95rem,3.5vw,1.2rem);text-shadow:2px 2px 0 #000;margin:6px 0}
-    .fish-list{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:10px 0}
-    .fish-list span{background:rgba(255,255,255,.85);color:#000;padding:4px 10px;border-radius:14px;font-weight:900;font-family:Nunito,sans-serif;font-size:.85em}
-    .hint-pill{display:inline-block;background:rgba(0,0,0,.7);color:#fff;padding:6px 14px;border-radius:14px;font-family:'Bangers',sans-serif;font-size:clamp(.95rem,3vw,1.2rem);text-shadow:1px 1px 0 #000;animation:hint-pulse 1.4s ease-in-out infinite}
-    @keyframes hint-pulse{0%,100%{opacity:.7}50%{opacity:1}}
+    .start-box,.catch-box{background:linear-gradient(180deg,#5db8ff,#0066ff);border:6px solid #fff;border-radius:28px;padding:20px 30px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.5);max-width:92vw;max-height:90vh;overflow-y:auto}
+    .start-box h2,.catch-box h2{font-family:'Bangers',sans-serif;font-size:clamp(1.6rem,6vw,2.8rem);color:#fff;-webkit-text-stroke:2px #000;text-shadow:3px 3px 0 var(--hw-red);margin:0 0 10px}
+    .start-box p,.catch-box p{font-family:'Nunito',sans-serif;font-weight:900;color:#fff;font-size:clamp(.9rem,3.2vw,1.1rem);text-shadow:2px 2px 0 #000;margin:5px 0}
+    .fish-list{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:8px 0}
+    .fish-list span{background:rgba(255,255,255,.85);color:#000;padding:3px 8px;border-radius:12px;font-weight:900;font-family:Nunito,sans-serif;font-size:.8em}
+    .status-banner{
+      position:absolute;
+      left:50%;
+      transform:translateX(-50%);
+      top:60px;
+      background:rgba(0,0,0,0.75);
+      color:#fff;
+      padding:8px 18px;
+      border-radius:18px;
+      font-family:'Bangers',sans-serif;
+      font-size:clamp(1rem,3.5vw,1.4rem);
+      letter-spacing:.04em;
+      pointer-events:none;
+      z-index:10;
+      transition:background .2s;
+      white-space:nowrap;
+      box-shadow:0 4px 12px rgba(0,0,0,.4);
+    }
+    .status-banner.alert{background:#e11d48;animation:alertPulse .35s ease-in-out infinite}
+    .status-banner.success{background:#2e7d32}
+    @keyframes alertPulse{0%,100%{transform:translateX(-50%) scale(1)}50%{transform:translateX(-50%) scale(1.08)}}
   </style>
 </head>
 <body>
@@ -47,33 +66,34 @@
   </header>
 
   <main class="game-area" style="flex-direction:column;">
-    <div class="canvas-wrap">
+    <div class="canvas-wrap" style="position:relative">
       <div class="hud">
         <div class="stat-pill">⭐ <span id="score">0</span></div>
         <div class="stat-pill">🐟 <span id="caught">0</span></div>
         <div class="stat-pill">🏆 <span id="best">0</span></div>
       </div>
       <canvas id="c" width="640" height="640"></canvas>
-      <div id="hint" class="hint-pill">👆 Тапни — заброс!</div>
+      <div id="status" class="status-banner">👆 Тапни в воду — заброс!</div>
     </div>
   </main>
 
   <div class="start-overlay" id="startOverlay">
     <div class="start-box">
       <h2>🎣 РЫБАЛКА</h2>
-      <p><b>Как играть:</b></p>
-      <p>1️⃣ Тапни → заброс</p>
-      <p>2️⃣ Жди когда поплавок дёрнется</p>
-      <p>3️⃣ Тапни в момент клёва — подсечка!</p>
-      <p>4️⃣ Тапай ритмично чтобы вытащить рыбу</p>
+      <p><b>Как ловить рыбу:</b></p>
+      <p>1️⃣ Тапни в воду → заброс</p>
+      <p>2️⃣ Поплавок встанет на воде красным сверху, белым снизу</p>
+      <p>3️⃣ Жди! Сначала поплавок будет лишь шевелиться — это рыбка пробует наживку</p>
+      <p>4️⃣ Когда поплавок резко <b>уйдёт под воду</b>, поведёт <b>в сторону</b> или <b>наклонится</b> — это клёв! Тапай!</p>
+      <p>5️⃣ Тапай ритмично чтобы вытащить рыбу</p>
       <div class="fish-list">
-        <span>🐟 Карась = 2</span>
-        <span>🐠 Окунь = 4</span>
-        <span>🐡 Лещ = 5</span>
-        <span>🦈 Сом = 10</span>
-        <span>🐍 Щука = 15</span>
-        <span>✨ Золотая = 50</span>
-        <span>👢 Сапог = -2</span>
+        <span>🐟 Карась +2</span>
+        <span>🐠 Окунь +4</span>
+        <span>🐡 Лещ +5</span>
+        <span>🦈 Сом +10</span>
+        <span>🐍 Щука +15</span>
+        <span>✨ Золотая +50</span>
+        <span>👢 Сапог −2</span>
       </div>
       <p>🏆 Рекорд: <span id="recordEl">0</span></p>
       <button class="win-btn" onclick="startGame()">🎣 НАЧАТЬ!</button>
@@ -82,8 +102,8 @@
 
   <div class="catch-overlay hide" id="catchOverlay">
     <div class="catch-box">
-      <h2 id="catchTitle">🎣 ПОЙМАЛ!</h2>
-      <div id="catchFish" style="font-size:5rem;margin:10px 0"></div>
+      <h2 id="catchTitle">🏆 ПОЙМАЛ!</h2>
+      <div id="catchFish" style="font-size:5rem;margin:8px 0"></div>
       <p id="catchName"></p>
       <p id="catchScore"></p>
       <button class="win-btn" onclick="continueFishing()">▶ ДАЛЬШЕ</button>
@@ -94,53 +114,62 @@
     const canvas = document.getElementById('c');
     const ctx = canvas.getContext('2d');
     const W = canvas.width, H = canvas.height;
-    const WATER_Y = H * 0.45;
+    const WATER_Y = H * 0.42;
+    // Уровень ватерлинии — куда садится поплавок (низ красной части)
+    const FLOAT_WATERLINE_OFFSET = 4;
 
     const scoreEl = document.getElementById('score');
     const caughtEl = document.getElementById('caught');
     const bestEl = document.getElementById('best');
-    const hintEl = document.getElementById('hint');
+    const statusEl = document.getElementById('status');
     const startOverlay = document.getElementById('startOverlay');
     const catchOverlay = document.getElementById('catchOverlay');
 
-    // ===== СОСТОЯНИЕ =====
+    /* ===== СОСТОЯНИЕ ===== */
     let phase = 'menu'; // menu, idle, casting, waiting, biting, fighting, caught, missed
-    let score = 0;
-    let caught = 0;
+    let score = 0, caught = 0;
     let best = parseInt(localStorage.getItem('bear_fish_best') || '0', 10);
     document.getElementById('recordEl').textContent = best;
 
     // Удочка
-    let rodAngle = -Math.PI / 4;       // угол удочки (вверх-вправо)
-    let rodTipX = 0, rodTipY = 0;      // конец удочки (вычисляется)
+    let rodAngle = -Math.PI / 3;
+    let rodTipX = 0, rodTipY = 0;
+
     // Поплавок
-    let bobX = 0, bobY = 0;            // позиция поплавка
-    let bobTargetX = 0, bobTargetY = 0;// куда летит при забросе
-    let bobUnderwater = 0;             // 0..1 — как глубоко под водой
-    let bobJiggle = 0;                 // дрожание поплавка
-    // Заброс
-    let castPower = 0;                 // 0..1 — сила (анимация)
-    let castDir = 1;                   // направление движения индикатора
-    let castStartTime = 0;
-    let castFlightT = 0;               // прогресс полёта поплавка
-    // Ожидание
-    let waitStart = 0;
-    let nextBiteAt = 0;
-    let interestT = 0;                 // рыба заинтересовалась (поплавок чуть качается)
+    let bobX = 0, bobY = 0;
+    let bobTargetX = 0, bobTargetY = 0; // позиция стояния на воде (низ красной части)
+    let bobAngle = 0;        // наклон поплавка (0 = вертикально)
+    let bobOffsetX = 0;      // смещение по X относительно цели
+    let bobOffsetY = 0;      // смещение по Y (отрицательное = вверх над водой, положительное = под воду)
+    let bobSinkExtra = 0;    // дополнительное погружение для anim полного утопа
+    let bobJiggle = 0;       // мелкое дрожание
+
+    // Рябь на воде
+    let waterRipples = [];
+
     // Клёв
-    let biteStart = 0;
-    let biteWindow = 1500;             // мс на подсечку
+    let biteState = 'none';   // none, nibble, tilt, sideways, submerge
+    let biteStateUntil = 0;
+    let nextBiteEventAt = 0;
+    let biteCount = 0;        // сколько событий клёва уже произошло
+    let biteCatchableUntil = 0; // до этого момента можно подсечь (только во время серьёзного клёва)
+    let isCatchableBite = false;
+    let nibbleDir = 1;
     let currentFish = null;
+
+    // Заброс
+    let castStartTime = 0;
+    let waitStart = 0;
+
     // Вываживание
-    let fightHP = 0;                   // здоровье рыбы (тапаем чтобы добить)
-    let fightMaxHP = 5;
-    let fightTension = 0;              // 0..1 натяжение лески — растёт сама, тап = снимает
+    let fightHP = 0, fightMaxHP = 5, fightTension = 0;
     let fightStart = 0;
-    let lastTapAt = 0;
-    let tapCombo = 0;
-    // Рыбы под водой (просто плавают, не клюют)
+    // Положение пойманной рыбы (для анимации вытаскивания)
+    let caughtFishX = 0, caughtFishY = 0;
+
+    // Подводные рыбы (фон)
     let waterFish = [];
-    // Эффекты
+    // Эффекты заброса
     let splashes = [];
     let bubbles = [];
     let waveOffset = 0;
@@ -168,18 +197,27 @@
     }
 
     function spawnWaterFish() {
-      const t = FISH_TYPES[Math.floor(Math.random() * 5)]; // не сапог и не золотая
+      const t = FISH_TYPES[Math.floor(Math.random() * 5)];
       waterFish.push({
         x: Math.random() < 0.5 ? -50 : W + 50,
         y: WATER_Y + 60 + Math.random() * (H - WATER_Y - 100),
         vx: (Math.random() < 0.5 ? 1 : -1) * (0.6 + Math.random() * 1.2),
-        size: t.size * 18,
+        size: t.size * 16,
         color: t.color,
         wobble: Math.random() * Math.PI * 2,
       });
     }
 
-    // ===== ГЛАВНЫЙ ЦИКЛ =====
+    function addRipple(x, y, intensity = 1) {
+      waterRipples.push({ x, y, r: 4, maxR: 60 + 20 * intensity, life: 50, alpha: 0.7 * intensity });
+    }
+
+    function setStatus(text, type = '') {
+      statusEl.textContent = text;
+      statusEl.className = 'status-banner' + (type ? ' ' + type : '');
+    }
+
+    /* ===== ГЛАВНЫЙ ЦИКЛ ===== */
     let lastFrame = 0;
     function loop(now) {
       const dt = Math.min(50, now - lastFrame);
@@ -202,20 +240,30 @@
         if (f.x < -100 || f.x > W + 100) waterFish.splice(idx, 1);
       });
 
-      // Пузырьки
-      if (Math.random() < 0.05) {
-        bubbles.push({
-          x: bobX + (Math.random() - 0.5) * 30,
-          y: WATER_Y + 30 + Math.random() * 200,
-          size: 2 + Math.random() * 3,
-          vy: -0.3 - Math.random() * 0.4,
-          life: 100,
-        });
+      // Пузырьки (когда поплавок в воде)
+      if (phase === 'waiting' || phase === 'biting' || phase === 'fighting') {
+        if (Math.random() < 0.04) {
+          bubbles.push({
+            x: bobX + (Math.random() - 0.5) * 20,
+            y: WATER_Y + 30 + Math.random() * 200,
+            size: 1.5 + Math.random() * 2.5,
+            vy: -0.3 - Math.random() * 0.4,
+            life: 100,
+          });
+        }
       }
       bubbles.forEach((b, idx) => {
         b.y += b.vy;
         b.life--;
         if (b.life <= 0 || b.y < WATER_Y) bubbles.splice(idx, 1);
+      });
+
+      // Рябь
+      waterRipples.forEach((r, idx) => {
+        r.r += 0.8;
+        r.life--;
+        r.alpha *= 0.96;
+        if (r.life <= 0) waterRipples.splice(idx, 1);
       });
 
       // Всплески
@@ -225,113 +273,207 @@
         if (s.life <= 0) splashes.splice(idx, 1);
       });
 
-      // Концовка удочки (расчёт по углу)
+      // Удочка
       const rodBaseX = 80;
       const rodBaseY = H - 100;
       const rodLen = 220;
       rodTipX = rodBaseX + Math.cos(rodAngle) * rodLen;
       rodTipY = rodBaseY + Math.sin(rodAngle) * rodLen;
 
-      // === ФАЗЫ ===
+      /* === ФАЗЫ === */
       if (phase === 'idle') {
         bobX = rodTipX;
         bobY = rodTipY + 8;
-        bobUnderwater = 0;
-        rodAngle = -Math.PI / 3 + Math.sin(now * 0.001) * 0.05;
+        bobAngle = 0;
+        bobOffsetX = 0;
+        bobOffsetY = 0;
+        rodAngle = -Math.PI / 3 + Math.sin(now * 0.001) * 0.04;
       }
+
       else if (phase === 'casting') {
-        // Анимация заброса
         const elapsed = now - castStartTime;
         const T = 600;
         if (elapsed < T) {
           const t = elapsed / T;
-          // Удочка взмахивает
           rodAngle = -Math.PI / 3 + Math.sin(t * Math.PI) * 0.4 - t * 0.3;
-          // Поплавок летит по параболе
           const tt = Math.min(1, t * 1.2);
           bobX = rodTipX + (bobTargetX - rodTipX) * tt;
           bobY = rodTipY + (bobTargetY - rodTipY) * tt - Math.sin(tt * Math.PI) * 80;
         } else {
-          // Приземлился
           bobX = bobTargetX;
           bobY = bobTargetY;
           phase = 'waiting';
           waitStart = now;
-          nextBiteAt = now + 2500 + Math.random() * 6500;
-          // Всплеск
-          splashes.push({ x: bobX, y: WATER_Y + 5, r: 5, life: 30 });
-          playSplash(0.8);
-          hintEl.textContent = '🐟 Жди клёва...';
+          biteCount = 0;
+          biteState = 'none';
+          // Первое событие клёва через 2-5 секунд
+          nextBiteEventAt = now + 2200 + Math.random() * 2800;
+          // Большой всплеск при заземлении
+          splashes.push({ x: bobX, y: WATER_Y + 5, r: 8, life: 35 });
+          addRipple(bobX, WATER_Y + 4, 1.2);
+          addRipple(bobX, WATER_Y + 4, 0.8);
+          playSplash(0.9);
+          setStatus('🐟 Жди клёва...', '');
         }
       }
+
       else if (phase === 'waiting') {
         rodAngle = -Math.PI / 4 + Math.sin(now * 0.0008) * 0.04;
-        // Поплавок плавает
-        bobJiggle = Math.sin(now * 0.005) * 2 + Math.sin(now * 0.011) * 1;
-        bobY = bobTargetY + bobJiggle;
-        // Иногда лёгкий "интерес" — поплавок чуть дёргается
-        if (Math.random() < 0.005) interestT = 1;
-        if (interestT > 0) {
-          bobY += Math.sin(now * 0.04) * 4 * interestT;
-          interestT = Math.max(0, interestT - 0.01);
+        // Постоянное лёгкое покачивание поплавка от волн
+        bobJiggle = Math.sin(now * 0.005) * 1.5 + Math.sin(now * 0.011) * 0.7;
+
+        // Применяем смещения по типу клёва
+        applyBiteAnimation(now);
+
+        // Плановые события клёва
+        if (now > nextBiteEventAt) {
+          startBiteEvent(now);
         }
-        // Время клевать!
-        if (now > nextBiteAt) {
-          phase = 'biting';
-          biteStart = now;
-          currentFish = rollFish();
-          biteWindow = 1500 - Math.min(700, score * 5); // окно сужается с очками
-          playBite();
-          hintEl.textContent = '⚡ КЛЮЁТ! ТАП!';
-          hintEl.style.background = 'rgba(255,0,0,0.85)';
-        }
-      }
-      else if (phase === 'biting') {
-        const elapsed = now - biteStart;
-        // Поплавок резко уходит под воду
-        bobUnderwater = Math.min(1, elapsed / 300);
-        bobY = bobTargetY + bobUnderwater * 30 + Math.sin(now * 0.06) * 3;
-        // Если просрочил
-        if (elapsed > biteWindow) {
-          phase = 'missed';
-          hintEl.style.background = 'rgba(0,0,0,0.7)';
-          hintEl.textContent = '💨 Сорвалась...';
-          playMiss();
-          setTimeout(() => returnToIdle(), 1500);
+
+        // Если был серьёзный клёв и время на подсечку прошло
+        if (isCatchableBite && now > biteCatchableUntil) {
+          isCatchableBite = false;
+          biteState = 'none';
+          biteStateUntil = 0;
+          bobOffsetX = 0;
+          bobOffsetY = 0;
+          bobAngle = 0;
+          bobSinkExtra = 0;
+          // Рыба сорвалась
+          setStatus('💨 Сорвалась... Жди следующую', '');
+          playMissBite();
+          // Следующее событие через паузу
+          nextBiteEventAt = now + 3000 + Math.random() * 4000;
+          biteCount = 0;
         }
       }
+
       else if (phase === 'fighting') {
-        // Натяжение растёт со временем
-        fightTension += 0.005;
-        // Угол удочки реагирует на натяжение
-        rodAngle = -Math.PI / 3 + Math.sin(now * 0.02) * 0.05 - fightTension * 0.3;
-        // Поплавок мечется
-        bobX = bobTargetX + Math.sin(now * 0.015) * 20 * fightTension;
-        bobY = bobTargetY + 25 + Math.sin(now * 0.02) * 8;
-        // Если натяжение слишком большое — леска лопается
+        fightTension += 0.0045;
+        rodAngle = -Math.PI / 3 + Math.sin(now * 0.02) * 0.04 - fightTension * 0.35;
+        bobX = bobTargetX + Math.sin(now * 0.018) * 18 * fightTension;
+        bobY = bobTargetY + 28 + Math.sin(now * 0.022) * 6;
+        bobAngle = Math.sin(now * 0.025) * 0.5;
         if (fightTension >= 1) {
           phase = 'missed';
-          hintEl.style.background = 'rgba(0,0,0,0.7)';
-          hintEl.textContent = '💔 Леска лопнула!';
+          setStatus('💔 Леска лопнула!', 'alert');
           playLineBreak();
           setTimeout(() => returnToIdle(), 1500);
         }
       }
+
       else if (phase === 'caught') {
-        // Поплавок и рыба прыгают из воды
-        const t = (now - biteStart) / 800;
-        bobY = bobTargetY - Math.sin(Math.min(1, t) * Math.PI) * 80;
+        // Анимация прыжка рыбы из воды
+        const t = Math.min(1, (now - fightStart) / 1000);
+        caughtFishX = bobX;
+        caughtFishY = bobY - Math.sin(t * Math.PI) * 120 - 40;
+      }
+
+      else if (phase === 'missed') {
+        // Тихая пауза перед возвратом
       }
     }
 
+    /* ===== СОБЫТИЯ КЛЁВА (NIBBLE / TILT / SIDEWAYS / SUBMERGE) ===== */
+    function startBiteEvent(now) {
+      biteCount++;
+      // Чем больше предклёвок прошло — тем выше шанс серьёзного клёва
+      const seriousChance = Math.min(0.85, 0.25 + biteCount * 0.2);
+      const isSerious = Math.random() < seriousChance;
+
+      if (!isSerious) {
+        // Лёгкое подёргивание (рыба пробует наживку)
+        biteState = 'nibble';
+        biteStateUntil = now + 600 + Math.random() * 400;
+        nibbleDir = Math.random() < 0.5 ? -1 : 1;
+        playNibble();
+        setStatus('🐟 Шевелится... подожди', '');
+        // Следующее событие через короткую паузу
+        nextBiteEventAt = now + 800 + Math.random() * 1500;
+        addRipple(bobX, WATER_Y + 4, 0.4);
+      } else {
+        // Серьёзный клёв — выбираем тип
+        const types = ['submerge', 'tilt', 'sideways'];
+        biteState = types[Math.floor(Math.random() * types.length)];
+        currentFish = rollFish();
+        // Окно для подсечки 1.0-1.6 сек
+        biteCatchableUntil = now + 1100 + Math.random() * 500;
+        biteStateUntil = biteCatchableUntil;
+        isCatchableBite = true;
+        nibbleDir = Math.random() < 0.5 ? -1 : 1;
+        addRipple(bobX, WATER_Y + 4, 1.5);
+        // Уведомление
+        if (biteState === 'submerge') {
+          setStatus('⚡ ПОПЛАВОК ПОД ВОДУ! ТАП!', 'alert');
+          playBiteUnder();
+        } else if (biteState === 'tilt') {
+          setStatus('⚡ КЛЮЁТ — НАКЛОНИЛО! ТАП!', 'alert');
+          playBiteSide();
+        } else {
+          setStatus('⚡ ТАЩИТ В СТОРОНУ! ТАП!', 'alert');
+          playBiteSide();
+        }
+      }
+    }
+
+    function applyBiteAnimation(now) {
+      if (biteState === 'none' || now > biteStateUntil) {
+        // Возвращаемся в спокойное состояние
+        bobOffsetX *= 0.85;
+        bobOffsetY *= 0.85;
+        bobAngle *= 0.85;
+        bobSinkExtra *= 0.9;
+        bobX = bobTargetX + bobOffsetX;
+        bobY = bobTargetY + bobJiggle + bobOffsetY + bobSinkExtra;
+        return;
+      }
+
+      const tProgress = 1 - (biteStateUntil - now) / (biteStateUntil - (biteStateUntil - 1500));
+
+      if (biteState === 'nibble') {
+        // Поплавок подёргивается на месте + лёгкая рябь
+        const dur = (biteStateUntil - now);
+        const intense = Math.sin(dur * 0.04) * Math.exp(-(1500 - dur) / 800);
+        bobOffsetY = -intense * 5;
+        bobOffsetX = Math.sin(now * 0.06) * 2 * nibbleDir;
+        bobAngle = Math.sin(now * 0.06) * 0.08 * nibbleDir;
+        if (Math.random() < 0.05) addRipple(bobX, WATER_Y + 4, 0.3);
+      }
+      else if (biteState === 'tilt') {
+        // Поплавок наклоняется в сторону + чуть погружается
+        bobAngle = nibbleDir * Math.min(0.7, tProgress * 1.2);
+        bobOffsetY = Math.min(8, tProgress * 12);
+        bobOffsetX = nibbleDir * Math.min(15, tProgress * 20);
+        if (Math.random() < 0.15) addRipple(bobX, WATER_Y + 4, 0.5);
+      }
+      else if (biteState === 'sideways') {
+        // Поплавок едет по поверхности в сторону
+        bobOffsetX = nibbleDir * Math.min(60, tProgress * 80);
+        bobOffsetY = Math.sin(now * 0.04) * 3;
+        bobAngle = nibbleDir * 0.25;
+        if (Math.random() < 0.18) addRipple(bobX, WATER_Y + 4, 0.4);
+      }
+      else if (biteState === 'submerge') {
+        // Поплавок резко уходит под воду
+        bobSinkExtra = Math.min(60, tProgress * 90);
+        bobOffsetY = 0;
+        bobOffsetX = Math.sin(now * 0.08) * 3;
+        bobAngle = Math.sin(now * 0.08) * 0.15;
+        if (Math.random() < 0.25) addRipple(bobX, WATER_Y + 4, 0.6);
+      }
+
+      bobX = bobTargetX + bobOffsetX;
+      bobY = bobTargetY + bobJiggle + bobOffsetY + bobSinkExtra;
+    }
+
+    /* ===== ОТРИСОВКА ===== */
     function draw(now) {
-      // ====== НЕБО ======
+      // Небо
       const sky = ctx.createLinearGradient(0, 0, 0, WATER_Y);
       sky.addColorStop(0, '#5db8ff');
       sky.addColorStop(1, '#fff8c0');
       ctx.fillStyle = sky;
       ctx.fillRect(0, 0, W, WATER_Y);
-
       // Облака
       ctx.fillStyle = 'rgba(255,255,255,0.85)';
       for (let i = 0; i < 4; i++) {
@@ -340,16 +482,33 @@
         cloud(cx, cy, 26);
       }
 
-      // ====== ВОДА ======
+      // Дальний берег
+      ctx.fillStyle = '#3a8c3a';
+      ctx.beginPath();
+      ctx.moveTo(0, WATER_Y);
+      for (let x = 0; x < W; x += 30) {
+        ctx.lineTo(x, WATER_Y - 5 - Math.sin(x * 0.04) * 5 - (x * 0.013 % 1) * 8);
+      }
+      ctx.lineTo(W, WATER_Y);
+      ctx.fill();
+
+      // Вода (градиент)
       const water = ctx.createLinearGradient(0, WATER_Y, 0, H);
-      water.addColorStop(0, '#5db8ff');
+      water.addColorStop(0, '#4a9fdc');
       water.addColorStop(0.3, '#1976d2');
       water.addColorStop(0.7, '#0d47a1');
       water.addColorStop(1, '#062a5e');
       ctx.fillStyle = water;
       ctx.fillRect(0, WATER_Y, W, H - WATER_Y);
 
-      // Подводные растения / трава
+      // Поверхность воды — более светлая полоса
+      const surfGrad = ctx.createLinearGradient(0, WATER_Y, 0, WATER_Y + 12);
+      surfGrad.addColorStop(0, 'rgba(255,255,255,0.35)');
+      surfGrad.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = surfGrad;
+      ctx.fillRect(0, WATER_Y, W, 12);
+
+      // Подводные растения у дна
       ctx.fillStyle = '#1b5e20';
       [40, 110, 200, 320, 450, 560].forEach(x => {
         for (let h = 0; h < 4; h++) {
@@ -360,10 +519,36 @@
         }
       });
 
-      // Рыбы под водой (силуэты)
+      // Силуэты рыб под водой
       waterFish.forEach(f => drawFishSilhouette(f));
 
-      // Пузырьки
+      // Подводная часть лески (если поплавок на воде или под водой)
+      if (phase === 'waiting' || phase === 'biting' || phase === 'fighting') {
+        // Леска от поплавка вниз к крючку
+        const hookY = bobY + 50 + bobSinkExtra * 0.3;
+        ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(bobX, bobY + 4);
+        ctx.lineTo(bobX, hookY);
+        ctx.stroke();
+        // Крючок
+        ctx.strokeStyle = '#999';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(bobX + 3, hookY, 4, Math.PI, Math.PI * 2);
+        ctx.stroke();
+        // Червячок (приманка)
+        ctx.strokeStyle = '#e11d48';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(bobX + 4, hookY + 2);
+        ctx.quadraticCurveTo(bobX + 8, hookY + 4, bobX + 6, hookY + 8);
+        ctx.quadraticCurveTo(bobX + 4, hookY + 11, bobX + 8, hookY + 14);
+        ctx.stroke();
+      }
+
+      // Пузырьки под водой
       bubbles.forEach(b => {
         ctx.fillStyle = `rgba(255,255,255,${b.life / 100 * 0.7})`;
         ctx.beginPath();
@@ -371,28 +556,37 @@
         ctx.fill();
       });
 
-      // ====== ВОЛНЫ (поверх воды) ======
+      // Волны на поверхности
       ctx.strokeStyle = 'rgba(255,255,255,0.4)';
       ctx.lineWidth = 1.5;
       for (let i = 0; i < 5; i++) {
         ctx.beginPath();
         for (let x = 0; x < W; x += 3) {
-          const y = WATER_Y + 10 + i * 18 + Math.sin((x + waveOffset + i * 30) * 0.04) * 2;
+          const y = WATER_Y + 14 + i * 18 + Math.sin((x + waveOffset + i * 30) * 0.04) * 2;
           if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
         }
         ctx.stroke();
       }
 
-      // Всплески
-      splashes.forEach(s => {
-        ctx.strokeStyle = `rgba(255,255,255,${s.life / 30})`;
-        ctx.lineWidth = 2;
+      // Круги ряби вокруг поплавка
+      waterRipples.forEach(r => {
+        ctx.strokeStyle = `rgba(255,255,255,${r.alpha})`;
+        ctx.lineWidth = 1.5;
         ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.ellipse(r.x, r.y, r.r, r.r * 0.4, 0, 0, Math.PI * 2);
         ctx.stroke();
       });
 
-      // ====== БЕРЕГ (внизу слева) ======
+      // Всплески от заброса
+      splashes.forEach(s => {
+        ctx.strokeStyle = `rgba(255,255,255,${s.life / 35})`;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.ellipse(s.x, s.y, s.r, s.r * 0.4, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      });
+
+      // Берег с травой
       ctx.fillStyle = '#8B6F47';
       ctx.beginPath();
       ctx.moveTo(0, H);
@@ -400,7 +594,6 @@
       ctx.bezierCurveTo(80, H - 100, 120, H - 60, 160, H - 50);
       ctx.lineTo(160, H);
       ctx.fill();
-      // Трава на берегу
       ctx.fillStyle = '#388e3c';
       ctx.beginPath();
       ctx.moveTo(0, H - 80);
@@ -408,100 +601,30 @@
       ctx.bezierCurveTo(120, H - 70, 80, H - 90, 0, H - 70);
       ctx.fill();
 
-      // ====== МИШКА-РЫБОЛОВ ======
+      // Мишка-рыболов
       drawBearFisher();
-
-      // ====== УДОЧКА ======
+      // Удочка
       drawRod();
 
-      // ====== ЛЕСКА ======
-      ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+      // Леска от удочки к поплавку (с провисом)
+      ctx.strokeStyle = 'rgba(255,255,255,0.7)';
       ctx.lineWidth = 1.2;
       ctx.beginPath();
       ctx.moveTo(rodTipX, rodTipY);
-      // Лёгкий провис
       const midX = (rodTipX + bobX) / 2;
       const midY = (rodTipY + bobY) / 2 + 8;
-      ctx.quadraticCurveTo(midX, midY, bobX, bobY);
+      ctx.quadraticCurveTo(midX, midY, bobX, bobY - 4);
       ctx.stroke();
 
-      // ====== ПОПЛАВОК ======
-      drawBobber();
+      // ПОПЛАВОК — рисуем РЕАЛИСТИЧНО с разделением на надводную и подводную часть
+      drawBobberRealistic(now);
 
-      // ====== HUD КЛЁВ-ИНДИКАТОР ======
-      if (phase === 'biting') {
-        const t = (now - biteStart) / biteWindow;
-        // Большое восклицание над поплавком
-        ctx.save();
-        ctx.translate(bobX, bobY - 50);
-        ctx.scale(1 + Math.sin(now * 0.03) * 0.15, 1 + Math.sin(now * 0.03) * 0.15);
-        ctx.font = 'bold 50px Bangers,sans-serif';
-        ctx.textAlign = 'center';
-        ctx.lineWidth = 5;
-        ctx.strokeStyle = '#000';
-        ctx.fillStyle = '#ff003c';
-        ctx.strokeText('!!!', 0, 0);
-        ctx.fillText('!!!', 0, 0);
-        ctx.restore();
-        // Полоса убывающего времени
-        ctx.fillStyle = 'rgba(0,0,0,0.5)';
-        ctx.fillRect(W/2 - 100, 20, 200, 16);
-        ctx.fillStyle = t < 0.7 ? '#39ff14' : '#ff003c';
-        ctx.fillRect(W/2 - 100, 20, 200 * (1 - t), 16);
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(W/2 - 100, 20, 200, 16);
-      }
-
-      // ====== HUD ВЫВАЖИВАНИЕ ======
-      if (phase === 'fighting') {
-        // Шкала натяжения
-        const barX = W/2 - 120, barY = 20, barW = 240, barH = 22;
-        ctx.fillStyle = 'rgba(0,0,0,0.5)';
-        ctx.fillRect(barX, barY, barW, barH);
-        const grad = ctx.createLinearGradient(barX, 0, barX + barW, 0);
-        grad.addColorStop(0, '#39ff14');
-        grad.addColorStop(0.6, '#ffcc00');
-        grad.addColorStop(1, '#ff003c');
-        ctx.fillStyle = grad;
-        ctx.fillRect(barX, barY, barW * fightTension, barH);
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(barX, barY, barW, barH);
-        // Подпись
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 16px Bangers,sans-serif';
-        ctx.textAlign = 'center';
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = '#000';
-        ctx.strokeText('НАТЯЖЕНИЕ', W/2, 56);
-        ctx.fillText('НАТЯЖЕНИЕ', W/2, 56);
-
-        // Шкала здоровья рыбы (HP)
-        const hpY = 76;
-        ctx.fillStyle = 'rgba(0,0,0,0.5)';
-        ctx.fillRect(barX, hpY, barW, 16);
-        ctx.fillStyle = '#0066ff';
-        ctx.fillRect(barX, hpY, barW * (1 - fightHP / fightMaxHP), 16);
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(barX, hpY, barW, 16);
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 13px Bangers,sans-serif';
-        ctx.textAlign = 'center';
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = '#000';
-        ctx.strokeText('РЫБА (тапай!)', W/2, 105);
-        ctx.fillText('РЫБА (тапай!)', W/2, 105);
-      }
-
-      // Поймал — показать рыбу
+      // Поймал — летающая рыба
       if (phase === 'caught' && currentFish) {
-        const t = Math.min(1, (now - biteStart) / 800);
-        const fy = bobY - 60 + Math.sin(t * Math.PI) * -30;
         ctx.save();
-        ctx.translate(bobX, fy);
-        ctx.rotate(-Math.PI / 6 - t * Math.PI * 0.5);
+        ctx.translate(caughtFishX, caughtFishY);
+        const t = (now - fightStart) / 1000;
+        ctx.rotate(-Math.PI / 6 - Math.min(1, t) * Math.PI * 0.4);
         drawFishBig(currentFish);
         ctx.restore();
       }
@@ -520,7 +643,9 @@
       ctx.save();
       ctx.translate(f.x, f.y);
       if (f.vx < 0) ctx.scale(-1, 1);
-      ctx.fillStyle = `rgba(${parseInt(f.color.slice(1,3),16)}, ${parseInt(f.color.slice(3,5),16)}, ${parseInt(f.color.slice(5,7),16)}, 0.5)`;
+      const c = f.color.slice(1);
+      const r = parseInt(c.slice(0,2),16), g = parseInt(c.slice(2,4),16), b = parseInt(c.slice(4,6),16);
+      ctx.fillStyle = `rgba(${r},${g},${b},0.45)`;
       ctx.beginPath();
       ctx.ellipse(0, 0, f.size, f.size * 0.5, 0, 0, Math.PI * 2);
       ctx.fill();
@@ -532,26 +657,142 @@
       ctx.restore();
     }
 
+    /* ===== РЕАЛИСТИЧНЫЙ ПОПЛАВОК ===== */
+    function drawBobberRealistic(now) {
+      ctx.save();
+      ctx.translate(bobX, bobY);
+      ctx.rotate(bobAngle);
+
+      // Тень/отражение под поплавком в воде (если на воде)
+      if (phase === 'waiting' || phase === 'biting' || phase === 'casting') {
+        ctx.fillStyle = 'rgba(0,0,0,0.25)';
+        ctx.beginPath();
+        ctx.ellipse(0, 14, 8, 2, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // === Если поплавок не утопает (на воде) ===
+      if (bobSinkExtra < 30) {
+        // ----- НАДВОДНАЯ ЧАСТЬ (видна полностью) -----
+        // Антенна (тонкая палочка вверх с оранжевым кончиком)
+        ctx.fillStyle = '#222';
+        ctx.fillRect(-1, -28, 2, 18);
+        // Кончик антенны (оранжевый)
+        ctx.fillStyle = '#ff6b00';
+        ctx.fillRect(-1.5, -28, 3, 5);
+        // Колечко-маркер
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(-1.5, -22, 3, 1.5);
+
+        // Верхняя красная часть (надводная)
+        const redGrad = ctx.createRadialGradient(-2, -12, 1, 0, -10, 9);
+        redGrad.addColorStop(0, '#ff5c7a');
+        redGrad.addColorStop(0.6, '#e11d48');
+        redGrad.addColorStop(1, '#8b0d28');
+        ctx.fillStyle = redGrad;
+        ctx.beginPath();
+        ctx.ellipse(0, -10, 8, 9, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Белая средняя часть
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 8, 7, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // Чёрная разделительная полоска
+        ctx.fillStyle = '#0a0a0a';
+        ctx.fillRect(-8, -4, 16, 1.5);
+
+        // === ПОДВОДНАЯ ЧАСТЬ — рисуем ниже линии воды ===
+        ctx.save();
+        // Маска: рисуем только ниже WATER_Y (в координатах canvas, не локальных)
+        // Используем clip
+        ctx.beginPath();
+        ctx.rect(-30, FLOAT_WATERLINE_OFFSET, 60, 80);
+        ctx.clip();
+
+        // Нижняя часть (под водой видна через синюю воду — рисуем тёмнее)
+        // Сначала чисто белая
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.beginPath();
+        ctx.ellipse(0, 6, 7, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // Синий оттенок воды поверх (создаёт эффект "под водой")
+        ctx.fillStyle = 'rgba(13,71,161,0.55)';
+        ctx.beginPath();
+        ctx.ellipse(0, 6, 7, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        // Блик на поплавке
+        ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        ctx.beginPath();
+        ctx.arc(-3, -12, 2, 0, Math.PI * 2);
+        ctx.fill();
+
+      } else {
+        // === Поплавок ушёл под воду — рисуем затопленным ===
+        // Только маленький намёк на верхушку видим над водой
+        ctx.globalAlpha = 0.5;
+        // Антенна
+        ctx.fillStyle = '#ff6b00';
+        ctx.fillRect(-1, -10, 2, 8);
+        ctx.globalAlpha = 1;
+
+        // Поплавок целиком под водой — рисуем с синим оттенком
+        ctx.save();
+        // Если bobSinkExtra > 30, поплавок ниже воды
+        // Локальная Y = 0 это на воде, увеличение Y = вниз
+        // bobY уже включает sinkExtra, так что в локальных координатах верх поплавка = -10, низ = 6
+        // То есть весь поплавок виден ниже линии воды (которая в текущей системе координат = -bobSinkExtra)
+        const waterLineLocal = -bobSinkExtra; // координата линии воды в локальной системе
+
+        // Применяем синий тон ко всему поплавку (он под водой)
+        ctx.beginPath();
+        // Красная верхушка (в синей воде)
+        ctx.fillStyle = '#a82e44';
+        ctx.beginPath();
+        ctx.ellipse(0, -10, 8, 9, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // Белая часть
+        ctx.fillStyle = 'rgba(180,200,220,0.85)';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 8, 7, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(120,150,180,0.85)';
+        ctx.beginPath();
+        ctx.ellipse(0, 6, 7, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // Чёрная полоса
+        ctx.fillStyle = '#0a0a0a';
+        ctx.fillRect(-8, -4, 16, 1.5);
+        // Синий оттенок поверх (вода)
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = '#0d47a1';
+        ctx.fillRect(-10, -25, 20, 40);
+        ctx.globalAlpha = 1;
+        ctx.restore();
+      }
+
+      ctx.restore();
+    }
+
     function drawFishBig(fish) {
       const s = 50 * fish.size;
-      // Тело
       ctx.fillStyle = fish.color;
       ctx.beginPath();
       ctx.ellipse(0, 0, s, s * 0.5, 0, 0, Math.PI * 2);
       ctx.fill();
-      // Брюхо светлее
       ctx.fillStyle = 'rgba(255,255,255,0.4)';
       ctx.beginPath();
       ctx.ellipse(0, s * 0.15, s * 0.85, s * 0.3, 0, 0, Math.PI * 2);
       ctx.fill();
-      // Хвост
       ctx.fillStyle = fish.color;
       ctx.beginPath();
       ctx.moveTo(-s, 0);
       ctx.lineTo(-s * 1.5, -s * 0.4);
       ctx.lineTo(-s * 1.5, s * 0.4);
       ctx.fill();
-      // Глаз
       ctx.fillStyle = '#fff';
       ctx.beginPath();
       ctx.arc(s * 0.55, -s * 0.15, s * 0.12, 0, Math.PI * 2);
@@ -560,11 +801,8 @@
       ctx.beginPath();
       ctx.arc(s * 0.6, -s * 0.13, s * 0.06, 0, Math.PI * 2);
       ctx.fill();
-      // Особые детали разных рыб
       if (fish.id === 'okun') {
-        // Полосы у окуня
-        ctx.strokeStyle = '#1a3a1a';
-        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#1a3a1a'; ctx.lineWidth = 3;
         for (let i = -1; i <= 2; i++) {
           ctx.beginPath();
           ctx.moveTo(s * 0.2 * i, -s * 0.4);
@@ -572,9 +810,7 @@
           ctx.stroke();
         }
       } else if (fish.id === 'som') {
-        // Усы сома
-        ctx.strokeStyle = '#3a2410';
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#3a2410'; ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(s * 0.7, -s * 0.05);
         ctx.quadraticCurveTo(s * 1.0, -s * 0.3, s * 1.15, -s * 0.2);
@@ -582,7 +818,6 @@
         ctx.quadraticCurveTo(s * 1.0, s * 0.3, s * 1.15, s * 0.2);
         ctx.stroke();
       } else if (fish.id === 'shuka') {
-        // Зубы щуки
         ctx.fillStyle = '#fff';
         ctx.beginPath();
         ctx.moveTo(s * 0.85, s * 0.05);
@@ -590,7 +825,6 @@
         ctx.lineTo(s * 0.75, s * 0.1);
         ctx.fill();
       } else if (fish.id === 'gold') {
-        // Корона у золотой рыбки
         ctx.fillStyle = '#ff6b00';
         ctx.beginPath();
         ctx.moveTo(-s * 0.3, -s * 0.5);
@@ -599,13 +833,7 @@
         ctx.lineTo(0, -s * 0.7);
         ctx.lineTo(s * 0.1, -s * 0.5);
         ctx.fill();
-        // Сияние
-        ctx.fillStyle = 'rgba(255,255,200,0.5)';
-        ctx.beginPath();
-        ctx.arc(0, 0, s * 1.5, 0, Math.PI * 2);
-        ctx.fill();
       } else if (fish.id === 'boot') {
-        // Сапог рисуем по-другому
         ctx.clearRect(-s * 1.7, -s * 0.7, s * 3.5, s * 1.5);
         ctx.fillStyle = '#3a2410';
         ctx.beginPath();
@@ -616,9 +844,7 @@
         ctx.lineTo(s * 0.9, s * 0.6);
         ctx.lineTo(-s * 0.8, s * 0.6);
         ctx.fill();
-        // Шнурки
-        ctx.strokeStyle = '#888';
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#888'; ctx.lineWidth = 2;
         for (let i = 0; i < 4; i++) {
           ctx.beginPath();
           ctx.moveTo(-s * 0.5, -s * 0.5 + i * s * 0.25);
@@ -629,192 +855,127 @@
     }
 
     function drawBearFisher() {
-      // Мишка стоит на берегу
       const bx = 80, by = H - 110;
-      // Туловище
       ctx.fillStyle = '#A0522D';
-      ctx.beginPath();
-      ctx.ellipse(bx, by + 50, 32, 40, 0, 0, Math.PI * 2);
-      ctx.fill();
-      // Жилет
-      ctx.fillStyle = '#5d3a1a';
-      ctx.fillRect(bx - 28, by + 30, 56, 30);
-      // Голова
+      ctx.beginPath(); ctx.ellipse(bx, by + 50, 32, 40, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#5d3a1a'; ctx.fillRect(bx - 28, by + 30, 56, 30);
       ctx.fillStyle = '#A0522D';
-      ctx.beginPath();
-      ctx.arc(bx, by, 26, 0, Math.PI * 2);
-      ctx.fill();
-      // Уши
+      ctx.beginPath(); ctx.arc(bx, by, 26, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#8B4513';
       ctx.beginPath(); ctx.arc(bx - 22, by - 15, 8, 0, Math.PI * 2); ctx.arc(bx + 22, by - 15, 8, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#D2691E';
       ctx.beginPath(); ctx.arc(bx - 22, by - 15, 4, 0, Math.PI * 2); ctx.arc(bx + 22, by - 15, 4, 0, Math.PI * 2); ctx.fill();
-      // Морда
       ctx.fillStyle = '#F4D8A8';
-      ctx.beginPath();
-      ctx.ellipse(bx, by + 8, 13, 10, 0, 0, Math.PI * 2);
-      ctx.fill();
-      // Нос
+      ctx.beginPath(); ctx.ellipse(bx, by + 8, 13, 10, 0, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#2b1810';
-      ctx.beginPath();
-      ctx.ellipse(bx, by + 5, 3, 2, 0, 0, Math.PI * 2);
-      ctx.fill();
-      // Глаза
+      ctx.beginPath(); ctx.ellipse(bx, by + 5, 3, 2, 0, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#fff';
       ctx.beginPath(); ctx.arc(bx - 7, by - 3, 3, 0, Math.PI * 2); ctx.arc(bx + 7, by - 3, 3, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#000';
       ctx.beginPath(); ctx.arc(bx - 7, by - 3, 1.5, 0, Math.PI * 2); ctx.arc(bx + 7, by - 3, 1.5, 0, Math.PI * 2); ctx.fill();
-      // Рот в зависимости от фазы
-      ctx.strokeStyle = '#2b1810';
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#2b1810'; ctx.lineWidth = 2;
       ctx.beginPath();
-      if (phase === 'caught') {
-        ctx.arc(bx, by + 11, 5, 0, Math.PI);
-      } else if (phase === 'biting') {
+      if (phase === 'caught') ctx.arc(bx, by + 11, 5, 0, Math.PI);
+      else if (phase === 'biting' || (phase === 'waiting' && isCatchableBite)) {
         ctx.fillStyle = '#ff4d6d';
         ctx.ellipse(bx, by + 12, 4, 3, 0, 0, Math.PI * 2);
         ctx.fill();
-        return;
-      } else {
-        ctx.moveTo(bx - 3, by + 12);
-        ctx.lineTo(bx + 3, by + 12);
-      }
+      } else { ctx.moveTo(bx - 3, by + 12); ctx.lineTo(bx + 3, by + 12); }
       ctx.stroke();
-      // Шапка-кепка с лоскутом
       ctx.fillStyle = '#2e7d32';
-      ctx.beginPath();
-      ctx.arc(bx, by - 18, 22, Math.PI, 0);
-      ctx.fill();
+      ctx.beginPath(); ctx.arc(bx, by - 18, 22, Math.PI, 0); ctx.fill();
+      ctx.fillStyle = '#1b5e20'; ctx.fillRect(bx - 22, by - 22, 44, 6);
       ctx.fillStyle = '#1b5e20';
-      ctx.fillRect(bx - 22, by - 22, 44, 6);
-      // Козырёк кепки
-      ctx.fillStyle = '#1b5e20';
-      ctx.beginPath();
-      ctx.ellipse(bx + 18, by - 16, 14, 4, 0, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.beginPath(); ctx.ellipse(bx + 18, by - 16, 14, 4, 0, 0, Math.PI * 2); ctx.fill();
     }
 
     function drawRod() {
-      const rodBaseX = 80;
-      const rodBaseY = H - 100;
-      // Удилище
+      const rodBaseX = 80, rodBaseY = H - 100;
       ctx.save();
       ctx.translate(rodBaseX, rodBaseY);
       ctx.rotate(rodAngle);
-      // Тело удилища (градиент от тёмного к светлому)
       const rodGrad = ctx.createLinearGradient(0, 0, 220, 0);
       rodGrad.addColorStop(0, '#3a2410');
       rodGrad.addColorStop(0.5, '#8B4513');
       rodGrad.addColorStop(1, '#D2691E');
       ctx.fillStyle = rodGrad;
       ctx.beginPath();
-      ctx.moveTo(0, -3);
-      ctx.lineTo(220, -1);
-      ctx.lineTo(220, 1);
-      ctx.lineTo(0, 3);
-      ctx.fill();
-      // Кольца на удилище
+      ctx.moveTo(0, -3); ctx.lineTo(220, -1); ctx.lineTo(220, 1); ctx.lineTo(0, 3); ctx.fill();
       ctx.fillStyle = '#ccc';
-      [40, 90, 140, 190].forEach(x => {
-        ctx.beginPath();
-        ctx.arc(x, 0, 3, 0, Math.PI * 2);
-        ctx.fill();
-      });
-      // Рукоятка
-      ctx.fillStyle = '#1a0a00';
-      ctx.fillRect(-15, -5, 30, 10);
+      [40, 90, 140, 190].forEach(x => { ctx.beginPath(); ctx.arc(x, 0, 3, 0, Math.PI * 2); ctx.fill(); });
+      ctx.fillStyle = '#1a0a00'; ctx.fillRect(-15, -5, 30, 10);
       ctx.restore();
-      // Катушка
       ctx.fillStyle = '#444';
-      ctx.beginPath();
-      ctx.arc(rodBaseX + 5, rodBaseY + 8, 8, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.beginPath(); ctx.arc(rodBaseX + 5, rodBaseY + 8, 8, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#888';
-      ctx.beginPath();
-      ctx.arc(rodBaseX + 5, rodBaseY + 8, 4, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.beginPath(); ctx.arc(rodBaseX + 5, rodBaseY + 8, 4, 0, Math.PI * 2); ctx.fill();
     }
 
-    function drawBobber() {
-      // Поплавок: красный верх, белый низ, антенна
-      ctx.save();
-      ctx.translate(bobX, bobY);
-      // Антенна (тонкая палочка вверх)
-      ctx.fillStyle = '#ff003c';
-      ctx.fillRect(-1, -22, 2, 12);
-      // Верхняя часть (красный шар)
-      ctx.fillStyle = '#e11d48';
-      ctx.beginPath();
-      ctx.arc(0, -8, 8, 0, Math.PI * 2);
-      ctx.fill();
-      // Нижняя часть (белая)
-      ctx.fillStyle = '#fff';
-      ctx.beginPath();
-      ctx.arc(0, 0, 8, 0, Math.PI * 2);
-      ctx.fill();
-      // Линия раздела
-      ctx.fillStyle = '#0a0a0a';
-      ctx.fillRect(-8, -4, 16, 1.5);
-      // Блик
-      ctx.fillStyle = 'rgba(255,255,255,0.6)';
-      ctx.beginPath();
-      ctx.arc(-3, -10, 2, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    }
-
-    // ===== ИГРОВЫЕ ДЕЙСТВИЯ =====
+    /* ===== ИГРОВЫЕ ДЕЙСТВИЯ ===== */
     function startGame() {
-      score = 0;
-      caught = 0;
+      score = 0; caught = 0;
       updateHUD();
       startOverlay.classList.add('hide');
       catchOverlay.classList.add('hide');
       returnToIdle();
       lastFrame = performance.now();
-      requestAnimationFrame(loop);
     }
 
     function returnToIdle() {
       phase = 'idle';
-      bobUnderwater = 0;
+      bobOffsetX = 0; bobOffsetY = 0; bobAngle = 0; bobSinkExtra = 0;
+      isCatchableBite = false;
+      biteState = 'none';
       currentFish = null;
-      hintEl.textContent = '👆 Тапни в воду — заброс!';
-      hintEl.style.background = 'rgba(0,0,0,0.7)';
+      setStatus('👆 Тапни в воду — заброс!', '');
     }
 
     function castTo(targetX, targetY) {
       if (phase !== 'idle') return;
-      // Принудительно в воду
-      targetY = Math.max(WATER_Y + 10, Math.min(H - 30, targetY));
+      targetY = Math.max(WATER_Y + 20, Math.min(H - 40, targetY));
       bobTargetX = targetX;
       bobTargetY = targetY;
       phase = 'casting';
       castStartTime = performance.now();
       playCast();
-      hintEl.textContent = '🎣 Заброс!';
+      setStatus('🎣 Заброс!', '');
     }
 
     function tryHook() {
-      if (phase === 'biting') {
-        // Подсечка успешна!
-        phase = 'fighting';
-        fightHP = currentFish.fightHP;
-        fightMaxHP = currentFish.fightHP;
-        fightTension = 0.2;
-        fightStart = performance.now();
-        hintEl.textContent = '💪 Тапай быстрее!';
-        hintEl.style.background = 'rgba(57,255,20,0.85)';
-        playHookSet();
+      const now = performance.now();
+      if (phase === 'waiting') {
+        if (isCatchableBite && now <= biteCatchableUntil) {
+          // Подсечка успешна!
+          phase = 'fighting';
+          fightHP = currentFish.fightHP;
+          fightMaxHP = currentFish.fightHP;
+          fightTension = 0.2;
+          fightStart = now;
+          isCatchableBite = false;
+          biteState = 'none';
+          setStatus('💪 Тапай быстрее!', 'success');
+          playHookSet();
+        } else if (biteState === 'nibble') {
+          // Преждевременная подсечка — рыба испугалась
+          biteState = 'none';
+          biteStateUntil = 0;
+          bobOffsetX = 0; bobOffsetY = 0; bobAngle = 0;
+          setStatus('🙈 Рано! Рыба испугалась', '');
+          playMissBite();
+          nextBiteEventAt = now + 4000 + Math.random() * 3000;
+          biteCount = 0;
+        } else {
+          // Тап в пустоту
+          setStatus('🐟 Жди клёва...', '');
+          playClickEmpty();
+        }
       } else if (phase === 'fighting') {
-        // Тап во время вываживания — снимаем натяжение и ослабляем рыбу
         fightHP--;
         fightTension = Math.max(0, fightTension - 0.18);
         playReel();
         if (fightHP <= 0) {
-          // Поймал!
           phase = 'caught';
-          biteStart = performance.now();
+          fightStart = now;
           score += currentFish.points;
           caught++;
           if (score > best) {
@@ -822,12 +983,14 @@
             localStorage.setItem('bear_fish_best', best);
           }
           updateHUD();
-          splashes.push({ x: bobX, y: WATER_Y + 5, r: 10, life: 40 });
+          splashes.push({ x: bobX, y: WATER_Y + 5, r: 12, life: 45 });
+          addRipple(bobX, WATER_Y + 4, 1.5);
           playCatch();
-          hintEl.textContent = '🏆 ПОЙМАЛ!';
-          hintEl.style.background = 'rgba(57,255,20,0.85)';
-          setTimeout(() => showCatchModal(), 800);
+          setStatus('🏆 ПОЙМАЛ!', 'success');
+          setTimeout(() => showCatchModal(), 1100);
         }
+      } else if (phase === 'idle') {
+        // обработано в handleTap
       }
     }
 
@@ -851,7 +1014,7 @@
       bestEl.textContent = best;
     }
 
-    // ===== УПРАВЛЕНИЕ =====
+    /* ===== УПРАВЛЕНИЕ ===== */
     function getCanvasPoint(clientX, clientY) {
       const rect = canvas.getBoundingClientRect();
       return {
@@ -865,16 +1028,15 @@
       const t = e.touches ? e.touches[0] : (e.changedTouches ? e.changedTouches[0] : e);
       const p = getCanvasPoint(t.clientX, t.clientY);
       if (phase === 'idle') {
-        // Заброс к точке тапа
         if (p.y > WATER_Y) castTo(p.x, p.y);
-      } else if (phase === 'biting' || phase === 'fighting') {
+      } else if (phase === 'waiting' || phase === 'fighting') {
         tryHook();
       }
     }
     canvas.addEventListener('click', handleTap);
     canvas.addEventListener('touchstart', handleTap, { passive: false });
 
-    // ===== ЗВУКИ =====
+    /* ===== ЗВУКИ ===== */
     function playSplash(vol = 1) {
       if (!window.BearSound || !BearSound.sfxEnabled) return;
       const ctxA = BearSound._ctx();
@@ -900,14 +1062,11 @@
     }
     function playCast() {
       if (!window.BearSound || !BearSound.sfxEnabled) return;
-      // Свист удилища + всплеск через 600мс
       const ctxA = BearSound._ctx();
       const t = ctxA.currentTime;
       const buf = ctxA.createBuffer(1, ctxA.sampleRate * 0.3, ctxA.sampleRate);
       const data = buf.getChannelData(0);
-      for (let i = 0; i < data.length; i++) {
-        data[i] = (Math.random() * 2 - 1) * Math.pow(Math.sin(i / data.length * Math.PI), 1);
-      }
+      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(Math.sin(i / data.length * Math.PI), 1);
       const src = ctxA.createBufferSource();
       src.buffer = buf;
       const filt = ctxA.createBiquadFilter();
@@ -921,26 +1080,57 @@
       src.connect(filt).connect(gain).connect(ctxA.destination);
       src.start(t);
     }
-    function playBite() {
+    /* Лёгкое подёргивание — тонкий "плик" */
+    function playNibble() {
       if (!window.BearSound || !BearSound.sfxEnabled) return;
-      // Булькающий звук под водой
+      const ctxA = BearSound._ctx();
+      const t = ctxA.currentTime;
+      const osc = ctxA.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(900, t);
+      osc.frequency.exponentialRampToValueAtTime(300, t + 0.08);
+      const g = ctxA.createGain();
+      g.gain.setValueAtTime(0.12, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+      osc.connect(g).connect(ctxA.destination);
+      osc.start(t); osc.stop(t + 0.11);
+    }
+    /* Серьёзный клёв — поплавок под воду — БУЛЬК! */
+    function playBiteUnder() {
+      if (!window.BearSound || !BearSound.sfxEnabled) return;
+      const ctxA = BearSound._ctx();
+      const t = ctxA.currentTime;
+      // Низкий бульк
+      const osc = ctxA.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(220, t);
+      osc.frequency.exponentialRampToValueAtTime(55, t + 0.18);
+      const g = ctxA.createGain();
+      g.gain.setValueAtTime(0.35, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+      osc.connect(g).connect(ctxA.destination);
+      osc.start(t); osc.stop(t + 0.24);
+      // Плеск
+      setTimeout(() => playSplash(0.7), 30);
+    }
+    /* Поведение в сторону — ПЛЮХ */
+    function playBiteSide() {
+      if (!window.BearSound || !BearSound.sfxEnabled) return;
+      playSplash(0.6);
       const ctxA = BearSound._ctx();
       const t = ctxA.currentTime;
       const osc = ctxA.createOscillator();
       osc.type = 'sine';
       osc.frequency.setValueAtTime(180, t);
-      osc.frequency.exponentialRampToValueAtTime(80, t + 0.15);
+      osc.frequency.exponentialRampToValueAtTime(90, t + 0.12);
       const g = ctxA.createGain();
-      g.gain.setValueAtTime(0.3, t);
-      g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+      g.gain.setValueAtTime(0.25, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
       osc.connect(g).connect(ctxA.destination);
-      osc.start(t); osc.stop(t + 0.2);
-      // Плеск
-      setTimeout(() => playSplash(0.5), 50);
+      osc.start(t); osc.stop(t + 0.16);
     }
     function playHookSet() {
       if (!window.BearSound || !BearSound.sfxEnabled) return;
-      // Резкий "вжик!" подсечки
       const ctxA = BearSound._ctx();
       const t = ctxA.currentTime;
       const osc = ctxA.createOscillator();
@@ -955,7 +1145,6 @@
     }
     function playReel() {
       if (!window.BearSound || !BearSound.sfxEnabled) return;
-      // Тиканье катушки
       const ctxA = BearSound._ctx();
       const t = ctxA.currentTime;
       const buf = ctxA.createBuffer(1, ctxA.sampleRate * 0.05, ctxA.sampleRate);
@@ -965,21 +1154,21 @@
       src.buffer = buf;
       const filt = ctxA.createBiquadFilter();
       filt.type = 'bandpass';
-      filt.frequency.value = 3000;
-      filt.Q.value = 8;
+      filt.frequency.value = 3000; filt.Q.value = 8;
       const g = ctxA.createGain();
       g.gain.value = 0.18;
       src.connect(filt).connect(g).connect(ctxA.destination);
       src.start(t);
     }
-    function playMiss() {
-      if (window.BearSound) BearSound._tone(150, 0.3, 'sawtooth', 0.2);
+    function playMissBite() {
+      if (window.BearSound) BearSound._tone(150, 0.2, 'sawtooth', 0.18);
+    }
+    function playClickEmpty() {
+      if (window.BearSound) BearSound._tone(400, 0.04, 'square', 0.08);
     }
     function playLineBreak() {
       if (!window.BearSound || !BearSound.sfxEnabled) return;
-      // "Бзынь!" треск
       const ctxA = BearSound._ctx();
-      const t = ctxA.currentTime;
       [3000, 2000, 1500].forEach((f, i) => setTimeout(() => {
         const osc = ctxA.createOscillator();
         osc.type = 'square';
@@ -989,8 +1178,7 @@
         g.gain.setValueAtTime(0.2, ctxA.currentTime);
         g.gain.exponentialRampToValueAtTime(0.001, ctxA.currentTime + 0.12);
         osc.connect(g).connect(ctxA.destination);
-        osc.start();
-        osc.stop(ctxA.currentTime + 0.13);
+        osc.start(); osc.stop(ctxA.currentTime + 0.13);
       }, i * 80));
     }
     function playCatch() {
@@ -1000,13 +1188,13 @@
       }
     }
 
-    // ===== Звук кнопки =====
+    /* ===== Звук кнопки ===== */
     function refreshSoundBtns(){const s=window.BearSound;if(!s)return;document.getElementById('sfxBtn').classList.toggle('off',!s.sfxEnabled);document.getElementById('sfxBtn').textContent=s.sfxEnabled?'🔊':'🔇';document.getElementById('musBtn').classList.toggle('off',!s.musicEnabled);document.getElementById('musBtn').textContent=s.musicEnabled?'🎵':'🎶'}
     document.getElementById('sfxBtn').addEventListener('click',()=>{BearSound.toggleSfx();refreshSoundBtns()});
     document.getElementById('musBtn').addEventListener('click',()=>{BearSound.toggleMusic();refreshSoundBtns()});
     window.addEventListener('load',()=>setTimeout(refreshSoundBtns,100));
 
-    // Старт инициализация (не запускаем игру до клика)
+    // Старт инициализация
     rodAngle = -Math.PI / 3;
     bobX = 80 + Math.cos(rodAngle) * 220;
     bobY = H - 100 + Math.sin(rodAngle) * 220 + 8;
