@@ -53,10 +53,7 @@
         <div class="stat-pill">🏆 <span id="round">1</span></div>
         <div class="stat-pill">⭐ <span id="score">0</span></div>
         <div class="stat-pill">🎯 <span id="hit">0</span>/<span id="total">10</span></div>
-        <div class="stat-pill ammo-display">
-          <span class="shell" id="shell1"></span>
-          <span class="shell" id="shell2"></span>
-        </div>
+        <div class="stat-pill ammo-display" id="ammoDisplay"></div>
         <div class="stat-pill" id="reloadPill" style="display:none;color:#e11d48">🔄 ПЕРЕЗАРЯДКА</div>
       </div>
       <canvas id="c" width="640" height="640"></canvas>
@@ -110,15 +107,15 @@
     const scoreEl = document.getElementById('score');
     const hitEl = document.getElementById('hit');
     const totalEl = document.getElementById('total');
-    const shell1 = document.getElementById('shell1');
-    const shell2 = document.getElementById('shell2');
+    const ammoDisplay = document.getElementById('ammoDisplay');
+    const MAX_AMMO = 10;
     const reloadPill = document.getElementById('reloadPill');
     const startOverlay = document.getElementById('startOverlay');
     const roundOverlay = document.getElementById('roundOverlay');
     const winModal = document.getElementById('winModal');
 
     // State
-    let round = 1, score = 0, ammo = 2, reloading = false;
+    let round = 1, score = 0, ammo = MAX_AMMO, reloading = false;
     let ducksLeft = 10, ducksHit = 0, ducksGone = 0, ducksTotalThisRound = 10;
     let phase = 'menu';
     let ducks = [], particles = [], smoke = [];
@@ -857,7 +854,7 @@
       // Прицел перепрыгивает в точку выстрела (для тача)
       aim.x = clickX; aim.y = clickY;
       ammo--;
-      activeBarrel = ammo === 1 ? 0 : 1; // первым стреляем правый, потом левый
+      activeBarrel = ammo % 2; // чередуем стволы
       updateAmmo();
       flash = { x: clickX, y: clickY, age: 0 };
       recoil = 1;
@@ -930,15 +927,30 @@
       reloadPill.style.display = 'inline-block';
       playReload();
       setTimeout(() => {
-        ammo = 2; reloading = false;
+        ammo = MAX_AMMO; reloading = false;
         reloadPill.style.display = 'none';
         updateAmmo();
       }, 1400);
     }
 
     function updateAmmo() {
-      shell1.classList.toggle('empty', ammo < 1);
-      shell2.classList.toggle('empty', ammo < 2);
+      ammoDisplay.innerHTML = '';
+      // Показываем счётчик + ряд патронов
+      const lbl = document.createElement('span');
+      lbl.style.fontFamily = 'Bangers,sans-serif';
+      lbl.style.fontSize = 'clamp(.95rem,3vw,1.2rem)';
+      lbl.style.marginRight = '4px';
+      lbl.textContent = '🔫 ' + ammo + '/' + MAX_AMMO;
+      ammoDisplay.appendChild(lbl);
+      // Маленькие патрончики
+      for (let i = 0; i < MAX_AMMO; i++) {
+        const sh = document.createElement('span');
+        sh.className = 'shell' + (i >= ammo ? ' empty' : '');
+        sh.style.width = '6px';
+        sh.style.height = '14px';
+        sh.style.borderWidth = '1px';
+        ammoDisplay.appendChild(sh);
+      }
     }
     function updateHUD() {
       roundEl.textContent = round; scoreEl.textContent = score;
@@ -949,7 +961,7 @@
     function startGame() {
       round = 1; score = 0;
       ducksHit = 0; ducksGone = 0; ducksLeft = 10; ducksTotalThisRound = 10;
-      ammo = 2; reloading = false;
+      ammo = MAX_AMMO; reloading = false;
       ducks = []; particles = []; smoke = []; flash = null;
       phase = 'playing';
       lastSpawn = 0; spawnInterval = 1800;
@@ -990,7 +1002,7 @@
       ducksHit = 0; ducksGone = 0; ducksLeft = 10; ducksTotalThisRound = 10;
       phase = 'playing';
       ducks = []; particles = [];
-      ammo = 2; reloading = false;
+      ammo = MAX_AMMO; reloading = false;
       reloadPill.style.display = 'none';
       roundOverlay.classList.add('hide');
       updateAmmo(); updateHUD();
@@ -1372,7 +1384,7 @@
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'r' || e.key === 'R' || e.code === 'KeyR') {
-        if (!reloading && ammo < 2) reload();
+        if (!reloading && ammo < MAX_AMMO) reload();
       }
       if (e.code === 'Space') {
         e.preventDefault();
