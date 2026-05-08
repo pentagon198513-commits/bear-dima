@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#FF6B00" />
+  <title>🦆 Охота на уток — Медведь</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon-180.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="game.css" />
+  <script src="sounds.js?v=4" defer></script>
+  <style>
+    .canvas-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 8px;
+      position: relative;
+    }
+    canvas {
+      width: min(95vw, 720px);
+      height: min(60vh, 480px);
+      background: linear-gradient(180deg, #87ceeb 0%, #b6e3ff 60%, #90c87f 60%, #4d8c2f 100%);
+      border: 6px solid var(--hw-yellow);
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35), 0 0 40px rgba(255,107,0,0.4);
+      display: block;
+      touch-action: none;
+      cursor: crosshair;
+    }
+    .ammo-bar {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: center;
+      margin: 6px 0;
+      font-family: 'Bangers', sans-serif;
+      letter-spacing: 0.05em;
+    }
+    .shell {
+      width: 22px;
+      height: 36px;
+      border-radius: 4px 4px 6px 6px;
+      background: linear-gradient(180deg, #d40000 0%, #8b0000 60%, #ffcc00 60%, #aa8800 100%);
+      border: 2px solid #2b1810;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      transition: transform 0.2s, opacity 0.2s;
+    }
+    .shell.spent { opacity: 0.25; transform: scale(0.85); }
+    .reloading-text {
+      font-family: 'Bangers', sans-serif;
+      color: #fff;
+      font-size: clamp(1rem, 4vw, 1.4rem);
+      text-shadow: 2px 2px 0 #000;
+      animation: pulse 0.8s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:0.5} 50%{opacity:1} }
+    .game-over-text {
+      font-family: 'Bangers', sans-serif;
+      color: #fff;
+      font-size: clamp(1.1rem, 3.5vw, 1.4rem);
+      text-shadow: 2px 2px 0 #000;
+    }
+    .game-stats .stat-pill { font-size: clamp(0.9rem, 3vw, 1.2rem); }
+  </style>
+</head>
+<body>
+  <header class="game-header">
+    <a href="../" class="back-btn"><span>←</span><span>НАЗАД</span></a>
+    <h1 class="game-title">🦆 ОХОТА НА УТОК</h1>
+    <div class="game-stats">
+      <div class="stat-pill">⭐ <span id="score">0</span></div>
+      <div class="stat-pill">❤️ <span id="lives">3</span></div>
+    </div>
+    <div class="sound-toggles">
+      <button class="sound-btn" id="sfxBtn" aria-label="Звук">🔊</button>
+      <button class="sound-btn" id="musBtn" aria-label="Музыка">🎵</button>
+    </div>
+  </header>
+
+  <main class="game-area" style="flex-direction:column;gap:6px;">
+    <div class="ammo-bar">
+      <span class="game-over-text">🔫</span>
+      <div class="shell" id="shell0"></div>
+      <div class="shell" id="shell1"></div>
+      <span class="reloading-text" id="reloadTxt" style="display:none">Перезарядка...</span>
+    </div>
+    <div class="canvas-wrap"><canvas id="c" width="720" height="480"></canvas></div>
+  </main>
+
+  <div class="win-modal" id="winModal">
+    <div class="win-box">
+      <h2 class="win-title" id="winTitle">🎯 КОНЕЦ ОХОТЫ</h2>
+      <div class="win-stat">Очки: <span id="finalScore">0</span></div>
+      <div class="win-stat">Рекорд: <span id="finalBest">0</span></div>
+      <div class="win-stat">Уток подбито: <span id="finalDucks">0</span></div>
+      <button class="win-btn" onclick="startGame()">🔁 ЕЩЁ РАЗ</button><br />
+      <a href="../" class="win-btn" style="margin-top:10px;">🏠 ДОМОЙ</a>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const livesEl = document.getElementById('lives');
+    const winModal = document.getElementById('winModal');
+    const winTitle = document.getElementById('winTitle');
+    const finalScoreEl = document.getElementById('finalScore');
+    const finalBestEl = document.getElementById('finalBest');
+    const finalDucksEl = document.getElementById('finalDucks');
+    const reloadTxt = document.getElementById('reloadTxt');
+    const shell0 = document.getElementById('shell0');
+    const shell1 = document.getElementById('shell1');
+
+    const W = canvas.width, H = canvas.height;
+    const GROUND_Y = H * 0.6;
+
+    let ducks = [];
+    let particles = []; // дробь, перья
+    let score = 0;
+    let lives = 3;
+    let ducksKilled = 0;
+    let best = parseInt(localStorage.getItem('bear_hunt_best') || '0', 10);
+    let lastSpawn = 0;
+    let spawnInterval = 1800;
+    let running = false;
+    let rafId;
+    let ammo = 2;
+    let reloading = false;
+    let muzzleFlash = 0; // кадры свечения
+    let muzzleSide = 0; // 0=левый ствол, 1=правый
+
+    /* === УТКИ === */
+    function spawnDuck() {
+      const fromLeft = Math.random() < 0.5;
+      const speed = 2 + Math.random() * 2 + score * 0.01;
+      const colors = ['#3d6e2a', '#8b6914', '#5a4a2c', '#6b4423']; // зелёная, коричневая, тёмная
+      const points = Math.random() < 0.2 ? 5 : (Math.random() < 0.5 ? 3 : 1);
+      // золотая утка = 5 очков, бронзовая = 3, обычная = 1
+      const colorIdx = points === 5 ? 0 : (points === 3 ? 1 : Math.floor(Math.random() * colors.length));
+      const color = points === 5 ? '#39ff14' : (points === 3 ? '#ff6b00' : colors[colorIdx]);
+      ducks.push({
+        x: fromLeft ? -50 : W + 50,
+        y: 60 + Math.random() * (GROUND_Y - 100),
+        vx: fromLeft ? speed : -speed,
+        vy: (Math.random() - 0.5) * 1.5,
+        wing: 0,
+        color,
+        points,
+        alive: true,
+        falling: false,
+        size: points === 5 ? 30 : 36,
+      });
+    }
+
+    /* === ВЫСТРЕЛ === */
+    function shoot(x, y) {
+      if (!running) return;
+      if (reloading) { window.BearSound && BearSound.blocked(); return; }
+      if (ammo <= 0) { startReload(); return; }
+
+      ammo--;
+      muzzleFlash = 6;
+      muzzleSide = ammo === 1 ? 0 : 1; // первый = правый, второй = левый
+      updateAmmoUI();
+      playShotgun();
+
+      // Дробь — 12 частиц разлетающихся от точки прицела
+      for (let i = 0; i < 14; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const sp = 4 + Math.random() * 6;
+        particles.push({
+          x, y,
+          vx: Math.cos(ang) * sp,
+          vy: Math.sin(ang) * sp,
+          life: 18,
+          size: 2 + Math.random() * 2,
+          color: '#222',
+          gravity: 0.15,
+        });
+      }
+
+      // Радиус разлёта дроби
+      const RADIUS = 55;
+      let hit = false;
+      for (const d of ducks) {
+        if (!d.alive || d.falling) continue;
+        const dx = d.x - x, dy = d.y - y;
+        if (Math.sqrt(dx*dx + dy*dy) < RADIUS + d.size * 0.4) {
+          d.alive = false;
+          d.falling = true;
+          d.vy = -2; // подскок перед падением
+          d.vx *= 0.3;
+          score += d.points;
+          ducksKilled++;
+          scoreEl.textContent = score;
+          window.BearSound && BearSound.pop();
+          // Перья в стороны
+          for (let i = 0; i < 10; i++) {
+            const ang = Math.random() * Math.PI * 2;
+            particles.push({
+              x: d.x, y: d.y,
+              vx: Math.cos(ang) * 3,
+              vy: Math.sin(ang) * 3 - 2,
+              life: 40,
+              size: 3 + Math.random() * 2,
+              color: d.color,
+              gravity: 0.08,
+              feather: true,
+            });
+          }
+          hit = true;
+        }
+      }
+      if (!hit) {
+        // Промах — короткий низкий звук
+        setTimeout(() => window.BearSound && BearSound.blocked(), 80);
+      }
+      if (ammo === 0) {
+        setTimeout(startReload, 220); // короткая пауза перед перезарядкой
+      }
+    }
+
+    function startReload() {
+      if (reloading) return;
+      reloading = true;
+      reloadTxt.style.display = 'inline';
+      playReload();
+      setTimeout(() => {
+        ammo = 2;
+        reloading = false;
+        reloadTxt.style.display = 'none';
+        updateAmmoUI();
+        window.BearSound && BearSound.click();
+      }, 1400);
+    }
+
+    function updateAmmoUI() {
+      shell0.classList.toggle('spent', ammo < 2);
+      shell1.classList.toggle('spent', ammo < 1);
+    }
+
+    /* === ЗВУКИ ОРУЖИЯ === */
+    function playShotgun() {
+      if (!window.BearSound || !window.BearSound.sfxEnabled) return;
+      try {
+        const ctx = window.BearSound._ctx();
+        // Удар — низкий бах
+        const buf = ctx.createBuffer(1, ctx.sampleRate * 0.25, ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < data.length; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 1.6);
+        }
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.45, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(2200, ctx.currentTime);
+        filter.frequency.exponentialRampToValueAtTime(180, ctx.currentTime + 0.25);
+        src.connect(filter).connect(gain).connect(ctx.destination);
+        src.start();
+        // Глубокий бум
+        BearSound._tone(60, 0.18, 'sine', 0.35);
+      } catch (e) { /* ignore */ }
+    }
+
+    function playReload() {
+      if (!window.BearSound || !window.BearSound.sfxEnabled) return;
+      // Два щелчка-затвора
+      window.BearSound._tone(280, 0.05, 'square', 0.15);
+      setTimeout(() => window.BearSound._tone(220, 0.05, 'square', 0.15), 130);
+      setTimeout(() => window.BearSound._tone(380, 0.06, 'square', 0.18), 700);
+      setTimeout(() => window.BearSound._tone(300, 0.06, 'square', 0.18), 850);
+    }
+
+    /* === ИГРА === */
+    function startGame() {
+      ducks = [];
+      particles = [];
+      score = 0;
+      lives = 3;
+      ducksKilled = 0;
+      lastSpawn = 0;
+      spawnInterval = 1800;
+      ammo = 2;
+      reloading = false;
+      muzzleFlash = 0;
+      reloadTxt.style.display = 'none';
+      scoreEl.textContent = '0';
+      livesEl.textContent = '3';
+      winModal.classList.remove('show');
+      updateAmmoUI();
+      running = true;
+      cancelAnimationFrame(rafId);
+      loop(performance.now());
+    }
+
+    function loop(now) {
+      if (!running) return;
+
+      // спавн
+      if (now - lastSpawn > spawnInterval) {
+        spawnDuck();
+        lastSpawn = now;
+        spawnInterval = Math.max(700, 1800 - score * 12);
+      }
+
+      // обновление уток
+      for (let i = ducks.length - 1; i >= 0; i--) {
+        const d = ducks[i];
+        d.wing += 0.3;
+        if (d.falling) {
+          d.vy += 0.35;
+          d.y += d.vy;
+          d.x += d.vx;
+          if (d.y > GROUND_Y + 30) {
+            ducks.splice(i, 1);
+            window.BearSound && BearSound.blocked();
+          }
+          continue;
+        }
+        d.x += d.vx;
+        d.y += d.vy + Math.sin(d.wing * 0.5) * 0.6;
+        // Не вылетать выше
+        if (d.y < 50) d.vy = Math.abs(d.vy);
+        if (d.y > GROUND_Y - 40) d.vy = -Math.abs(d.vy);
+        // Улетела за экран — теряем жизнь
+        if (d.x < -80 || d.x > W + 80) {
+          ducks.splice(i, 1);
+          lives--;
+          livesEl.textContent = lives;
+          window.BearSound && BearSound.lose();
+          if (lives <= 0) return endGame();
+        }
+      }
+
+      // частицы
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += p.gravity;
+        if (p.feather) {
+          p.vx *= 0.97;
+          p.vy *= 0.99;
+        }
+        p.life--;
+        if (p.life <= 0 || p.y > H) particles.splice(i, 1);
+      }
+
+      draw(now);
+
+      if (muzzleFlash > 0) muzzleFlash--;
+
+      rafId = requestAnimationFrame(loop);
+    }
+
+    function draw(now) {
+      // фон рисуется через CSS, но рисуем облака и детали
+      ctx.clearRect(0, 0, W, H);
+
+      // Облака (медленно плывут)
+      ctx.fillStyle = 'rgba(255,255,255,0.7)';
+      const cloudOffset = (now / 50) % (W + 200);
+      for (let i = 0; i < 5; i++) {
+        const cx = (i * 220 + cloudOffset) % (W + 200) - 100;
+        const cy = 30 + i * 12;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 22, 0, Math.PI * 2);
+        ctx.arc(cx + 22, cy + 4, 18, 0, Math.PI * 2);
+        ctx.arc(cx - 20, cy + 4, 18, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Деревья на горизонте
+      for (let i = 0; i < 6; i++) {
+        const tx = (i * 130 + 40) % W;
+        const ty = GROUND_Y - 40;
+        ctx.fillStyle = '#2d5016';
+        ctx.beginPath();
+        ctx.moveTo(tx, ty);
+        ctx.lineTo(tx - 18, ty + 35);
+        ctx.lineTo(tx + 18, ty + 35);
+        ctx.fill();
+        ctx.fillRect(tx - 3, ty + 30, 6, 8);
+      }
+
+      // Кусты у земли
+      ctx.fillStyle = '#3d8c1f';
+      for (let i = 0; i < 8; i++) {
+        const bx = (i * 95 + 30) % W;
+        ctx.beginPath();
+        ctx.arc(bx, GROUND_Y + 18, 22, Math.PI, 0);
+        ctx.fill();
+      }
+
+      // Утки
+      for (const d of ducks) {
+        drawDuck(d);
+      }
+
+      // Частицы
+      for (const p of particles) {
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = Math.min(1, p.life / 20);
+        if (p.feather) {
+          // перо — овал
+          ctx.beginPath();
+          ctx.ellipse(p.x, p.y, p.size, p.size * 0.5, p.life * 0.1, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          // дробь — круг
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.globalAlpha = 1;
+
+      // Двустволка внизу + вспышка
+      drawShotgun();
+    }
+
+    function drawDuck(d) {
+      ctx.save();
+      ctx.translate(d.x, d.y);
+      const facingLeft = d.vx < 0;
+      if (facingLeft) ctx.scale(-1, 1);
+
+      const flap = Math.sin(d.wing) * 0.6;
+      const sz = d.size;
+
+      // Тело
+      ctx.fillStyle = d.color;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, sz * 0.7, sz * 0.45, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Крыло
+      ctx.fillStyle = d.color === '#39ff14' ? '#7fffa0' : (d.color === '#ff6b00' ? '#ffaa55' : '#a08050');
+      ctx.beginPath();
+      ctx.ellipse(-sz * 0.15, -sz * 0.15 - flap * 8, sz * 0.45, sz * 0.18 + Math.abs(flap) * 6, -0.3 - flap, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Шея + голова
+      ctx.fillStyle = d.color;
+      ctx.beginPath();
+      ctx.ellipse(sz * 0.55, -sz * 0.15, sz * 0.25, sz * 0.22, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Клюв
+      ctx.fillStyle = '#ffaa00';
+      ctx.beginPath();
+      ctx.moveTo(sz * 0.8, -sz * 0.15);
+      ctx.lineTo(sz * 1.05, -sz * 0.05);
+      ctx.lineTo(sz * 0.8, -sz * 0.05);
+      ctx.fill();
+
+      // Глаз
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(sz * 0.62, -sz * 0.22, sz * 0.07, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      ctx.arc(sz * 0.65, -sz * 0.22, sz * 0.04, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Лапки если падает
+      if (d.falling) {
+        ctx.fillStyle = '#ffaa00';
+        ctx.fillRect(-sz * 0.2, sz * 0.3, 4, 8);
+        ctx.fillRect(sz * 0.05, sz * 0.3, 4, 8);
+      }
+
+      ctx.restore();
+    }
+
+    function drawShotgun() {
+      const cx = W / 2;
+      const baseY = H - 20;
+
+      // Приклад (тёмное дерево)
+      ctx.fillStyle = '#5d3a1a';
+      ctx.beginPath();
+      ctx.moveTo(cx - 50, baseY);
+      ctx.lineTo(cx - 35, baseY + 20);
+      ctx.lineTo(cx - 15, baseY + 20);
+      ctx.lineTo(cx - 10, baseY - 10);
+      ctx.fill();
+
+      // Спусковая скоба
+      ctx.fillStyle = '#888';
+      ctx.fillRect(cx - 12, baseY - 5, 6, 12);
+
+      // Два ствола (спарка)
+      ctx.fillStyle = '#1a1a1a';
+      ctx.fillRect(cx - 8, baseY - 60, 14, 70);
+      ctx.fillRect(cx + 8, baseY - 60, 14, 70);
+
+      // Передний край стволов (отверстия)
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      ctx.arc(cx - 1, baseY - 60, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(cx + 15, baseY - 60, 6, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Вспышка от выстрела
+      if (muzzleFlash > 0) {
+        const fx = muzzleSide === 0 ? cx - 1 : cx + 15;
+        const r = 18 + (6 - muzzleFlash) * 4;
+        const grad = ctx.createRadialGradient(fx, baseY - 65, 2, fx, baseY - 65, r);
+        grad.addColorStop(0, 'rgba(255,255,200,1)');
+        grad.addColorStop(0.4, 'rgba(255,180,0,0.8)');
+        grad.addColorStop(1, 'rgba(255,80,0,0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(fx, baseY - 65, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    /* === КОНЕЦ ИГРЫ === */
+    function endGame() {
+      running = false;
+      cancelAnimationFrame(rafId);
+      window.BearSound && BearSound.lose();
+      if (score > best) {
+        best = score;
+        localStorage.setItem('bear_hunt_best', best);
+        winTitle.textContent = '🏆 НОВЫЙ РЕКОРД!';
+      } else {
+        winTitle.textContent = '🎯 КОНЕЦ ОХОТЫ';
+      }
+      finalScoreEl.textContent = score;
+      finalBestEl.textContent = best;
+      finalDucksEl.textContent = ducksKilled;
+      setTimeout(() => winModal.classList.add('show'), 400);
+    }
+
+    /* === УПРАВЛЕНИЕ === */
+    function getCanvasPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const t = (e.touches && e.touches[0]) || e;
+      return {
+        x: (t.clientX - rect.left) * (W / rect.width),
+        y: (t.clientY - rect.top) * (H / rect.height),
+      };
+    }
+    canvas.addEventListener('click', (e) => { e.preventDefault(); const p = getCanvasPos(e); shoot(p.x, p.y); });
+    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); const p = getCanvasPos(e); shoot(p.x, p.y); }, { passive: false });
+    // R или Space — перезарядка вручную
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'KeyR' || e.code === 'Space') {
+        if (!reloading && ammo < 2) startReload();
+      }
+    });
+
+    /* === ПАУЗА === */
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        running = false;
+        cancelAnimationFrame(rafId);
+      } else if (!winModal.classList.contains('show') && lives > 0) {
+        running = true;
+        lastSpawn = performance.now();
+        loop(lastSpawn);
+      }
+    });
+
+    /* === ЗВУК UI === */
+    function refreshSoundBtns() {
+      const s = window.BearSound; if (!s) return;
+      const sfx = document.getElementById('sfxBtn');
+      const mus = document.getElementById('musBtn');
+      sfx.classList.toggle('off', !s.sfxEnabled);
+      sfx.textContent = s.sfxEnabled ? '🔊' : '🔇';
+      mus.classList.toggle('off', !s.musicEnabled);
+      mus.textContent = s.musicEnabled ? '🎵' : '🎶';
+    }
+    document.getElementById('sfxBtn').addEventListener('click', () => { BearSound.toggleSfx(); refreshSoundBtns(); });
+    document.getElementById('musBtn').addEventListener('click', () => { BearSound.toggleMusic(); refreshSoundBtns(); });
+    window.addEventListener('load', () => setTimeout(refreshSoundBtns, 100));
+
+    startGame();
+  </script>
+</body>
+</html>
