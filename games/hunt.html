@@ -130,34 +130,55 @@
     document.getElementById('recordEl').textContent = best;
 
     /* ========== Утки ========== */
+    /* === ПАРАМЕТРЫ СЛОЖНОСТИ ПО РАУНДАМ === */
+    function getDifficulty() {
+      return {
+        baseSpeed:     1 + (round - 1) * 0.22,                 // скорость растёт быстро
+        spawnInterval: Math.max(500, 1800 - round * 100),      // спавн чаще
+        maxConcurrent: 1 + Math.floor(round / 2),              // больше уток одновременно
+        tauntChance:   Math.min(0.45, 0.15 + (round - 1) * 0.04), // больше дразнящихся
+        goldChance:    Math.min(0.20, 0.08 + (round - 1) * 0.025),
+        bronzeChance:  Math.min(0.40, 0.27 + (round - 1) * 0.02),
+        ampMultiplier: 1 + Math.min(1.5, (round - 1) * 0.15),  // больше виляют
+        diveChance:    Math.min(0.20, Math.max(0, (round - 4)) * 0.04), // с 5 раунда — пикирующие
+      };
+    }
+
     function spawnDuck() {
+      const D = getDifficulty();
       const dirRight = Math.random() < 0.5;
       const r = Math.random();
       let type, color, points, speed;
-      if (r < 0.65) { type='regular'; color='#5d3a1a'; points=1; speed=2.0; }
-      else if (r < 0.92) { type='bronze'; color='#cd7f32'; points=3; speed=2.6; }
-      else { type='gold'; color='#ffcc00'; points=5; speed=3.4; }
-      const baseSpeed = (1 + (round-1) * 0.18);
-      // Шанс что утка будет дразниться (18% — каждая 5-6 утка)
-      const willTaunt = Math.random() < 0.18;
+      if (r < D.goldChance) { type='gold'; color='#ffcc00'; points=5; speed=3.4; }
+      else if (r < D.goldChance + D.bronzeChance) { type='bronze'; color='#cd7f32'; points=3; speed=2.6; }
+      else { type='regular'; color='#5d3a1a'; points=1; speed=2.0; }
+      const baseSpeed = D.baseSpeed;
+      const willTaunt = Math.random() < D.tauntChance;
+      const isDiver = Math.random() < D.diveChance; // пикирующая утка
       ducks.push({
         x: dirRight ? -50 : W + 50,
         y: 60 + Math.random() * (GROUND_Y - 220),
         vx: (dirRight ? 1 : -1) * speed * baseSpeed,
-        vy: 0,
-        amp: 30 + Math.random() * 50,
-        freq: 0.015 + Math.random() * 0.015,
+        vy: isDiver ? 1.5 : 0,
+        amp: 30 + Math.random() * 50 * D.ampMultiplier,
+        freq: 0.015 + Math.random() * 0.015 * D.ampMultiplier,
         phase: Math.random() * Math.PI * 2,
         wing: 0,
         type, color, points,
         size: type === 'gold' ? 28 : 26,
         alive: true, falling: false,
         willTaunt,
-        tauntStartAt: performance.now() + 700 + Math.random() * 1400, // когда начнёт дразниться
+        tauntStartAt: performance.now() + 700 + Math.random() * 1400,
         taunting: false,
         tauntEndAt: 0,
         tauntPhase: 0,
+        isDiver,
+        nextQuackAt: performance.now() + 200 + Math.random() * 800,
       });
+      // Кряк при появлении (приглушённый — далеко) — у некоторых уток
+      if (Math.random() < 0.5) {
+        setTimeout(() => playDuckQuack(0.5 + Math.random() * 0.3), 200 + Math.random() * 400);
+      }
     }
 
     /* ========== Главный цикл ========== */
@@ -168,12 +189,13 @@
       lastFrame = now;
 
       // Спавн
-      if (phase === 'playing' && ducks.length < (1 + Math.floor(round/3)) && ducksLeft > 0) {
+      const D = getDifficulty();
+      if (phase === 'playing' && ducks.length < D.maxConcurrent && ducksLeft > 0) {
         if (now - lastSpawn > spawnInterval) {
           spawnDuck();
           ducksLeft--;
           lastSpawn = now;
-          spawnInterval = Math.max(800, 1800 - round * 60);
+          spawnInterval = D.spawnInterval;
         }
       }
       cloudOffset = (cloudOffset + 0.2) % W;
@@ -224,8 +246,21 @@
           } else {
             // Обычная утка — плавная синусоида
             d.y += Math.sin(d.x * d.freq + d.phase) * 0.6;
+            // Пикирующая утка — постепенно опускается
+            if (d.isDiver) {
+              d.y += d.vy;
+              d.vy = Math.min(2.5, d.vy + 0.04);
+              if (d.y > GROUND_Y - 90) { d.vy = -0.5; }
+            }
           }
           d.wing += d.taunting ? 0.32 : 0.25;
+          // Случайное кряканье
+          if (now > d.nextQuackAt) {
+            // Громкость зависит от размера и типа
+            const vol = (d.taunting ? 0 : 1) * (0.5 + (d.type === 'gold' ? 0.3 : 0));
+            if (vol > 0 && Math.random() < 0.35) playDuckQuack(vol);
+            d.nextQuackAt = now + 1500 + Math.random() * 2500;
+          }
           // Запуск дразнилки
           if (d.willTaunt && !d.taunting && now >= d.tauntStartAt) {
             d.taunting = true;
@@ -1148,6 +1183,10 @@
       roundOverlay.classList.add('hide');
       updateAmmo(); updateHUD();
       lastSpawn = 0;
+      // Звук фанфар начала нового уровня
+      if (window.BearSound && BearSound.sfxEnabled) {
+        [523, 659, 784].forEach((f, i) => setTimeout(() => BearSound._tone(f, 0.12, 'square', 0.18), i * 80));
+      }
     }
     function gameOver() {
       phase = 'gameOver';
@@ -1483,6 +1522,74 @@
     function playHit() { if (window.BearSound) [800, 1000, 1200].forEach((f, i) => setTimeout(() => BearSound._tone(f, 0.08, 'square', 0.18), i * 50)); }
     function playMiss() { if (window.BearSound) BearSound._tone(150, 0.1, 'sawtooth', 0.15); }
     function playLaugh() { if (window.BearSound) [400, 350, 400, 350, 400].forEach((f, i) => setTimeout(() => BearSound._tone(f, 0.1, 'square', 0.12), i * 100)); }
+
+    /* === НАСТОЯЩИЙ ЗВУК КРЯКАЮЩЕЙ УТКИ ===
+       Серия из 2-4 кряков с естественными вариациями частоты и тембра */
+    function playDuckQuack(volume = 1) {
+      if (!window.BearSound || !BearSound.sfxEnabled) return;
+      const numQuacks = 2 + Math.floor(Math.random() * 3);
+      for (let i = 0; i < numQuacks; i++) {
+        const delay = i * (110 + Math.random() * 80);
+        const v = volume * (0.85 + Math.random() * 0.25);
+        setTimeout(() => playSingleQuack(v), delay);
+      }
+    }
+
+    function playSingleQuack(vol) {
+      const ctxA = BearSound._ctx();
+      const t = ctxA.currentTime;
+      const baseF = 580 + (Math.random() - 0.5) * 220; // вариация частоты
+
+      // Основной осциллятор — sawtooth с быстрым sweep (характерно для утки)
+      const osc = ctxA.createOscillator();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(baseF * 1.4, t);
+      osc.frequency.exponentialRampToValueAtTime(baseF * 0.7, t + 0.04);
+      osc.frequency.exponentialRampToValueAtTime(baseF * 1.05, t + 0.09);
+
+      // Vibrato (LFO) — даёт "квакающий" окрас
+      const lfo = ctxA.createOscillator();
+      lfo.type = 'sine';
+      lfo.frequency.value = 35 + Math.random() * 15;
+      const lfoGain = ctxA.createGain();
+      lfoGain.gain.value = 60;
+      lfo.connect(lfoGain).connect(osc.frequency);
+
+      // Bandpass с резонансом — "горловой" тембр
+      const filter = ctxA.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(baseF * 2, t);
+      filter.frequency.exponentialRampToValueAtTime(baseF * 1.2, t + 0.08);
+      filter.Q.value = 5;
+
+      // Огибающая громкости (резкая атака, быстрое затухание)
+      const gain = ctxA.createGain();
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.18 * vol, t + 0.008);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.11);
+
+      osc.connect(filter).connect(gain).connect(ctxA.destination);
+      osc.start(t);
+      osc.stop(t + 0.13);
+      lfo.start(t);
+      lfo.stop(t + 0.13);
+
+      // Лёгкий "придых" — короткий шум через highpass
+      const buf = ctxA.createBuffer(1, ctxA.sampleRate * 0.04, ctxA.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 1.2);
+      }
+      const noise = ctxA.createBufferSource();
+      noise.buffer = buf;
+      const noiseFilt = ctxA.createBiquadFilter();
+      noiseFilt.type = 'highpass';
+      noiseFilt.frequency.value = 1500;
+      const noiseGain = ctxA.createGain();
+      noiseGain.gain.value = 0.04 * vol;
+      noise.connect(noiseFilt).connect(noiseGain).connect(ctxA.destination);
+      noise.start(t);
+    }
 
     /* Кряканье + смех дразнящейся утки */
     function playDuckLaugh() {
