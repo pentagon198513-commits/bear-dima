@@ -328,6 +328,23 @@
       -webkit-appearance:none;
       outline:none;
     }
+    .home-btn{
+      position:absolute;
+      top:10px;right:60px;
+      width:42px;height:42px;
+      border-radius:50%;
+      background:rgba(20,40,60,.85);
+      border:2px solid rgba(255,255,255,.4);
+      color:#fff;
+      font-size:1.2rem;
+      cursor:pointer;
+      z-index:30;
+      display:flex;align-items:center;justify-content:center;
+      -webkit-appearance:none;
+      outline:none;
+      text-decoration:none;
+    }
+    .home-btn:active,.mute:active{transform:scale(.92)}
   </style>
 </head>
 <body>
@@ -343,6 +360,7 @@
     <div class="pill">🏆 Рекорд:<span class="v" id="vRecord">0</span></div>
   </div>
 
+  <a href="../index.html" class="home-btn" title="В главное меню">🏠</a>
   <button class="mute" id="muteBtn">🔊</button>
 
   <div class="banner" id="banner">Готов</div>
@@ -431,13 +449,13 @@ let castStartX=0, castStartY=0;
 
 // ============== FISH ==============
 const FISH = [
-  {name:'Карась',     emoji:'🐟', minW:0.3, maxW:1.2, points:5,  rarity:.30, fightHP:60,  diff:1.0},
-  {name:'Окунь',      emoji:'🐠', minW:0.4, maxW:1.5, points:8,  rarity:.22, fightHP:75,  diff:1.1},
-  {name:'Лещ',        emoji:'🐡', minW:0.5, maxW:2.5, points:12, rarity:.18, fightHP:90,  diff:1.2},
-  {name:'Щука',       emoji:'🦈', minW:1.5, maxW:5.5, points:25, rarity:.10, fightHP:140, diff:1.6},
-  {name:'Сом',        emoji:'🐬', minW:2.0, maxW:8.0, points:35, rarity:.06, fightHP:170, diff:1.8},
-  {name:'Золотая',    emoji:'✨', minW:0.2, maxW:0.8, points:100,rarity:.02, fightHP:50,  diff:0.8},
-  {name:'Сапог',      emoji:'🥾', minW:0.5, maxW:1.0, points:-3, rarity:.12, fightHP:30,  diff:0.6, junk:true}
+  {name:'Карась',     emoji:'🐟', minW:0.3, maxW:1.2, points:5,  rarity:.30, fightHP:30,  diff:0.6},
+  {name:'Окунь',      emoji:'🐠', minW:0.4, maxW:1.5, points:8,  rarity:.22, fightHP:38,  diff:0.7},
+  {name:'Лещ',        emoji:'🐡', minW:0.5, maxW:2.5, points:12, rarity:.18, fightHP:45,  diff:0.8},
+  {name:'Щука',       emoji:'🦈', minW:1.5, maxW:5.5, points:25, rarity:.10, fightHP:65,  diff:1.0},
+  {name:'Сом',        emoji:'🐬', minW:2.0, maxW:8.0, points:35, rarity:.06, fightHP:80,  diff:1.1},
+  {name:'Золотая',    emoji:'✨', minW:0.2, maxW:0.8, points:100,rarity:.02, fightHP:25,  diff:0.5},
+  {name:'Сапог',      emoji:'🥾', minW:0.5, maxW:1.0, points:-3, rarity:.12, fightHP:20,  diff:0.4, junk:true}
 ];
 function pickFish(){
   const r=Math.random(); let acc=0;
@@ -676,8 +694,8 @@ function hookIt(){
 }
 function reelTap(){
   if(phase!=='fight') return;
-  fishHP -= 4 + Math.random()*3;
-  tensionPct += 8 + Math.random()*5;
+  fishHP -= 6 + Math.random()*4;
+  tensionPct += 4 + Math.random()*3;
   if(tensionPct>100) tensionPct=100;
   pReel();
   if(fishHP<=0) doCatch();
@@ -832,8 +850,8 @@ function update(dt){
     floatTilt *= 0.92;
   }
   if(phase==='fight'){
-    tensionPct = Math.max(0, tensionPct - dt*8);
-    if(Math.random() < dt*1.2) tensionPct += 6 + Math.random()*8*currentFish.diff;
+    tensionPct = Math.max(0, tensionPct - dt*18);
+    if(Math.random() < dt*0.6) tensionPct += 3 + Math.random()*5*currentFish.diff;
     tensionFill.style.width = Math.min(100,tensionPct)+'%';
     let lab='НАТЯЖЕНИЕ ЛЕСКИ';
     if(tensionPct<30) lab='🟢 МОЖНО ТЯНУТЬ!';
