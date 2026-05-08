@@ -13,7 +13,19 @@
     *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
     html,body{width:100%;height:100%;overflow:hidden;font-family:'Nunito',sans-serif;background:#000;user-select:none;-webkit-user-select:none}
     #game{position:relative;width:100vw;height:100vh;overflow:hidden;background:#0a3a5c}
-    canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+
+    /* PHOTO BACKGROUND */
+    .bg-photo{
+      position:absolute;inset:0;width:100%;height:100%;
+      object-fit:cover;
+      z-index:0;
+      filter:saturate(1.05) contrast(1.05);
+      animation:bgshift 60s ease-in-out infinite alternate;
+    }
+    @keyframes bgshift{from{transform:scale(1.0)}to{transform:scale(1.04)}}
+    .bg-loading{position:absolute;inset:0;background:linear-gradient(180deg,#5fa9d6 0%,#a4d2ed 40%,#3a78a8 60%,#1a4878 100%);z-index:0}
+
+    canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;z-index:5}
 
     /* HUD - top-left score panel */
     .hud-top-left{position:absolute;top:12px;left:12px;display:flex;flex-direction:column;gap:6px;z-index:20;pointer-events:none}
@@ -33,23 +45,6 @@
     }
     .hud-pill .label{opacity:.7;font-size:.78em;font-weight:700}
     .hud-pill .value{color:#ffd84a;text-shadow:1px 1px 0 #000}
-
-    /* Top-right back button */
-    .hud-top-right{position:absolute;top:12px;right:12px;display:flex;flex-direction:column;gap:6px;z-index:20}
-    .hud-btn{
-      background:linear-gradient(180deg,rgba(20,40,60,.85),rgba(10,20,30,.85));
-      border:2px solid rgba(255,255,255,.4);
-      border-radius:14px;
-      padding:8px 14px;
-      color:#fff;
-      font-weight:900;
-      font-size:clamp(.85rem,2.8vw,1rem);
-      cursor:pointer;
-      pointer-events:auto;
-      box-shadow:0 4px 12px rgba(0,0,0,.4);
-      backdrop-filter:blur(6px);
-    }
-    .hud-btn:active{transform:scale(.95)}
 
     /* Status banner */
     .status-banner{
@@ -87,8 +82,8 @@
       width:clamp(96px,22vw,140px);
       height:clamp(96px,22vw,140px);
       border-radius:50%;
-      border:5px solid rgba(255,255,255,.85);
-      box-shadow:0 8px 24px rgba(0,0,0,.5),inset 0 -6px 12px rgba(0,0,0,.3),inset 0 4px 8px rgba(255,255,255,.3);
+      border:5px solid rgba(255,255,255,.9);
+      box-shadow:0 8px 24px rgba(0,0,0,.5),inset 0 -6px 12px rgba(0,0,0,.3),inset 0 4px 8px rgba(255,255,255,.4);
       font-family:'Bangers',cursive;
       font-size:clamp(.9rem,3.5vw,1.4rem);
       letter-spacing:.05em;
@@ -212,40 +207,45 @@
       z-index:2;
       letter-spacing:.05em;
     }
-    .tension-marker{
-      position:absolute;top:-6px;bottom:-6px;width:3px;
-      background:#fff;
-      box-shadow:0 0 4px #000;
-      z-index:3;
-    }
 
     /* Catch reveal overlay */
     .catch-reveal{
       position:absolute;inset:0;
-      background:radial-gradient(ellipse at center,rgba(0,30,80,.4) 0%,rgba(0,0,0,.85) 80%);
+      background:radial-gradient(ellipse at center,rgba(0,30,80,.5) 0%,rgba(0,0,0,.92) 80%);
       display:none;align-items:center;justify-content:center;
       z-index:50;
       flex-direction:column;
-      gap:10px;
+      gap:14px;
       pointer-events:auto;
-      animation:fadein .4s;
+      animation:fadein .5s;
     }
     @keyframes fadein{from{opacity:0}to{opacity:1}}
     .catch-reveal.show{display:flex}
-    .catch-fish-emoji{
-      font-size:clamp(8rem,30vw,16rem);
-      filter:drop-shadow(0 0 30px rgba(255,200,0,.6)) drop-shadow(0 8px 16px rgba(0,0,0,.6));
-      animation:fishhop 1.2s ease infinite;
+    .catch-fish-wrap{
+      position:relative;
+      width:clamp(220px,55vw,420px);
+      height:clamp(220px,55vw,420px);
+      filter:drop-shadow(0 0 40px rgba(255,200,0,.5)) drop-shadow(0 12px 20px rgba(0,0,0,.7));
+      animation:fishhop 1.4s ease infinite;
     }
     @keyframes fishhop{
-      0%,100%{transform:translateY(0) rotate(-8deg)}
-      50%{transform:translateY(-15px) rotate(8deg)}
+      0%,100%{transform:translateY(0) rotate(-6deg) scale(1)}
+      50%{transform:translateY(-18px) rotate(6deg) scale(1.04)}
+    }
+    .catch-fish-img{
+      position:absolute;inset:0;width:100%;height:100%;
+      object-fit:contain;
+    }
+    .catch-fish-emoji{
+      position:absolute;inset:0;
+      display:flex;align-items:center;justify-content:center;
+      font-size:clamp(8rem,30vw,16rem);
     }
     .catch-name{
       font-family:'Bangers',cursive;
       font-size:clamp(2rem,8vw,3.5rem);
       color:#ffd84a;
-      text-shadow:3px 3px 0 #000,0 0 20px rgba(255,200,0,.6);
+      text-shadow:3px 3px 0 #000,0 0 24px rgba(255,200,0,.7);
       letter-spacing:.06em;
     }
     .catch-stats{
@@ -281,7 +281,7 @@
     /* Menu overlay */
     .menu-overlay{
       position:absolute;inset:0;
-      background:rgba(0,0,0,.5);
+      background:rgba(0,0,0,.55);
       display:flex;align-items:center;justify-content:center;
       z-index:60;
       flex-direction:column;
@@ -368,10 +368,35 @@
       z-index:18;
       animation:flyaway 1.2s forwards;
     }
+
+    /* Loading screen for first photo */
+    .loading-overlay{
+      position:absolute;inset:0;
+      background:linear-gradient(180deg,#5fa9d6,#1a4878);
+      display:flex;align-items:center;justify-content:center;
+      flex-direction:column;
+      z-index:70;
+      gap:14px;
+      pointer-events:auto;
+    }
+    .loading-overlay.hide{display:none}
+    .loading-spinner{
+      width:60px;height:60px;
+      border:6px solid rgba(255,255,255,.3);
+      border-top-color:#ffd84a;
+      border-radius:50%;
+      animation:spin 1s linear infinite;
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .loading-text{color:#fff;font-family:'Bangers',cursive;font-size:1.3rem;letter-spacing:.06em;text-shadow:2px 2px 0 #000}
   </style>
 </head>
 <body>
 <div id="game">
+  <!-- Photo background (loaded async) -->
+  <div class="bg-loading" id="bgLoading"></div>
+  <img class="bg-photo" id="bgPhoto" alt="" style="display:none" />
+
   <canvas id="cv"></canvas>
 
   <!-- HUD -->
@@ -396,7 +421,6 @@
   <div class="tension-meter" id="tensionMeter">
     <div class="tension-bg"></div>
     <div class="tension-fill" id="tensionFill"></div>
-    <div class="tension-marker" id="tensionMarker" style="left:30%"></div>
     <div class="tension-label" id="tensionLabel">НАТЯЖЕНИЕ ЛЕСКИ</div>
   </div>
 
@@ -406,7 +430,10 @@
 
   <!-- Catch reveal -->
   <div class="catch-reveal" id="catchReveal">
-    <div class="catch-fish-emoji" id="catchEmoji">🐟</div>
+    <div class="catch-fish-wrap">
+      <img class="catch-fish-img" id="catchFishImg" alt="" style="display:none" />
+      <div class="catch-fish-emoji" id="catchEmoji">🐟</div>
+    </div>
     <div class="catch-name" id="catchName">Карась</div>
     <div class="catch-stats">
       <div class="catch-stat" id="catchWeight">1.2 кг</div>
@@ -438,11 +465,37 @@
       <a href="../index.html"><button class="menu-btn back">⬅ НАЗАД</button></a>
     </div>
   </div>
+
+  <!-- Loading -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">🌊 Загружаем озеро...</div>
+  </div>
 </div>
 
 <script>
 (function(){
   'use strict';
+
+  // ============== POLLINATIONS IMAGE HELPERS ==============
+  // Use seeds for deterministic photos that match our scene layout
+  const PROMPT_BG = 'photorealistic+beautiful+lake+from+wooden+dock+perspective+sunny+summer+day+pine+forest+mountains+blue+water+calm+lake+highly+detailed+8k';
+  const BG_URL = `https://image.pollinations.ai/prompt/${PROMPT_BG}?width=1280&height=720&seed=44288&nologo=true&model=flux`;
+
+  // Fish images via pollinations
+  function fishImageURL(name, seed){
+    const map = {
+      'Карась': 'photorealistic+crucian+carp+fish+shiny+wet+golden+side+view+isolated+plain+dark+background',
+      'Окунь': 'photorealistic+european+perch+fish+green+orange+stripes+side+view+isolated+plain+dark+background',
+      'Лещ': 'photorealistic+silver+bream+fish+side+view+isolated+plain+dark+background',
+      'Щука': 'photorealistic+northern+pike+fish+long+toothy+side+view+isolated+plain+dark+background',
+      'Сом': 'photorealistic+wels+catfish+big+grey+barbels+side+view+isolated+plain+dark+background',
+      'Золотая': 'photorealistic+goldfish+golden+sparkly+wet+side+view+isolated+plain+dark+background',
+      'Старый сапог': 'photorealistic+old+brown+leather+boot+wet+covered+with+algae+isolated+plain+dark+background'
+    };
+    const p = map[name] || map['Карась'];
+    return `https://image.pollinations.ai/prompt/${p}?width=512&height=512&seed=${seed}&nologo=true&model=flux`;
+  }
 
   // ============== STATE ==============
   const cv = document.getElementById('cv');
@@ -452,18 +505,18 @@
   let phase = 'menu'; // menu|ready|charging|casting|waiting|nibble|bite|fight|catch|miss
   let score = 0;
   let caught = 0;
-  let record = parseInt(localStorage.getItem('fishingRecord_v3')||'0');
+  let record = parseInt(localStorage.getItem('fishingRecord_v4')||'0');
   let muted = localStorage.getItem('fishingMuted')==='1';
 
   // Cast mechanics
   let charging = false;
   let chargeStart = 0;
-  let castPower = 0; // 0-100
-  let castProgress = 0; // 0-1 during cast animation
+  let castPower = 0;
+  let castProgress = 0;
 
   // Float position (canvas coords)
-  let floatX = 0;
-  let floatY = 0;
+  let floatX = -100;
+  let floatY = -100;
   let floatTargetX = 0;
   let floatTargetY = 0;
   let floatBobPhase = 0;
@@ -475,7 +528,7 @@
   let nibbleEndTime = 0;
   let biteEndTime = 0;
   let currentFish = null;
-  let visibleFish = []; // swimming nearby
+  let visibleFish = [];
 
   // Fight state
   let tensionPct = 30;
@@ -485,18 +538,12 @@
 
   // Animation
   let lastTime = performance.now();
-  let rodAngle = 0; // bend
-  let rodSwing = 0; // swing animation
   let waterTime = 0;
   let splashTime = -999;
   let splashX = 0, splashY = 0;
   let castFlightStart = 0;
   let castFlightDur = 700;
   let castStartX = 0, castStartY = 0;
-
-  // Caught fish jump animation
-  let jumpProgress = 0;
-  let jumpFishY = 0;
 
   // ============== FISH TYPES ==============
   const FISH = [
@@ -510,7 +557,6 @@
   ];
 
   function pickFish(){
-    // Weight roll
     const r = Math.random();
     let acc = 0;
     for(const f of FISH){
@@ -521,7 +567,7 @@
   }
   function makeFishInstance(t){
     const w = +(t.minW + Math.random()*(t.maxW-t.minW)).toFixed(2);
-    const sizeMul = (w-t.minW)/(t.maxW-t.minW||1); // 0..1
+    const sizeMul = (w-t.minW)/(t.maxW-t.minW||1);
     return {
       name:t.name, emoji:t.emoji, color:t.color,
       weight:w,
@@ -546,6 +592,27 @@
   window.addEventListener('resize', resize);
   resize();
 
+  // ============== LOAD BG IMAGE ==============
+  const bgPhoto = document.getElementById('bgPhoto');
+  const bgLoading = document.getElementById('bgLoading');
+  const loadingOverlay = document.getElementById('loadingOverlay');
+  bgPhoto.onload = ()=>{
+    bgPhoto.style.display = 'block';
+    bgLoading.style.display = 'none';
+    loadingOverlay.classList.add('hide');
+  };
+  bgPhoto.onerror = ()=>{
+    // Use gradient fallback
+    bgLoading.style.display = 'block';
+    loadingOverlay.classList.add('hide');
+  };
+  // Auto-fallback after 8s if image still loading
+  setTimeout(()=>{
+    if(loadingOverlay.classList.contains('hide')) return;
+    loadingOverlay.classList.add('hide');
+  }, 8000);
+  bgPhoto.src = BG_URL;
+
   // ============== SOUNDS ==============
   function ac(){return window.BearSound&&window.BearSound._ac?window.BearSound._ac():null}
   function muteToggle(){
@@ -557,8 +624,7 @@
   document.getElementById('muteBtn').addEventListener('click', muteToggle);
 
   function playReel(){
-    if(muted) return;
-    const a = ac(); if(!a) return;
+    if(muted) return; const a = ac(); if(!a) return;
     const o = a.createOscillator(), g = a.createGain(), bp = a.createBiquadFilter();
     o.type='sawtooth'; o.frequency.value = 180;
     bp.type='bandpass'; bp.frequency.value=400; bp.Q.value=4;
@@ -570,8 +636,7 @@
     o.start(); o.stop(a.currentTime+.2);
   }
   function playSplash(){
-    if(muted) return;
-    const a = ac(); if(!a) return;
+    if(muted) return; const a = ac(); if(!a) return;
     const buf = a.createBuffer(1, a.sampleRate*.4, a.sampleRate);
     const d = buf.getChannelData(0);
     for(let i=0;i<d.length;i++){
@@ -585,8 +650,7 @@
     src.start();
   }
   function playCast(){
-    if(muted) return;
-    const a = ac(); if(!a) return;
+    if(muted) return; const a = ac(); if(!a) return;
     const o = a.createOscillator(), g = a.createGain();
     o.type='triangle'; o.frequency.setValueAtTime(800, a.currentTime);
     o.frequency.exponentialRampToValueAtTime(180, a.currentTime+.4);
@@ -597,8 +661,7 @@
     o.start(); o.stop(a.currentTime+.4);
   }
   function playNibble(){
-    if(muted) return;
-    const a = ac(); if(!a) return;
+    if(muted) return; const a = ac(); if(!a) return;
     for(let i=0;i<2;i++){
       const o=a.createOscillator(),g=a.createGain();
       o.type='sine'; o.frequency.value = 480+Math.random()*60;
@@ -610,8 +673,7 @@
     }
   }
   function playBite(){
-    if(muted) return;
-    const a = ac(); if(!a) return;
+    if(muted) return; const a = ac(); if(!a) return;
     const o = a.createOscillator(), g = a.createGain(), bp = a.createBiquadFilter();
     o.type='sine'; o.frequency.setValueAtTime(280, a.currentTime);
     o.frequency.exponentialRampToValueAtTime(80, a.currentTime+.4);
@@ -623,8 +685,7 @@
     o.start(); o.stop(a.currentTime+.5);
   }
   function playHookSet(){
-    if(muted) return;
-    const a = ac(); if(!a) return;
+    if(muted) return; const a = ac(); if(!a) return;
     const o = a.createOscillator(), g = a.createGain();
     o.type='square'; o.frequency.setValueAtTime(800, a.currentTime);
     o.frequency.exponentialRampToValueAtTime(1600, a.currentTime+.1);
@@ -635,8 +696,7 @@
     o.start(); o.stop(a.currentTime+.15);
   }
   function playCatch(){
-    if(muted) return;
-    const a = ac(); if(!a) return;
+    if(muted) return; const a = ac(); if(!a) return;
     const notes = [523, 659, 784, 1046];
     notes.forEach((f,i)=>{
       const o=a.createOscillator(),g=a.createGain();
@@ -649,8 +709,7 @@
     });
   }
   function playLineBreak(){
-    if(muted) return;
-    const a = ac(); if(!a) return;
+    if(muted) return; const a = ac(); if(!a) return;
     const buf = a.createBuffer(1, a.sampleRate*.3, a.sampleRate);
     const d = buf.getChannelData(0);
     for(let i=0;i<d.length;i++){
@@ -706,14 +765,6 @@
   }
   updateScoreUI();
 
-  function popPoints(text){
-    const el = document.createElement('div');
-    el.className = 'points-pop';
-    el.textContent = text;
-    document.getElementById('game').appendChild(el);
-    setTimeout(()=>el.remove(), 1200);
-  }
-
   // ============== PHASE TRANSITIONS ==============
   function toMenu(){
     phase = 'menu';
@@ -731,8 +782,7 @@
     setStatus('🎣 Зажми и держи кнопку для заброса', 'info', 2500);
     powerMeter.classList.remove('show');
     tensionMeter.classList.remove('show');
-    floatX = -100; floatY = -100; // hide
-    rodAngle = 0;
+    floatX = -100; floatY = -100;
     visibleFish = [];
   }
   function startCharging(){
@@ -757,20 +807,13 @@
     hideAction();
     playCast();
 
-    // Calculate float landing position based on power
-    const minDist = 0.18; // % of canvas width from rod tip
-    const maxDist = 0.72;
     const power01 = Math.max(0.15, castPower/100);
-    const dist = minDist + (maxDist-minDist)*power01;
-
-    // Rod tip starting point
     const rodTipPos = getRodTipPos();
     castStartX = rodTipPos.x;
     castStartY = rodTipPos.y;
 
-    // Landing point in water — middle of water area
     floatTargetX = W*0.18 + (W*0.62)*power01;
-    floatTargetY = H*(0.55 + 0.15*power01); // farther = deeper into water area
+    floatTargetY = H*(0.55 + 0.15*power01);
     castFlightStart = performance.now();
     castFlightDur = 600 + 200*power01;
     floatX = castStartX;
@@ -784,8 +827,7 @@
     setStatus('🌊 Жди клёва...', 'info', 2000);
     setActionBtn('idle');
     showCancel(true);
-    waitTimer = performance.now() + 2000 + Math.random()*4000; // first nibble
-    // Spawn 2-4 visible fish silhouettes nearby
+    waitTimer = performance.now() + 2000 + Math.random()*4000;
     visibleFish = [];
     const cnt = 2 + Math.floor(Math.random()*3);
     for(let i=0;i<cnt;i++){
@@ -822,7 +864,6 @@
   }
   function hookSuccess(){
     if(currentFish.junk){
-      // Skip fight for junk
       doCatch();
       return;
     }
@@ -862,7 +903,6 @@
       score = Math.max(0, score);
       setStatus('🥾 '+currentFish.name+' '+currentFish.points+' очков', 'alert', 1500);
       playLineBreak();
-      // small celebration screen
       showCatchReveal(currentFish);
       return;
     }
@@ -871,7 +911,7 @@
     caught += 1;
     if(score > record){
       record = score;
-      localStorage.setItem('fishingRecord_v3', record);
+      localStorage.setItem('fishingRecord_v4', record);
     }
     updateScoreUI();
     playCatch();
@@ -886,10 +926,27 @@
     document.getElementById('catchPoints').style.background = fish.points>=0
       ? 'linear-gradient(180deg,#ffe066,#ff9800)'
       : 'linear-gradient(180deg,#888,#444)';
+
+    // Try load real fish image (pollinations) - fallback to emoji
+    const img = document.getElementById('catchFishImg');
+    img.style.display = 'none';
+    document.getElementById('catchEmoji').style.display = 'flex';
+    const seed = Math.abs(hashStr(fish.name))%100000;
+    img.onload = ()=>{
+      img.style.display = 'block';
+      document.getElementById('catchEmoji').style.display = 'none';
+    };
+    img.onerror = ()=>{
+      img.style.display = 'none';
+      document.getElementById('catchEmoji').style.display = 'flex';
+    };
+    img.src = fishImageURL(fish.name, seed);
+
     document.getElementById('catchReveal').classList.add('show');
   }
+  function hashStr(s){let h=0;for(let i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0}return h}
+
   function reelIn(){
-    // Cancel current cast/wait/etc — return to ready
     phase = 'ready';
     document.getElementById('catchReveal').classList.remove('show');
     setActionBtn('cast');
@@ -899,22 +956,15 @@
     setStatus('🎣 Удочка готова к забросу', 'info', 1500);
     floatX = -100; floatY = -100;
     visibleFish = [];
-    rodAngle = 0;
     currentFish = null;
   }
 
   // ============== INPUT ==============
-  // Action button - press/release for charging
   function onActionDown(e){
     e.preventDefault();
     if(phase==='ready') startCharging();
-    else if(phase==='bite'){
-      // hook
-      hookSuccess();
-    }
-    else if(phase==='fight'){
-      reelTap();
-    }
+    else if(phase==='bite'){ hookSuccess(); }
+    else if(phase==='fight'){ reelTap(); }
   }
   function onActionUp(e){
     e.preventDefault();
@@ -939,25 +989,22 @@
     reelIn();
   });
 
-  // Tap on canvas during bite = hook
   cv.addEventListener('click', e=>{
     if(phase==='bite') hookSuccess();
   });
 
-  // ============== ROD/HAND POSITION HELPERS ==============
+  // ============== ROD POSITION ==============
   function getRodHandlePos(){
-    return { x: W*0.85, y: H*0.92 };
+    return { x: W*0.85, y: H*0.94 };
   }
   function getRodTipPos(){
-    // depends on phase
     const handle = getRodHandlePos();
     let tipX, tipY;
     const baseLen = Math.min(W,H)*0.7;
 
     if(phase==='charging'){
-      // pulled back behind shoulder
       const t = Math.min(1, castPower/100);
-      const angle = -Math.PI*0.95 + t*0.15; // pulled back
+      const angle = -Math.PI*0.95 + t*0.15;
       tipX = handle.x + Math.cos(angle)*baseLen*0.85;
       tipY = handle.y + Math.sin(angle)*baseLen*0.85;
     } else if(phase==='casting'){
@@ -967,13 +1014,11 @@
       tipX = handle.x + Math.cos(angle)*baseLen*0.9;
       tipY = handle.y + Math.sin(angle)*baseLen*0.9;
     } else if(phase==='fight'){
-      // bent down
       const bend = 0.5 + Math.sin(performance.now()/250)*0.15 + tensionPct/300;
       const angle = -Math.PI*0.55 + bend*0.4;
       tipX = handle.x + Math.cos(angle)*baseLen*0.78;
       tipY = handle.y + Math.sin(angle)*baseLen*0.78;
     } else {
-      // resting
       const angle = -Math.PI*0.62;
       tipX = handle.x + Math.cos(angle)*baseLen*0.95;
       tipY = handle.y + Math.sin(angle)*baseLen*0.95;
@@ -981,21 +1026,18 @@
     return { x: tipX, y: tipY };
   }
 
-  // ============== UPDATE LOOP ==============
+  // ============== UPDATE ==============
   function update(dt){
     waterTime += dt;
 
-    // Charge progress
     if(charging){
       const elapsed = performance.now() - chargeStart;
-      // Power oscillates - hold-to-charge with ceiling at 100, then loops
       const cycle = 1500;
       const pos = (elapsed%cycle)/cycle;
       castPower = Math.sin(pos*Math.PI)*100;
       powerFill.style.width = castPower+'%';
     }
 
-    // Casting flight
     if(phase==='casting'){
       const t = (performance.now()-castFlightStart)/castFlightDur;
       if(t >= 1){
@@ -1003,7 +1045,6 @@
         floatY = floatTargetY;
         arrivedFloat();
       } else {
-        // Parabolic arc
         const lerpX = castStartX + (floatTargetX-castStartX)*t;
         const arcH = -150*Math.sin(t*Math.PI);
         const lerpY = castStartY + (floatTargetY-castStartY)*t + arcH;
@@ -1012,7 +1053,6 @@
       }
     }
 
-    // Waiting tick
     if(phase==='waiting'){
       floatBobPhase += dt*2;
       if(performance.now() >= waitTimer){
@@ -1022,7 +1062,6 @@
     if(phase==='nibble'){
       floatBobPhase += dt*8;
       if(performance.now() >= nibbleEndTime){
-        // Decide: bite or fade
         if(Math.random() < 0.65){
           startBite();
         } else {
@@ -1033,11 +1072,9 @@
       }
     }
     if(phase==='bite'){
-      // Float dragged underwater
       floatSubmerge = Math.min(80, floatSubmerge + dt*150);
       floatTilt = Math.sin(performance.now()/80) * 0.4;
       if(performance.now() >= biteEndTime){
-        // Fish escaped — missed
         missedBite();
         floatSubmerge = 0;
       }
@@ -1046,15 +1083,11 @@
       floatTilt *= 0.92;
     }
 
-    // Fight phase
     if(phase==='fight'){
-      // Tension naturally decays
       tensionPct = Math.max(0, tensionPct - dt*8);
-      // Fish struggles randomly
       if(Math.random() < dt*1.2){
         tensionPct += 6 + Math.random()*8*currentFish.diff;
       }
-      // Visualization
       const fillPct = Math.min(100, tensionPct);
       tensionFill.style.width = fillPct+'%';
       let label = 'НАТЯЖЕНИЕ ЛЕСКИ';
@@ -1064,7 +1097,6 @@
       else label = '🔴 ПОРВЕТСЯ!';
       tensionLabel.textContent = label;
 
-      // Line break
       if(tensionPct >= 100){
         setStatus('💥 ЛЕСКА ПОРВАЛАСЬ!', 'alert', 1800);
         playLineBreak();
@@ -1072,7 +1104,6 @@
         setTimeout(()=>reelIn(), 1500);
         phase = 'miss';
       }
-      // Time runs out
       if(performance.now() > fightEndTime){
         setStatus('🐟 Рыба сорвалась!', 'alert', 1800);
         playLineBreak();
@@ -1081,179 +1112,52 @@
         phase = 'miss';
       }
 
-      // Float follows fish movement
       floatX += Math.sin(performance.now()/350)*1.5;
       floatY += Math.sin(performance.now()/200)*0.8;
     }
 
-    // Update visible fish
     visibleFish.forEach(f=>{
       f.x += f.vx*dt*60;
       f.wagPhase += dt*4;
-      // wrap around
       if(f.x < -50) f.x = W+50;
       if(f.x > W+50) f.x = -50;
     });
   }
 
   // ============== RENDERING ==============
-  function drawSky(){
-    // Sky gradient
-    const g = ctx.createLinearGradient(0,0,0,H*0.55);
-    g.addColorStop(0, '#5fa9d6');
-    g.addColorStop(0.55, '#a4d2ed');
-    g.addColorStop(1, '#dde8f5');
-    ctx.fillStyle = g;
-    ctx.fillRect(0,0,W,H*0.55);
-
-    // Sun
-    const sunX = W*0.78, sunY = H*0.13;
-    const sunG = ctx.createRadialGradient(sunX,sunY,0, sunX,sunY,80);
-    sunG.addColorStop(0,'rgba(255,250,200,1)');
-    sunG.addColorStop(0.3,'rgba(255,235,150,0.6)');
-    sunG.addColorStop(1,'rgba(255,235,150,0)');
-    ctx.fillStyle = sunG;
-    ctx.fillRect(sunX-100, sunY-100, 200, 200);
-    ctx.fillStyle = '#fffadc';
-    ctx.beginPath(); ctx.arc(sunX,sunY,28,0,Math.PI*2); ctx.fill();
-
-    // Clouds
-    ctx.fillStyle = 'rgba(255,255,255,.85)';
-    drawCloud(W*0.15, H*0.10, 50);
-    drawCloud(W*0.45, H*0.07, 60);
-    drawCloud(W*0.92, H*0.18, 40);
-    drawCloud(W*0.30, H*0.20, 35);
-  }
-  function drawCloud(cx,cy,r){
-    ctx.beginPath();
-    ctx.arc(cx-r*0.5, cy, r*0.6, 0, Math.PI*2);
-    ctx.arc(cx, cy-r*0.2, r*0.7, 0, Math.PI*2);
-    ctx.arc(cx+r*0.5, cy, r*0.6, 0, Math.PI*2);
-    ctx.arc(cx, cy+r*0.1, r*0.5, 0, Math.PI*2);
-    ctx.fill();
-  }
-  function drawMountains(){
-    // Distant mountains
-    ctx.fillStyle = '#7a8aa3';
-    ctx.beginPath();
-    ctx.moveTo(0, H*0.55);
-    ctx.lineTo(0, H*0.40);
-    ctx.lineTo(W*0.10, H*0.30);
-    ctx.lineTo(W*0.20, H*0.36);
-    ctx.lineTo(W*0.30, H*0.28);
-    ctx.lineTo(W*0.42, H*0.34);
-    ctx.lineTo(W*0.55, H*0.26);
-    ctx.lineTo(W*0.70, H*0.34);
-    ctx.lineTo(W*0.85, H*0.28);
-    ctx.lineTo(W*1.0, H*0.36);
-    ctx.lineTo(W*1.0, H*0.55);
-    ctx.closePath();
-    ctx.fill();
-
-    // Snow caps
-    ctx.fillStyle = 'rgba(255,255,255,.8)';
-    [[0.10,0.30],[0.30,0.28],[0.55,0.26],[0.85,0.28]].forEach(([x,y])=>{
+  function drawWaterShimmer(){
+    // Subtle shimmer overlay on water area
+    ctx.save();
+    const yStart = H*0.55;
+    ctx.globalCompositeOperation = 'screen';
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+    ctx.lineWidth = 1.2;
+    for(let row=0; row<6; row++){
+      const y = yStart + row*(H*0.06);
       ctx.beginPath();
-      ctx.moveTo(W*x, H*y);
-      ctx.lineTo(W*(x-0.04), H*(y+0.04));
-      ctx.lineTo(W*(x+0.04), H*(y+0.04));
-      ctx.closePath();
-      ctx.fill();
-    });
-  }
-  function drawForest(){
-    // Mid-distance forest
-    ctx.fillStyle = '#3d6e4a';
-    ctx.beginPath();
-    ctx.moveTo(0, H*0.55);
-    ctx.lineTo(0, H*0.45);
-    let x = 0;
-    while(x <= W){
-      const yJit = Math.sin(x*0.05)*8 + Math.cos(x*0.12)*5;
-      ctx.lineTo(x, H*0.45 + yJit);
-      x += 8;
-    }
-    ctx.lineTo(W, H*0.55);
-    ctx.closePath();
-    ctx.fill();
-
-    // Tree silhouettes
-    ctx.fillStyle = '#2c4f37';
-    for(let i=0;i<25;i++){
-      const tx = (i*W/24) + Math.sin(i*0.5)*15;
-      const ty = H*0.45 + Math.sin(i*0.3)*5;
-      drawTree(tx, ty, 8+Math.random()*6);
-    }
-  }
-  function drawTree(cx, cy, r){
-    ctx.beginPath();
-    ctx.moveTo(cx, cy-r*1.5);
-    ctx.lineTo(cx-r*0.7, cy);
-    ctx.lineTo(cx+r*0.7, cy);
-    ctx.closePath();
-    ctx.fill();
-  }
-  function drawWater(){
-    // Water gradient
-    const g = ctx.createLinearGradient(0, H*0.55, 0, H);
-    g.addColorStop(0, '#5b9bc5');
-    g.addColorStop(0.3, '#3a78a8');
-    g.addColorStop(1, '#1a4878');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, H*0.55, W, H*0.45);
-
-    // Water reflections - sky lighter band
-    const reflG = ctx.createLinearGradient(0, H*0.55, 0, H*0.65);
-    reflG.addColorStop(0, 'rgba(255,255,255,0.3)');
-    reflG.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = reflG;
-    ctx.fillRect(0, H*0.55, W, H*0.10);
-
-    // Animated waves
-    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
-    ctx.lineWidth = 1.4;
-    for(let row=0; row<8; row++){
-      const y = H*0.56 + row*(H*0.05);
-      ctx.beginPath();
-      const amp = 2 + row*0.6;
+      const amp = 1.5 + row*0.5;
       const freq = 0.018 - row*0.001;
       const offset = waterTime*(2+row*0.5);
-      for(let x=0; x<=W; x+=6){
+      for(let x=0; x<=W; x+=8){
         const yy = y + Math.sin((x+offset*30)*freq)*amp;
         if(x===0) ctx.moveTo(x,yy); else ctx.lineTo(x,yy);
       }
-      ctx.globalAlpha = 0.5 - row*0.05;
+      ctx.globalAlpha = 0.4 - row*0.04;
       ctx.stroke();
     }
-    ctx.globalAlpha = 1;
-
-    // Reeds in foreground left
-    ctx.strokeStyle = '#4a6e35';
-    ctx.lineWidth = 2.2;
-    for(let i=0;i<5;i++){
-      const rx = 30 + i*22;
-      const ry = H*0.78;
-      const sway = Math.sin(waterTime*1.2 + i)*4;
-      ctx.beginPath();
-      ctx.moveTo(rx, ry);
-      ctx.quadraticCurveTo(rx+sway, ry-30, rx+sway*1.5, ry-60);
-      ctx.stroke();
-    }
+    ctx.restore();
   }
   function drawUnderwaterFish(){
     if(visibleFish.length===0) return;
     visibleFish.forEach(f=>{
-      // Fish silhouette
       ctx.save();
       ctx.translate(f.x, f.y);
       if(f.flip) ctx.scale(-1,1);
       const wag = Math.sin(f.wagPhase)*0.3;
       ctx.fillStyle = f.color;
-      // body
       ctx.beginPath();
       ctx.ellipse(0, 0, f.size, f.size*0.4, 0, 0, Math.PI*2);
       ctx.fill();
-      // tail
       ctx.beginPath();
       ctx.moveTo(-f.size*0.95, 0);
       ctx.lineTo(-f.size*1.4, -f.size*0.3-wag*5);
@@ -1266,7 +1170,6 @@
   function drawFloat(){
     if(floatX<0) return;
     if(phase==='casting'){
-      // bobber in air
       ctx.fillStyle = '#cc3030';
       ctx.beginPath();
       ctx.arc(floatX, floatY, 6, 0, Math.PI*2);
@@ -1277,23 +1180,25 @@
       return;
     }
 
-    // Underwater part if submerged
     ctx.save();
     ctx.translate(floatX, floatY);
     ctx.rotate(floatTilt);
 
     const totalH = 26;
-    const submergeAmt = floatSubmerge; // 0..80
+    const submergeAmt = floatSubmerge;
     const visibleH = Math.max(8, totalH - submergeAmt*0.3);
 
-    // Stem under water
+    // Shadow on water
+    ctx.fillStyle = 'rgba(0,0,0,.25)';
+    ctx.beginPath();
+    ctx.ellipse(0, 4, 14, 4, 0, 0, Math.PI*2);
+    ctx.fill();
+
     if(submergeAmt > 0){
       ctx.fillStyle = 'rgba(180,30,30,0.6)';
       ctx.fillRect(-1.2, 0, 2.4, submergeAmt);
     }
 
-    // Bobber - red top, white middle
-    // Top red sphere
     const grad = ctx.createRadialGradient(-3,-visibleH+5, 1, 0,-visibleH+8, 12);
     grad.addColorStop(0,'#ff7070');
     grad.addColorStop(0.6,'#cc1818');
@@ -1303,18 +1208,15 @@
     ctx.arc(0, -visibleH+10, 10, 0, Math.PI*2);
     ctx.fill();
 
-    // White stripe
     ctx.fillStyle = '#f5f5f5';
     ctx.beginPath();
     ctx.ellipse(0, -visibleH+18, 9, 4, 0, 0, Math.PI*2);
     ctx.fill();
 
-    // Black tip
     ctx.fillStyle = '#333';
     ctx.beginPath();
     ctx.arc(0, -visibleH+2, 4, 0, Math.PI*2);
     ctx.fill();
-    // antenna
     ctx.strokeStyle = '#333';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
@@ -1324,7 +1226,6 @@
 
     ctx.restore();
 
-    // Ripples
     if(phase==='waiting' || phase==='nibble' || phase==='fight'){
       const intensity = phase==='nibble'?2 : phase==='fight'?3 : 1;
       for(let i=0;i<3;i++){
@@ -1343,20 +1244,29 @@
     if(elapsed > 0.6) return;
     const t = elapsed/0.6;
     ctx.strokeStyle = 'rgba(255,255,255,'+(1-t)+')';
-    ctx.lineWidth = 2;
-    for(let i=0;i<8;i++){
-      const ang = Math.PI + (i/7)*Math.PI;
-      const len = 30 + t*40;
+    ctx.lineWidth = 2.5;
+    for(let i=0;i<10;i++){
+      const ang = Math.PI + (i/9)*Math.PI;
+      const len = 35 + t*50;
       const x1 = splashX + Math.cos(ang)*8;
       const y1 = splashY + Math.sin(ang)*4;
       const x2 = splashX + Math.cos(ang)*(8+len);
-      const y2 = splashY + Math.sin(ang)*(4+len*0.4) - t*20;
+      const y2 = splashY + Math.sin(ang)*(4+len*0.4) - t*25;
       ctx.beginPath();
       ctx.moveTo(x1,y1);
-      ctx.quadraticCurveTo((x1+x2)/2, y1-15-t*10, x2,y2);
+      ctx.quadraticCurveTo((x1+x2)/2, y1-18-t*12, x2,y2);
       ctx.stroke();
     }
-    // base ripples
+    ctx.fillStyle = 'rgba(255,255,255,'+(0.8*(1-t))+')';
+    for(let i=0;i<14;i++){
+      const ang = Math.random()*Math.PI*2;
+      const r = 5 + Math.random()*30 + t*20;
+      const x = splashX + Math.cos(ang)*r;
+      const y = splashY + Math.sin(ang)*r*0.5 - t*15;
+      ctx.beginPath();
+      ctx.arc(x, y, 2+Math.random()*3, 0, Math.PI*2);
+      ctx.fill();
+    }
     ctx.strokeStyle = 'rgba(255,255,255,'+(0.7*(1-t))+')';
     ctx.lineWidth = 1.8;
     for(let i=0;i<3;i++){
@@ -1372,13 +1282,21 @@
     let endX = floatX, endY = floatY;
     if(floatX<0){ endX = tip.x; endY = tip.y+5; }
 
-    // Line as curve with slight gravity sag
-    ctx.strokeStyle = phase==='fight'?'rgba(255,250,200,.95)':'rgba(255,255,255,.85)';
+    // Draw shadow line
+    ctx.strokeStyle = 'rgba(0,0,0,.3)';
+    ctx.lineWidth = phase==='fight'?2.5:2;
+    ctx.beginPath();
+    ctx.moveTo(tip.x+1, tip.y+2);
+    const sagY = (tip.y + endY)/2 + 12 + (phase==='fight'?-8:0);
+    const midX = (tip.x + endX)/2 + (phase==='fight'?Math.sin(performance.now()/180)*4:0);
+    ctx.quadraticCurveTo(midX+1, sagY+2, endX+1, endY+2);
+    ctx.stroke();
+
+    // Real line
+    ctx.strokeStyle = phase==='fight'?'rgba(255,250,200,.95)':'rgba(255,255,255,.95)';
     ctx.lineWidth = phase==='fight'?1.8:1.4;
     ctx.beginPath();
     ctx.moveTo(tip.x, tip.y);
-    const sagY = (tip.y + endY)/2 + 12 + (phase==='fight'?-8:0);
-    const midX = (tip.x + endX)/2 + (phase==='fight'?Math.sin(performance.now()/180)*4:0);
     ctx.quadraticCurveTo(midX, sagY, endX, endY);
     ctx.stroke();
   }
@@ -1386,11 +1304,9 @@
     const handle = getRodHandlePos();
     const tip = getRodTipPos();
 
-    // Rod curve - bent at midpoint
     const midX = (handle.x + tip.x)/2;
     const midY = (handle.y + tip.y)/2;
 
-    // Rod bending offset
     let bendOff = 0;
     if(phase==='fight') bendOff = 30 + tensionPct*0.4;
     else if(phase==='bite') bendOff = 22;
@@ -1402,67 +1318,107 @@
     const dx = tip.x - handle.x;
     const dy = tip.y - handle.y;
     const len = Math.sqrt(dx*dx+dy*dy)||1;
-    const nx = -dy/len, ny = dx/len; // perpendicular
+    const nx = -dy/len, ny = dx/len;
     const ctrlX = midX + nx*bendOff;
     const ctrlY = midY + ny*bendOff;
 
     // Rod shadow
-    ctx.strokeStyle = 'rgba(0,0,0,.3)';
-    ctx.lineWidth = 8;
+    ctx.strokeStyle = 'rgba(0,0,0,.4)';
+    ctx.lineWidth = 10;
     ctx.lineCap = 'round';
     ctx.beginPath();
-    ctx.moveTo(handle.x+3, handle.y+4);
-    ctx.quadraticCurveTo(ctrlX+3, ctrlY+4, tip.x+3, tip.y+4);
+    ctx.moveTo(handle.x+4, handle.y+5);
+    ctx.quadraticCurveTo(ctrlX+4, ctrlY+5, tip.x+4, tip.y+5);
     ctx.stroke();
 
-    // Rod body - tapered (draw segments)
-    const segs = 14;
+    // Rod body - tapered with metallic gradient
+    const segs = 18;
     for(let i=0;i<segs;i++){
       const t1 = i/segs, t2 = (i+1)/segs;
       const x1 = bezierX(handle.x, ctrlX, tip.x, t1);
       const y1 = bezierY(handle.y, ctrlY, tip.y, t1);
       const x2 = bezierX(handle.x, ctrlX, tip.x, t2);
       const y2 = bezierY(handle.y, ctrlY, tip.y, t2);
-      const w = 8 - t1*7; // thicker at handle
-      ctx.lineWidth = Math.max(1, w);
-      // Color varies along rod
-      const shade = 60 - t1*50;
-      ctx.strokeStyle = '#3a3a3a';
-      if(t1 < 0.18) ctx.strokeStyle = '#1a1a1a';
-      else if(t1 < 0.3) ctx.strokeStyle = '#2a2a2a';
+      const w = 9 - t1*7.5;
+      ctx.lineWidth = Math.max(1.2, w);
+      ctx.lineCap = 'round';
+      // Carbon fiber color
+      const c = Math.floor(50 - t1*30);
+      ctx.strokeStyle = `rgb(${c},${c},${c+5})`;
       ctx.beginPath();
       ctx.moveTo(x1,y1);
       ctx.lineTo(x2,y2);
+      ctx.stroke();
+      // Highlight stripe
+      if(i%2===0){
+        ctx.strokeStyle = `rgba(255,255,255,${0.15-t1*0.1})`;
+        ctx.lineWidth = Math.max(.5, w*0.3);
+        ctx.beginPath();
+        ctx.moveTo(x1,y1);
+        ctx.lineTo(x2,y2);
+        ctx.stroke();
+      }
+    }
+
+    // Rod guides (small rings at intervals)
+    ctx.fillStyle = '#888';
+    ctx.strokeStyle = '#222';
+    ctx.lineWidth = 1;
+    for(let i=2; i<=14; i+=3){
+      const t = i/15;
+      const gx = bezierX(handle.x, ctrlX, tip.x, t);
+      const gy = bezierY(handle.y, ctrlY, tip.y, t);
+      ctx.beginPath();
+      ctx.arc(gx, gy, 3-t*1.5, 0, Math.PI*2);
+      ctx.fill();
       ctx.stroke();
     }
 
     // Reel
     drawReel(handle.x, handle.y, Math.atan2(ctrlY-handle.y, ctrlX-handle.x));
 
-    // Handle grip (cork color)
+    // Handle grip
     const gripAng = Math.atan2(ctrlY-handle.y, ctrlX-handle.x);
-    const gripBackX = handle.x - Math.cos(gripAng)*40;
-    const gripBackY = handle.y - Math.sin(gripAng)*40;
-    ctx.lineWidth = 14;
+    const gripBackX = handle.x - Math.cos(gripAng)*45;
+    const gripBackY = handle.y - Math.sin(gripAng)*45;
+    ctx.lineWidth = 16;
     ctx.lineCap = 'round';
-    ctx.strokeStyle = '#a87632';
+
+    // Cork grip with gradient
+    const gripGrad = ctx.createLinearGradient(handle.x, handle.y, gripBackX, gripBackY);
+    gripGrad.addColorStop(0,'#a8742e');
+    gripGrad.addColorStop(0.5,'#c4894a');
+    gripGrad.addColorStop(1,'#8c5e22');
+    ctx.strokeStyle = gripGrad;
     ctx.beginPath();
     ctx.moveTo(handle.x, handle.y);
     ctx.lineTo(gripBackX, gripBackY);
     ctx.stroke();
-    // Cork detail
-    ctx.strokeStyle = 'rgba(120,80,30,.4)';
-    ctx.lineWidth = 1;
-    for(let i=0;i<6;i++){
-      const tx = i/5;
-      const px = handle.x - Math.cos(gripAng)*40*tx;
-      const py = handle.y - Math.sin(gripAng)*40*tx;
+
+    // Cork texture dots
+    ctx.fillStyle = 'rgba(80,50,15,.4)';
+    for(let i=0;i<14;i++){
+      const tx = i/13;
+      const px = handle.x - Math.cos(gripAng)*45*tx;
+      const py = handle.y - Math.sin(gripAng)*45*tx;
+      const off = (i%2)*4-2;
+      const ox = -Math.sin(gripAng)*off;
+      const oy = Math.cos(gripAng)*off;
       ctx.beginPath();
-      ctx.arc(px, py, 6, 0, Math.PI*2);
-      ctx.stroke();
+      ctx.arc(px+ox, py+oy, 1.4, 0, Math.PI*2);
+      ctx.fill();
     }
 
-    // Hand holding the rod
+    // End cap of rod (rubber)
+    ctx.fillStyle = '#1a1a1a';
+    ctx.beginPath();
+    ctx.arc(gripBackX, gripBackY, 9, 0, Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle = '#444';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Hand
     drawHand(handle.x - Math.cos(gripAng)*20, handle.y - Math.sin(gripAng)*20, gripAng);
   }
   function bezierX(p0, p1, p2, t){
@@ -1474,169 +1430,217 @@
     return u*u*p0 + 2*u*t*p1 + t*t*p2;
   }
   function drawReel(rx, ry, rodAng){
-    // Reel mounted just above handle on rod
-    const offX = Math.cos(rodAng + Math.PI/2)*8;
-    const offY = Math.sin(rodAng + Math.PI/2)*8;
+    const offX = Math.cos(rodAng + Math.PI/2)*10;
+    const offY = Math.sin(rodAng + Math.PI/2)*10;
     const cx = rx + offX;
     const cy = ry + offY;
 
-    // Reel body
     ctx.save();
     ctx.translate(cx, cy);
     ctx.rotate(rodAng + Math.PI/2);
 
-    // base
-    ctx.fillStyle = '#3a3a3a';
-    ctx.beginPath();
-    ctx.ellipse(0, 0, 14, 18, 0, 0, Math.PI*2);
-    ctx.fill();
-    // metal rim
-    const rg = ctx.createRadialGradient(-4,-3,2, 0,0,16);
-    rg.addColorStop(0,'#dddddd');
-    rg.addColorStop(0.4,'#888');
-    rg.addColorStop(1,'#444');
-    ctx.fillStyle = rg;
-    ctx.beginPath();
-    ctx.ellipse(0, 0, 11, 14, 0, 0, Math.PI*2);
-    ctx.fill();
-    // spool inside
+    // Mount foot
     ctx.fillStyle = '#222';
+    ctx.fillRect(-4, -6, 8, 12);
+
+    // Reel body - dark base
+    ctx.fillStyle = '#1a1a1a';
     ctx.beginPath();
-    ctx.ellipse(0, 0, 7, 9, 0, 0, Math.PI*2);
-    ctx.fill();
-    // line wrap
-    ctx.fillStyle = '#eaeaea';
-    ctx.beginPath();
-    ctx.ellipse(0, 0, 6, 8, 0, 0, Math.PI*2);
+    ctx.ellipse(0, 0, 16, 20, 0, 0, Math.PI*2);
     ctx.fill();
 
-    // handle/crank
+    // Metallic side rim
+    const rg = ctx.createRadialGradient(-4,-3,2, 0,0,18);
+    rg.addColorStop(0,'#f0f0f0');
+    rg.addColorStop(0.4,'#a0a0a0');
+    rg.addColorStop(1,'#3a3a3a');
+    ctx.fillStyle = rg;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 13, 17, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // Spool inside
+    ctx.fillStyle = '#0a0a0a';
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 8, 11, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // Line wrap (white braided)
+    ctx.fillStyle = '#e6e6e6';
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 7, 10, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // Spool center hub
+    ctx.fillStyle = '#222';
+    ctx.beginPath();
+    ctx.arc(0, 0, 2, 0, Math.PI*2);
+    ctx.fill();
+
+    // Crank handle
     let crankAng = performance.now()/200;
     if(phase==='fight') crankAng = performance.now()/80;
-    ctx.strokeStyle = '#c0c0c0';
-    ctx.lineWidth = 3;
+    if(phase==='casting') crankAng += performance.now()/40;
+
+    // Crank arm
+    ctx.strokeStyle = '#aaa';
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
     ctx.beginPath();
-    const hx = Math.cos(crankAng)*16;
-    const hy = Math.sin(crankAng)*16;
+    const hx = Math.cos(crankAng)*18;
+    const hy = Math.sin(crankAng)*18;
     ctx.moveTo(0, 0);
     ctx.lineTo(hx, hy);
     ctx.stroke();
-    ctx.fillStyle = '#ff5050';
+    // Crank knob
+    const kg = ctx.createRadialGradient(hx-1,hy-1,0, hx,hy,5);
+    kg.addColorStop(0,'#ff8888');
+    kg.addColorStop(1,'#cc2020');
+    ctx.fillStyle = kg;
     ctx.beginPath();
-    ctx.arc(hx, hy, 4, 0, Math.PI*2);
+    ctx.arc(hx, hy, 5, 0, Math.PI*2);
     ctx.fill();
+    ctx.strokeStyle = '#600';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Bail wire
+    ctx.strokeStyle = '#888';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(0, 0, 14, Math.PI*0.2, Math.PI*0.8);
+    ctx.stroke();
+
     ctx.restore();
   }
   function drawHand(hx, hy, rodAng){
-    // Hand reaching from bottom-right corner
     ctx.save();
 
-    // Forearm coming from corner
-    ctx.fillStyle = '#e8a878';
-    ctx.strokeStyle = '#a26a3e';
+    // Sleeve (red plaid shirt like in screenshot)
+    const sleeveGrad = ctx.createLinearGradient(W*1.05, H*1.05, hx, hy);
+    sleeveGrad.addColorStop(0, '#3a1818');
+    sleeveGrad.addColorStop(0.5, '#7a2020');
+    sleeveGrad.addColorStop(1, '#a83030');
+    ctx.fillStyle = sleeveGrad;
+    ctx.strokeStyle = '#400';
     ctx.lineWidth = 2;
-    ctx.beginPath();
-    // forearm shape - from bottom-right corner up to hand
-    const elbowX = W*1.05;
-    const elbowY = H*1.05;
-    const grad = ctx.createLinearGradient(elbowX, elbowY, hx, hy);
-    grad.addColorStop(0, '#c4815a');
-    grad.addColorStop(1, '#e8a878');
-    ctx.fillStyle = grad;
 
-    // Curve forearm
     ctx.beginPath();
-    ctx.moveTo(elbowX, elbowY-50);
-    ctx.quadraticCurveTo(W*0.95, H*0.95, hx-15, hy+25);
-    ctx.lineTo(hx+15, hy-15);
-    ctx.quadraticCurveTo(W*1.05, H*1.0, elbowX+50, elbowY);
+    ctx.moveTo(W*1.1, H*1.05);
+    ctx.quadraticCurveTo(W*0.95, H*0.97, hx-25, hy+30);
+    ctx.lineTo(hx+15, hy-10);
+    ctx.quadraticCurveTo(W*1.05, H*0.95, W*1.15, H*1.0);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
 
-    // Glove cuff
-    ctx.fillStyle = '#8b4f1f';
-    ctx.beginPath();
-    ctx.ellipse(hx-3, hy+10, 22, 10, rodAng+Math.PI/2, 0, Math.PI*2);
-    ctx.fill();
+    // Plaid pattern
+    ctx.strokeStyle = 'rgba(0,0,0,.3)';
+    ctx.lineWidth = 1;
+    for(let i=0;i<6;i++){
+      const t = i/5;
+      ctx.beginPath();
+      ctx.moveTo(W*0.94+t*40, H*0.94);
+      ctx.lineTo(W*1.0+t*40, H*1.05);
+      ctx.stroke();
+    }
 
-    // Fingers around handle
+    // Cuff
+    ctx.fillStyle = '#1a0808';
+    ctx.beginPath();
+    ctx.ellipse(hx-3, hy+12, 24, 10, rodAng+Math.PI/2, 0, Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Hand skin
     ctx.fillStyle = '#e8a878';
     ctx.strokeStyle = '#a26a3e';
     ctx.lineWidth = 1.5;
+
+    // Palm/back of hand
+    ctx.beginPath();
+    ctx.ellipse(hx, hy, 18, 14, rodAng, 0, Math.PI*2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Highlight
+    ctx.fillStyle = 'rgba(255,220,180,.5)';
+    ctx.beginPath();
+    ctx.ellipse(hx-3, hy-3, 8, 5, rodAng, 0, Math.PI*2);
+    ctx.fill();
+
+    // Fingers wrapped around the rod
+    ctx.fillStyle = '#dca070';
+    ctx.strokeStyle = '#a26a3e';
+    ctx.lineWidth = 1.2;
     for(let i=0;i<4;i++){
       const fang = rodAng + Math.PI/2 + (i-1.5)*0.18;
-      const fx = hx + Math.cos(fang)*5;
-      const fy = hy + Math.sin(fang)*5;
+      const fx = hx + Math.cos(fang)*8;
+      const fy = hy + Math.sin(fang)*8;
       ctx.beginPath();
-      ctx.ellipse(fx, fy, 5, 8, fang, 0, Math.PI*2);
+      ctx.ellipse(fx, fy, 5, 9, fang, 0, Math.PI*2);
       ctx.fill();
       ctx.stroke();
+      // Knuckle highlight
+      ctx.fillStyle = 'rgba(255,220,180,.4)';
+      ctx.beginPath();
+      ctx.arc(fx, fy-2, 2, 0, Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle = '#dca070';
     }
-    // thumb
-    const thAng = rodAng - Math.PI/3;
+    // Thumb
+    const thAng = rodAng - Math.PI/2.8;
     ctx.beginPath();
-    ctx.ellipse(hx + Math.cos(thAng)*10, hy + Math.sin(thAng)*10, 5, 7, thAng, 0, Math.PI*2);
+    ctx.ellipse(hx + Math.cos(thAng)*12, hy + Math.sin(thAng)*12, 5, 8, thAng, 0, Math.PI*2);
     ctx.fill();
     ctx.stroke();
 
     ctx.restore();
   }
   function drawDock(){
-    // Wooden dock at bottom
-    ctx.fillStyle = '#8b5a2b';
-    ctx.fillRect(0, H*0.88, W, H*0.12);
-    // Plank lines
-    ctx.strokeStyle = 'rgba(0,0,0,.3)';
-    ctx.lineWidth = 1.2;
-    for(let i=0;i<5;i++){
-      const y = H*0.88 + (i+1)*(H*0.12/6);
-      ctx.beginPath();
-      ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
-    }
-    // Plank seams (vertical)
+    // Soft wooden plank in front (foreground)
+    const dockH = H*0.07;
+    const grad = ctx.createLinearGradient(0, H-dockH, 0, H);
+    grad.addColorStop(0, 'rgba(100,60,25,.85)');
+    grad.addColorStop(1, 'rgba(60,35,15,.95)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, H-dockH, W, dockH);
+
+    // Plank seams
     ctx.strokeStyle = 'rgba(0,0,0,.4)';
+    ctx.lineWidth = 1.5;
     for(let i=0;i<8;i++){
       const x = (i+0.5)*W/8;
       ctx.beginPath();
-      ctx.moveTo(x, H*0.88); ctx.lineTo(x, H);
-      ctx.stroke();
-    }
-    // Wood grain
-    ctx.strokeStyle = 'rgba(60,30,10,.25)';
-    ctx.lineWidth = .8;
-    for(let i=0;i<20;i++){
-      const x = Math.random()*W;
-      const y = H*0.88 + Math.random()*H*0.12;
-      ctx.beginPath();
-      ctx.moveTo(x, y); ctx.lineTo(x+10+Math.random()*30, y);
+      ctx.moveTo(x, H-dockH); ctx.lineTo(x, H);
       ctx.stroke();
     }
   }
 
   function render(){
-    // Sky and background
-    drawSky();
-    drawMountains();
-    drawForest();
-    drawWater();
+    ctx.clearRect(0, 0, W, H);
 
-    // Underwater fish silhouettes
+    // Water shimmer overlay (on top of photo)
+    drawWaterShimmer();
+
+    // Underwater fish (slightly visible)
     drawUnderwaterFish();
 
-    // Splash effect
+    // Splash
     if(performance.now()-splashTime < 600) drawSplash();
 
     // Foreground dock
     drawDock();
 
-    // Float (above water)
+    // Float
     drawFloat();
 
-    // Line from rod to float
+    // Line
     drawLine();
 
-    // Rod and hand (always on top)
+    // Rod and hand
     drawRod();
   }
 
@@ -1650,8 +1654,10 @@
   }
   requestAnimationFrame(loop);
 
-  // Start at menu
   toMenu();
+
+  // Hide loading once menu is up (image may still be loading in BG)
+  setTimeout(()=>{ loadingOverlay.classList.add('hide'); }, 2000);
 })();
 </script>
 </body>
