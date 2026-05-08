@@ -361,12 +361,10 @@
       ctx.restore();
     }
 
-    /* ========== ОТ ПЕРВОГО ЛИЦА — двустволка с лапами мишки ========== */
+    /* ========== РЕАЛИСТИЧНАЯ ДВУСТВОЛКА от первого лица ========== */
     function drawFirstPerson(now) {
-      // Опорная точка ружья — по центру нижней части экрана
       const baseX = W / 2;
-      const baseY = H + 80 + recoil * 40; // отдача — приклад уходит вниз и обратно
-      // Угол к прицелу
+      const baseY = H + 80 + recoil * 40;
       const dx = aimSmooth.x - baseX;
       const dy = aimSmooth.y - baseY;
       const angle = Math.atan2(dy, dx);
@@ -376,120 +374,354 @@
       ctx.rotate(angle);
 
       // === Тень за ружьём ===
-      ctx.fillStyle = 'rgba(0,0,0,0.25)';
-      ctx.fillRect(-20, -45, 320, 90);
+      ctx.fillStyle = 'rgba(0,0,0,0.3)';
+      ctx.beginPath();
+      ctx.ellipse(80, 50, 200, 25, 0, 0, Math.PI * 2);
+      ctx.fill();
 
-      // === Двустволка ===
       const barrelLen = 280;
-      const barrelW = 18;
 
-      // Стволы (двойные)
-      // Верхний ствол
-      const barrelGrad = ctx.createLinearGradient(0, -22, 0, -4);
-      barrelGrad.addColorStop(0, '#444');
-      barrelGrad.addColorStop(0.3, '#1a1a1a');
-      barrelGrad.addColorStop(1, '#2a2a2a');
-      ctx.fillStyle = barrelGrad;
-      ctx.fillRect(0, -22, barrelLen, barrelW);
+      // ========== СТВОЛЫ (цилиндрические с объёмом) ==========
+      // Верхний ствол — 3D-цилиндр через градиент
+      const upperGrad = ctx.createLinearGradient(0, -22, 0, -4);
+      upperGrad.addColorStop(0, '#5a5a5a');    // верхний блик
+      upperGrad.addColorStop(0.15, '#3a3a3a');
+      upperGrad.addColorStop(0.4, '#1a1a1a');  // основной чёрно-синий
+      upperGrad.addColorStop(0.7, '#0d0d0d');
+      upperGrad.addColorStop(1, '#252525');    // нижняя тень
+      ctx.fillStyle = upperGrad;
+      ctx.fillRect(0, -22, barrelLen, 18);
+      // Зеркальный блик на верхнем стволе
+      const upperShine = ctx.createLinearGradient(0, -21, 0, -16);
+      upperShine.addColorStop(0, 'rgba(180,180,200,0.5)');
+      upperShine.addColorStop(1, 'rgba(180,180,200,0)');
+      ctx.fillStyle = upperShine;
+      ctx.fillRect(2, -21, barrelLen - 4, 5);
+
       // Нижний ствол
-      const barrelGrad2 = ctx.createLinearGradient(0, 4, 0, 22);
-      barrelGrad2.addColorStop(0, '#2a2a2a');
-      barrelGrad2.addColorStop(0.7, '#1a1a1a');
-      barrelGrad2.addColorStop(1, '#444');
-      ctx.fillStyle = barrelGrad2;
-      ctx.fillRect(0, 4, barrelLen, barrelW);
+      const lowerGrad = ctx.createLinearGradient(0, 4, 0, 22);
+      lowerGrad.addColorStop(0, '#252525');
+      lowerGrad.addColorStop(0.3, '#0d0d0d');
+      lowerGrad.addColorStop(0.6, '#1a1a1a');
+      lowerGrad.addColorStop(0.85, '#3a3a3a');
+      lowerGrad.addColorStop(1, '#5a5a5a');
+      ctx.fillStyle = lowerGrad;
+      ctx.fillRect(0, 4, barrelLen, 18);
+      // Блик на нижнем стволе
+      const lowerShine = ctx.createLinearGradient(0, 17, 0, 22);
+      lowerShine.addColorStop(0, 'rgba(180,180,200,0)');
+      lowerShine.addColorStop(1, 'rgba(180,180,200,0.4)');
+      ctx.fillStyle = lowerShine;
+      ctx.fillRect(2, 17, barrelLen - 4, 5);
 
-      // Соединительная планка между стволами
-      ctx.fillStyle = '#3a3a3a';
-      ctx.fillRect(0, -3, barrelLen, 7);
-
-      // Кончики стволов (отверстия)
-      ctx.fillStyle = '#000';
-      ctx.beginPath(); ctx.arc(barrelLen, -13, 7, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(barrelLen, 13, 7, 0, Math.PI * 2); ctx.fill();
-      // Блик на кончиках
-      ctx.fillStyle = '#666';
-      ctx.beginPath(); ctx.arc(barrelLen - 1, -14, 2, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(barrelLen - 1, 14, 2, 0, Math.PI * 2); ctx.fill();
-
-      // Мушка на конце
-      ctx.fillStyle = '#ff6b00';
-      ctx.beginPath();
-      ctx.moveTo(barrelLen - 5, -28);
-      ctx.lineTo(barrelLen + 2, -28);
-      ctx.lineTo(barrelLen - 1, -32);
-      ctx.fill();
-
-      // === Цевьё (деревянное) ===
-      ctx.fillStyle = '#8B4513';
-      ctx.fillRect(-15, -25, 90, 50);
-      // Текстура дерева
-      ctx.strokeStyle = 'rgba(60,30,10,0.4)';
+      // ========== ПРИЦЕЛЬНАЯ ПЛАНКА (между стволами) ==========
+      ctx.fillStyle = '#0a0a0a';
+      ctx.fillRect(0, -4, barrelLen, 8);
+      // Ребристая текстура
+      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
       ctx.lineWidth = 1;
-      for (let i = -15; i < 75; i += 4) {
-        ctx.beginPath(); ctx.moveTo(i, -25); ctx.lineTo(i + 2, 25); ctx.stroke();
+      for (let i = 4; i < barrelLen - 4; i += 6) {
+        ctx.beginPath(); ctx.moveTo(i, -3); ctx.lineTo(i, 3); ctx.stroke();
       }
-      // Скоба для пальцев
-      ctx.strokeStyle = '#3a2410';
-      ctx.lineWidth = 4;
+
+      // ========== КОНЦЫ СТВОЛОВ (дула) ==========
+      // Верхнее дуло
+      ctx.fillStyle = '#1a1a1a';
+      ctx.beginPath(); ctx.arc(barrelLen, -13, 9, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#000';
+      ctx.beginPath(); ctx.arc(barrelLen, -13, 6, 0, Math.PI * 2); ctx.fill();
+      // Кольцо-блик
+      ctx.strokeStyle = '#666';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(barrelLen, -13, 8, -Math.PI * 0.7, -Math.PI * 0.3); ctx.stroke();
+
+      // Нижнее дуло
+      ctx.fillStyle = '#1a1a1a';
+      ctx.beginPath(); ctx.arc(barrelLen, 13, 9, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#000';
+      ctx.beginPath(); ctx.arc(barrelLen, 13, 6, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#666';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(barrelLen, 13, 8, Math.PI * 0.3, Math.PI * 0.7); ctx.stroke();
+
+      // ========== МУШКА (золотая на конце) ==========
+      ctx.fillStyle = '#ffcc00';
       ctx.beginPath();
-      ctx.arc(-30, 28, 18, -Math.PI/4, Math.PI/2, false);
+      ctx.moveTo(barrelLen - 8, -22);
+      ctx.lineTo(barrelLen - 2, -22);
+      ctx.lineTo(barrelLen - 5, -30);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#8b6914';
+      ctx.lineWidth = 1;
       ctx.stroke();
 
-      // === Приклад ===
-      ctx.fillStyle = '#5d3a1a';
+      // ========== ЦЕВЬЁ (деревянное, под стволами) ==========
+      // Изогнутая форма
       ctx.beginPath();
-      ctx.moveTo(-15, -25);
-      ctx.lineTo(-90, -15);
-      ctx.lineTo(-90, 30);
-      ctx.lineTo(-15, 25);
+      ctx.moveTo(20, 22);
+      ctx.lineTo(120, 22);
+      ctx.quadraticCurveTo(125, 35, 115, 42);
+      ctx.lineTo(30, 42);
+      ctx.quadraticCurveTo(15, 42, 20, 22);
+      const ceveGrad = ctx.createLinearGradient(0, 22, 0, 45);
+      ceveGrad.addColorStop(0, '#8b5a2b');
+      ceveGrad.addColorStop(0.4, '#6b4423');
+      ceveGrad.addColorStop(1, '#3a2410');
+      ctx.fillStyle = ceveGrad;
       ctx.fill();
-      // Тёмная обводка приклада
-      ctx.strokeStyle = '#2a1408';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(-15, -25);
-      ctx.lineTo(-90, -15);
-      ctx.lineTo(-90, 30);
-      ctx.lineTo(-15, 25);
-      ctx.stroke();
-
-      // === Лапы мишки ===
-      // Правая лапа держит цевьё (на стволах)
-      ctx.fillStyle = '#8B4513';
-      ctx.beginPath();
-      ctx.ellipse(40, 25, 30, 22, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#A0522D';
-      ctx.beginPath();
-      ctx.ellipse(40, 30, 28, 18, 0, 0, Math.PI * 2);
-      ctx.fill();
-      // Когти
-      ctx.fillStyle = '#2b1810';
-      [25, 35, 45, 55].forEach(cx => {
+      // Текстура волокон дерева
+      ctx.strokeStyle = 'rgba(40,20,5,0.4)';
+      ctx.lineWidth = 0.7;
+      for (let i = 25; i < 115; i += 3) {
         ctx.beginPath();
-        ctx.arc(cx, 12, 2, 0, Math.PI * 2);
+        ctx.moveTo(i, 23);
+        ctx.bezierCurveTo(i + 1, 30, i - 1, 36, i + 0.5, 41);
+        ctx.stroke();
+      }
+      // Светлые волокна
+      ctx.strokeStyle = 'rgba(200,150,100,0.25)';
+      for (let i = 26; i < 115; i += 7) {
+        ctx.beginPath();
+        ctx.moveTo(i, 24);
+        ctx.lineTo(i + 0.5, 41);
+        ctx.stroke();
+      }
+      // Насечка на цевье (для хвата)
+      ctx.strokeStyle = 'rgba(20,10,0,0.5)';
+      ctx.lineWidth = 0.8;
+      for (let i = 40; i < 100; i += 4) {
+        ctx.beginPath();
+        ctx.moveTo(i, 28);
+        ctx.lineTo(i - 3, 38);
+        ctx.stroke();
+      }
+      for (let i = 38; i < 100; i += 4) {
+        ctx.beginPath();
+        ctx.moveTo(i, 28);
+        ctx.lineTo(i + 3, 38);
+        ctx.stroke();
+      }
+      // Контур цевья
+      ctx.strokeStyle = '#1a0a00';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(20, 22);
+      ctx.lineTo(120, 22);
+      ctx.quadraticCurveTo(125, 35, 115, 42);
+      ctx.lineTo(30, 42);
+      ctx.quadraticCurveTo(15, 42, 20, 22);
+      ctx.stroke();
+
+      // ========== КОЛОДКА (receiver — металлический блок между стволами и прикладом) ==========
+      const recGrad = ctx.createLinearGradient(0, -28, 0, 32);
+      recGrad.addColorStop(0, '#4a4a4a');
+      recGrad.addColorStop(0.3, '#2a2a2a');
+      recGrad.addColorStop(0.7, '#1a1a1a');
+      recGrad.addColorStop(1, '#3a3a3a');
+      ctx.fillStyle = recGrad;
+      ctx.beginPath();
+      ctx.moveTo(-25, -28);
+      ctx.lineTo(5, -28);
+      ctx.lineTo(5, 32);
+      ctx.lineTo(-25, 32);
+      ctx.quadraticCurveTo(-30, 0, -25, -28);
+      ctx.fill();
+      // Гравировка на колодке (декоративные линии)
+      ctx.strokeStyle = 'rgba(200,180,100,0.4)';
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.moveTo(-22, -22); ctx.bezierCurveTo(-15, -15, -15, 15, -22, 22);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-18, -18); ctx.bezierCurveTo(-12, -10, -12, 10, -18, 18);
+      ctx.stroke();
+      // Болт на колодке (центр сбоку)
+      ctx.fillStyle = '#5a5a5a';
+      ctx.beginPath(); ctx.arc(-12, 0, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#1a1a1a';
+      ctx.beginPath(); ctx.arc(-12, 0, 1.5, 0, Math.PI * 2); ctx.fill();
+
+      // ========== СПУСКОВАЯ СКОБА (латунь) ==========
+      ctx.strokeStyle = '#b8860b';
+      ctx.lineWidth = 4;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(-5, 32);
+      ctx.bezierCurveTo(-10, 48, -32, 50, -38, 38);
+      ctx.stroke();
+      // Блик на скобе
+      ctx.strokeStyle = '#ffe082';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(-7, 33);
+      ctx.bezierCurveTo(-12, 46, -28, 48, -36, 39);
+      ctx.stroke();
+      ctx.lineCap = 'butt';
+
+      // Спусковой крючок
+      ctx.fillStyle = '#1a1a1a';
+      ctx.beginPath();
+      ctx.moveTo(-15, 32);
+      ctx.quadraticCurveTo(-20, 42, -16, 46);
+      ctx.lineTo(-13, 44);
+      ctx.lineTo(-12, 32);
+      ctx.fill();
+
+      // ========== ШЕЙКА ПРИКЛАДА (изогнутая часть) ==========
+      const neckGrad = ctx.createLinearGradient(0, -10, 0, 30);
+      neckGrad.addColorStop(0, '#6b4423');
+      neckGrad.addColorStop(0.5, '#5d3a1a');
+      neckGrad.addColorStop(1, '#3a2410');
+      ctx.fillStyle = neckGrad;
+      ctx.beginPath();
+      ctx.moveTo(-25, -10);
+      ctx.lineTo(-15, -10);
+      ctx.quadraticCurveTo(-25, 5, -55, 15);
+      ctx.lineTo(-55, 35);
+      ctx.quadraticCurveTo(-30, 32, -25, 32);
+      ctx.fill();
+      // Текстура шейки
+      ctx.strokeStyle = 'rgba(40,20,5,0.4)';
+      ctx.lineWidth = 0.7;
+      for (let i = -50; i > -55; i -= 0) break;
+      for (let i = 0; i < 8; i++) {
+        const t = i / 8;
+        ctx.beginPath();
+        ctx.moveTo(-25 - t * 30, -8 + t * 5);
+        ctx.lineTo(-25 - t * 30, 30 + t * 2);
+        ctx.stroke();
+      }
+      // Насечка на шейке (pistol grip checkering)
+      ctx.strokeStyle = 'rgba(20,10,0,0.5)';
+      ctx.lineWidth = 0.6;
+      for (let i = -50; i < -28; i += 3) {
+        ctx.beginPath(); ctx.moveTo(i, 14); ctx.lineTo(i - 2, 28); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(i, 14); ctx.lineTo(i + 2, 28); ctx.stroke();
+      }
+
+      // ========== ПРИКЛАД (эргономичный с изгибом) ==========
+      const stockGrad = ctx.createLinearGradient(-130, -15, -130, 40);
+      stockGrad.addColorStop(0, '#7a4f25');
+      stockGrad.addColorStop(0.3, '#5d3a1a');
+      stockGrad.addColorStop(0.7, '#4a2c10');
+      stockGrad.addColorStop(1, '#2a1408');
+      ctx.fillStyle = stockGrad;
+      ctx.beginPath();
+      ctx.moveTo(-55, 15);
+      ctx.bezierCurveTo(-80, 5, -110, -5, -130, -10);
+      ctx.lineTo(-135, 45);
+      ctx.bezierCurveTo(-100, 42, -75, 38, -55, 35);
+      ctx.closePath();
+      ctx.fill();
+
+      // Текстура волокон приклада (длинные изогнутые линии)
+      ctx.strokeStyle = 'rgba(40,20,5,0.45)';
+      ctx.lineWidth = 0.8;
+      for (let i = 0; i < 8; i++) {
+        const yOff = -8 + i * 6;
+        ctx.beginPath();
+        ctx.moveTo(-55, yOff + 18);
+        ctx.bezierCurveTo(-85, yOff + 12, -110, yOff - 5, -132, yOff + 2);
+        ctx.stroke();
+      }
+      // Светлые волокна
+      ctx.strokeStyle = 'rgba(200,150,100,0.2)';
+      ctx.lineWidth = 0.6;
+      for (let i = 0; i < 5; i++) {
+        const yOff = -5 + i * 9;
+        ctx.beginPath();
+        ctx.moveTo(-58, yOff + 18);
+        ctx.bezierCurveTo(-90, yOff + 14, -115, yOff - 2, -132, yOff + 1);
+        ctx.stroke();
+      }
+      // Тёмная окантовка приклада
+      ctx.strokeStyle = '#1a0a00';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(-55, 15);
+      ctx.bezierCurveTo(-80, 5, -110, -5, -130, -10);
+      ctx.lineTo(-135, 45);
+      ctx.bezierCurveTo(-100, 42, -75, 38, -55, 35);
+      ctx.closePath();
+      ctx.stroke();
+
+      // ========== ЗАТЫЛЬНИК (резиновый, чёрный с насечкой) ==========
+      ctx.fillStyle = '#1a1a1a';
+      ctx.beginPath();
+      ctx.moveTo(-130, -10);
+      ctx.lineTo(-138, -10);
+      ctx.lineTo(-142, 45);
+      ctx.lineTo(-135, 45);
+      ctx.fill();
+      // Насечка на резиновом затыльнике
+      ctx.strokeStyle = '#3a3a3a';
+      ctx.lineWidth = 0.7;
+      for (let y = -8; y < 44; y += 3) {
+        ctx.beginPath();
+        ctx.moveTo(-130, y);
+        ctx.lineTo(-141, y + 1);
+        ctx.stroke();
+      }
+
+      // ========== ЛАПЫ МИШКИ ==========
+      // Правая лапа на цевьё (передняя рука)
+      const pawFrontGrad = ctx.createRadialGradient(60, 20, 5, 60, 20, 35);
+      pawFrontGrad.addColorStop(0, '#A0522D');
+      pawFrontGrad.addColorStop(0.7, '#8B4513');
+      pawFrontGrad.addColorStop(1, '#5d3a1a');
+      ctx.fillStyle = pawFrontGrad;
+      ctx.beginPath();
+      ctx.ellipse(65, 28, 30, 22, -0.1, 0, Math.PI * 2);
+      ctx.fill();
+      // Подушечка лапы (светлее)
+      ctx.fillStyle = '#D2691E';
+      ctx.beginPath();
+      ctx.ellipse(60, 35, 22, 12, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // Когти на передней лапе
+      ctx.fillStyle = '#1a0a00';
+      [40, 52, 64, 76, 88].forEach((cx, i) => {
+        const cy = 12 - Math.abs(i - 2) * 1.5;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, 2, 4, 0, 0, Math.PI * 2);
         ctx.fill();
       });
+      // Шерсть/контур
+      ctx.strokeStyle = '#3a2410';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.ellipse(65, 28, 30, 22, -0.1, 0, Math.PI * 2);
+      ctx.stroke();
 
-      // Левая лапа на спусковом крючке
-      ctx.fillStyle = '#8B4513';
+      // Левая лапа держит шейку приклада + палец на крючке
+      const pawBackGrad = ctx.createRadialGradient(-30, 30, 5, -30, 30, 30);
+      pawBackGrad.addColorStop(0, '#A0522D');
+      pawBackGrad.addColorStop(0.7, '#8B4513');
+      pawBackGrad.addColorStop(1, '#5d3a1a');
+      ctx.fillStyle = pawBackGrad;
       ctx.beginPath();
-      ctx.ellipse(-25, 30, 26, 20, 0, 0, Math.PI * 2);
+      ctx.ellipse(-32, 32, 28, 20, 0.15, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = '#A0522D';
+      // Подушечка
+      ctx.fillStyle = '#D2691E';
       ctx.beginPath();
-      ctx.ellipse(-25, 35, 24, 16, 0, 0, Math.PI * 2);
+      ctx.ellipse(-32, 38, 20, 10, 0, 0, Math.PI * 2);
       ctx.fill();
       // Палец на крючке
       ctx.fillStyle = '#A0522D';
       ctx.beginPath();
-      ctx.ellipse(-15, 38, 8, 6, 0.3, 0, Math.PI * 2);
+      ctx.ellipse(-15, 41, 10, 5, 0.2, 0, Math.PI * 2);
       ctx.fill();
+      // Контур лапы
+      ctx.strokeStyle = '#3a2410';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.ellipse(-32, 32, 28, 20, 0.15, 0, Math.PI * 2);
+      ctx.stroke();
 
       ctx.restore();
 
-      // === Уголок мишки внизу-слева для настроения ===
       drawBearMood(now);
     }
 
