@@ -1095,26 +1095,237 @@
       src.start();
     }
 
+    /* ========== РЕАЛИСТИЧНАЯ ПЕРЕЗАРЯДКА ПЕРЕЛОМНОЙ ДВУСТВОЛКИ ==========
+       Последовательность: открытие переломки → выброс 2 гильз → вставка 2 патронов → защёлкивание
+       Используется WebAudio синтез: металлические резонансы + удары + шумы трения
+    */
     function playReload() {
-      if (!window.BearSound) return;
-      // Звуки затвора
-      [0, 180, 700, 1050].forEach((d, i) => {
-        setTimeout(() => {
-          const ctxA = BearSound._ctx();
-          const buf = ctxA.createBuffer(1, ctxA.sampleRate * 0.05, ctxA.sampleRate);
-          const data = buf.getChannelData(0);
-          for (let j = 0; j < data.length; j++) data[j] = (Math.random() * 2 - 1) * Math.pow(1 - j / data.length, 0.5);
-          const src = ctxA.createBufferSource();
-          src.buffer = buf;
-          const filt = ctxA.createBiquadFilter();
-          filt.type = 'bandpass';
-          filt.frequency.value = i % 2 ? 1500 : 800;
-          const gain = ctxA.createGain();
-          gain.gain.value = 0.25;
-          src.connect(filt).connect(gain).connect(ctxA.destination);
-          src.start();
-        }, d);
+      if (!window.BearSound || !BearSound.sfxEnabled) return;
+
+      // 0мс: Сухой щелчок-разблокировка перед открытием
+      setTimeout(() => playMetalClick(0.18, 1800, 0.025), 0);
+
+      // 30мс: Скрип открытия переломки (металлическое трение)
+      setTimeout(() => playBreakOpen(), 30);
+
+      // 350мс: Звон первой гильзы (металлический резонанс)
+      setTimeout(() => playShellEject(), 350);
+      // 480мс: Звон второй гильзы
+      setTimeout(() => playShellEject(0.85), 480);
+
+      // 600мс: Гильзы падают на землю (приглушённые удары)
+      setTimeout(() => playShellDrop(), 620);
+      setTimeout(() => playShellDrop(0.7), 720);
+
+      // 800мс: Вставка первого патрона (глухой щелчок)
+      setTimeout(() => playChamber(), 800);
+      // 950мс: Вставка второго патрона
+      setTimeout(() => playChamber(), 950);
+
+      // 1200мс: Громкое защёлкивание ружья — метал по металлу
+      setTimeout(() => playGunClose(), 1200);
+    }
+
+    /* Металлический щелчок (для разблокировки/защёлок) */
+    function playMetalClick(vol = 0.2, freq = 2000, dur = 0.03) {
+      const ctxA = BearSound._ctx();
+      const t = ctxA.currentTime;
+      const buf = ctxA.createBuffer(1, ctxA.sampleRate * dur, ctxA.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 0.4);
+      }
+      const src = ctxA.createBufferSource();
+      src.buffer = buf;
+      const filt = ctxA.createBiquadFilter();
+      filt.type = 'bandpass';
+      filt.frequency.value = freq;
+      filt.Q.value = 8;
+      const gain = ctxA.createGain();
+      gain.gain.setValueAtTime(vol, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      src.connect(filt).connect(gain).connect(ctxA.destination);
+      src.start(t);
+    }
+
+    /* Скрип открытия переломки (металлическое трение шарнира) */
+    function playBreakOpen() {
+      const ctxA = BearSound._ctx();
+      const t = ctxA.currentTime;
+      // Шум трения через bandpass
+      const buf = ctxA.createBuffer(1, ctxA.sampleRate * 0.25, ctxA.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) {
+        // Прерывистый шум — имитация трения
+        const env = Math.sin(i * 0.3) * 0.5 + 0.5;
+        data[i] = (Math.random() * 2 - 1) * env * Math.pow(1 - i / data.length, 0.5);
+      }
+      const src = ctxA.createBufferSource();
+      src.buffer = buf;
+      const filt = ctxA.createBiquadFilter();
+      filt.type = 'bandpass';
+      filt.frequency.setValueAtTime(2200, t);
+      filt.frequency.linearRampToValueAtTime(1400, t + 0.25); // частота падает (сбавление натяжения)
+      filt.Q.value = 6;
+      const gain = ctxA.createGain();
+      gain.gain.setValueAtTime(0.15, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+      src.connect(filt).connect(gain).connect(ctxA.destination);
+      src.start(t);
+
+      // Низкий металлический "клац" в начале (открытие защёлки)
+      const osc = ctxA.createOscillator();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(600, t);
+      osc.frequency.exponentialRampToValueAtTime(150, t + 0.04);
+      const oscGain = ctxA.createGain();
+      oscGain.gain.setValueAtTime(0.18, t);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+      osc.connect(oscGain).connect(ctxA.destination);
+      osc.start(t);
+      osc.stop(t + 0.06);
+    }
+
+    /* Звон выбрасываемой гильзы (металлический резонанс) */
+    function playShellEject(vol = 1) {
+      const ctxA = BearSound._ctx();
+      const t = ctxA.currentTime;
+      // Резонансный высокий тон (металл звенит)
+      [3200, 4500, 2400].forEach((freq, i) => {
+        const osc = ctxA.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, t);
+        const g = ctxA.createGain();
+        const a = (i === 0 ? 0.18 : 0.08) * vol;
+        g.gain.setValueAtTime(a, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+        osc.connect(g).connect(ctxA.destination);
+        osc.start(t);
+        osc.stop(t + 0.2);
       });
+      // Лёгкий металлический шум
+      const buf = ctxA.createBuffer(1, ctxA.sampleRate * 0.05, ctxA.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 0.3);
+      const src = ctxA.createBufferSource();
+      src.buffer = buf;
+      const filt = ctxA.createBiquadFilter();
+      filt.type = 'highpass';
+      filt.frequency.value = 2500;
+      const gain = ctxA.createGain();
+      gain.gain.value = 0.1 * vol;
+      src.connect(filt).connect(gain).connect(ctxA.destination);
+      src.start(t);
+    }
+
+    /* Падение гильзы на землю (приглушённый стук) */
+    function playShellDrop(vol = 1) {
+      const ctxA = BearSound._ctx();
+      const t = ctxA.currentTime;
+      // Глухой стук
+      const osc = ctxA.createOscillator();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(220 + Math.random() * 80, t);
+      osc.frequency.exponentialRampToValueAtTime(60, t + 0.08);
+      const g = ctxA.createGain();
+      g.gain.setValueAtTime(0.15 * vol, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+      osc.connect(g).connect(ctxA.destination);
+      osc.start(t);
+      osc.stop(t + 0.12);
+      // Высокочастотный отклик (звенящая гильза)
+      const osc2 = ctxA.createOscillator();
+      osc2.type = 'sine';
+      osc2.frequency.value = 2800;
+      const g2 = ctxA.createGain();
+      g2.gain.setValueAtTime(0.05 * vol, t + 0.005);
+      g2.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+      osc2.connect(g2).connect(ctxA.destination);
+      osc2.start(t);
+      osc2.stop(t + 0.16);
+    }
+
+    /* Вставка патрона в патронник (глухой "тук" + лёгкий металл) */
+    function playChamber() {
+      const ctxA = BearSound._ctx();
+      const t = ctxA.currentTime;
+      // Глухой удар (картон по металлу)
+      const buf = ctxA.createBuffer(1, ctxA.sampleRate * 0.06, ctxA.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 0.6);
+      }
+      const src = ctxA.createBufferSource();
+      src.buffer = buf;
+      const filt = ctxA.createBiquadFilter();
+      filt.type = 'lowpass';
+      filt.frequency.value = 600;
+      const gain = ctxA.createGain();
+      gain.gain.setValueAtTime(0.22, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+      src.connect(filt).connect(gain).connect(ctxA.destination);
+      src.start(t);
+
+      // Низкий тон-удар
+      const osc = ctxA.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(120, t);
+      osc.frequency.exponentialRampToValueAtTime(80, t + 0.05);
+      const oscGain = ctxA.createGain();
+      oscGain.gain.setValueAtTime(0.18, t);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+      osc.connect(oscGain).connect(ctxA.destination);
+      osc.start(t);
+      osc.stop(t + 0.07);
+    }
+
+    /* Громкое защёлкивание ружья (металл по металлу) */
+    function playGunClose() {
+      const ctxA = BearSound._ctx();
+      const t = ctxA.currentTime;
+      // Резкий металлический удар
+      const buf = ctxA.createBuffer(1, ctxA.sampleRate * 0.12, ctxA.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 0.4);
+      }
+      const src = ctxA.createBufferSource();
+      src.buffer = buf;
+      const filt = ctxA.createBiquadFilter();
+      filt.type = 'bandpass';
+      filt.frequency.setValueAtTime(2500, t);
+      filt.frequency.exponentialRampToValueAtTime(800, t + 0.1);
+      filt.Q.value = 5;
+      const gain = ctxA.createGain();
+      gain.gain.setValueAtTime(0.4, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+      src.connect(filt).connect(gain).connect(ctxA.destination);
+      src.start(t);
+
+      // Резонанс металла после удара (звон)
+      [1800, 2400, 3500].forEach((freq, i) => {
+        const osc = ctxA.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, t + 0.005);
+        const g = ctxA.createGain();
+        g.gain.setValueAtTime(i === 0 ? 0.18 : 0.08, t + 0.005);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+        osc.connect(g).connect(ctxA.destination);
+        osc.start(t + 0.005);
+        osc.stop(t + 0.27);
+      });
+
+      // Низкий бас от веса ружья
+      const sub = ctxA.createOscillator();
+      sub.type = 'sine';
+      sub.frequency.setValueAtTime(80, t);
+      sub.frequency.exponentialRampToValueAtTime(40, t + 0.08);
+      const subGain = ctxA.createGain();
+      subGain.gain.setValueAtTime(0.25, t);
+      subGain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+      sub.connect(subGain).connect(ctxA.destination);
+      sub.start(t);
+      sub.stop(t + 0.12);
     }
     function playHit() { if (window.BearSound) [800, 1000, 1200].forEach((f, i) => setTimeout(() => BearSound._tone(f, 0.08, 'square', 0.18), i * 50)); }
     function playMiss() { if (window.BearSound) BearSound._tone(150, 0.1, 'sawtooth', 0.15); }
