@@ -1,0 +1,1678 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#0a3a5c" />
+  <title>🎣 Рыбалка — Симулятор</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@700;900&display=swap" rel="stylesheet" />
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+    html,body{width:100%;height:100%;overflow:hidden;font-family:'Nunito',sans-serif;background:#000;user-select:none;-webkit-user-select:none}
+    #game{position:relative;width:100vw;height:100vh;overflow:hidden}
+
+    /* Background — gradient with mountains/forest/water */
+    .bg-scene{
+      position:absolute;inset:0;z-index:0;
+      background:
+        radial-gradient(ellipse 60% 30% at 78% 18%, rgba(255,250,200,.7) 0%, rgba(255,250,200,0) 70%),
+        linear-gradient(180deg,
+          #5fa9d6 0%,
+          #a4d2ed 30%,
+          #cae0ed 45%,
+          #6ea8c8 53%,
+          #3a78a8 65%,
+          #1f5582 85%,
+          #163d63 100%);
+    }
+    .bg-scene::before{
+      content:'';position:absolute;left:0;right:0;top:30%;height:18%;
+      background:linear-gradient(180deg,#5d8a6a 0%,#3d6e4a 40%,#2c4f37 60%,transparent 100%);
+      filter:blur(3px);opacity:.85;
+    }
+    .bg-scene::after{
+      content:'';position:absolute;left:0;right:0;top:25%;height:12%;
+      background:linear-gradient(180deg,#7a8aa3 0%,#5d6b85 60%,transparent 100%);
+      clip-path:polygon(0% 100%, 5% 60%, 12% 80%, 20% 50%, 30% 70%, 42% 40%, 55% 65%, 68% 45%, 80% 70%, 92% 50%, 100% 75%, 100% 100%);
+      opacity:.7;
+    }
+    .bg-photo{
+      position:absolute;inset:0;width:100%;height:100%;
+      object-fit:cover;z-index:1;
+      opacity:0;transition:opacity 1.2s ease;
+      filter:saturate(1.05) contrast(1.05);
+    }
+    .bg-photo.loaded{opacity:1}
+
+    canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;z-index:5}
+
+    /* HUD pills */
+    .hud{position:absolute;top:10px;left:10px;display:flex;flex-direction:column;gap:5px;z-index:20;pointer-events:none}
+    .pill{
+      background:rgba(15,30,50,.85);
+      border:2px solid rgba(255,255,255,.35);
+      border-radius:14px;
+      padding:5px 12px;
+      color:#fff;
+      font-weight:900;
+      font-size:clamp(.8rem,2.6vw,1rem);
+      box-shadow:0 4px 10px rgba(0,0,0,.35);
+    }
+    .pill .v{color:#ffd84a;text-shadow:1px 1px 0 #000;margin-left:4px}
+
+    /* Menu */
+    .menu{
+      position:absolute;inset:0;
+      background:linear-gradient(180deg,rgba(0,30,80,.65),rgba(0,10,40,.85));
+      display:flex;align-items:center;justify-content:center;
+      z-index:100;
+      flex-direction:column;
+      padding:14px;
+    }
+    .menu.hide{display:none !important}
+    .menu-card{
+      background:linear-gradient(180deg,rgba(20,80,140,.97),rgba(0,30,70,.97));
+      border:5px solid #ffd84a;
+      border-radius:24px;
+      padding:24px 22px;
+      max-width:min(92vw,440px);
+      max-height:90vh;
+      overflow-y:auto;
+      text-align:center;
+      box-shadow:0 12px 40px rgba(0,0,0,.6);
+    }
+    .menu-card h1{
+      font-family:'Bangers',cursive;
+      font-size:clamp(2.4rem,9vw,3.5rem);
+      color:#fff;
+      text-shadow:3px 3px 0 #000,0 0 20px rgba(255,200,0,.6);
+      letter-spacing:.04em;
+      line-height:1;
+      margin-bottom:4px;
+    }
+    .menu-card .sub{
+      color:#ffd84a;
+      font-weight:900;
+      font-size:clamp(1rem,3.4vw,1.2rem);
+      letter-spacing:.12em;
+      text-shadow:1px 1px 0 #000;
+      margin-bottom:16px;
+    }
+    .menu-card p{color:#fff;margin:5px 0;font-weight:700;font-size:clamp(.85rem,2.7vw,1rem);text-shadow:1px 1px 0 #000;line-height:1.35}
+    .start-btn{
+      display:block;
+      width:100%;
+      margin:18px 0 10px;
+      padding:18px 24px;
+      border-radius:22px;
+      background:linear-gradient(180deg,#34d058,#0a8030);
+      color:#fff;
+      border:4px solid #fff;
+      font-family:'Bangers',cursive;
+      font-size:clamp(1.4rem,5vw,2rem);
+      letter-spacing:.06em;
+      cursor:pointer;
+      box-shadow:0 6px 18px rgba(0,0,0,.5);
+      text-shadow:2px 2px 0 #000;
+      -webkit-appearance:none;
+      appearance:none;
+      outline:none;
+    }
+    .start-btn:active{transform:scale(.96);filter:brightness(1.15)}
+    .back-link{
+      display:inline-block;
+      margin-top:6px;
+      padding:10px 22px;
+      border-radius:18px;
+      background:linear-gradient(180deg,#666,#333);
+      color:#fff;
+      border:2px solid #fff;
+      font-family:'Bangers',cursive;
+      font-size:clamp(1rem,3.5vw,1.2rem);
+      letter-spacing:.05em;
+      text-decoration:none;
+      box-shadow:0 4px 10px rgba(0,0,0,.4);
+      text-shadow:1px 1px 0 #000;
+    }
+    .back-link:active{transform:scale(.96)}
+
+    /* Status banner */
+    .banner{
+      position:absolute;
+      left:50%;
+      top:14%;
+      transform:translateX(-50%);
+      padding:9px 20px;
+      border-radius:18px;
+      font-family:'Bangers',cursive;
+      font-size:clamp(1rem,4vw,1.5rem);
+      letter-spacing:.06em;
+      text-align:center;
+      pointer-events:none;
+      z-index:18;
+      white-space:nowrap;
+      transition:opacity .3s;
+      text-shadow:2px 2px 0 #000;
+      opacity:0;
+      max-width:90vw;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .banner.show{opacity:1}
+    .banner.info{background:rgba(0,80,160,.92);color:#fff;border:2px solid rgba(255,255,255,.5)}
+    .banner.alert{background:linear-gradient(180deg,#ff3838,#a00);color:#fff;border:2px solid #fff;animation:pulse .35s infinite alternate}
+    .banner.success{background:linear-gradient(180deg,#34d058,#0a8030);color:#fff;border:2px solid #fff}
+    @keyframes pulse{from{transform:translateX(-50%) scale(1)}to{transform:translateX(-50%) scale(1.07)}}
+
+    /* Action button */
+    .action{
+      position:absolute;
+      bottom:max(env(safe-area-inset-bottom,0),18px);
+      right:18px;
+      width:clamp(96px,22vw,140px);
+      height:clamp(96px,22vw,140px);
+      border-radius:50%;
+      border:5px solid rgba(255,255,255,.85);
+      box-shadow:0 8px 22px rgba(0,0,0,.5),inset 0 -6px 12px rgba(0,0,0,.3),inset 0 4px 8px rgba(255,255,255,.3);
+      font-family:'Bangers',cursive;
+      font-size:clamp(.9rem,3.4vw,1.3rem);
+      color:#fff;
+      text-shadow:2px 2px 0 rgba(0,0,0,.6);
+      cursor:pointer;
+      z-index:25;
+      display:flex;align-items:center;justify-content:center;
+      flex-direction:column;
+      gap:3px;
+      letter-spacing:.04em;
+      -webkit-appearance:none;
+      appearance:none;
+      outline:none;
+    }
+    .action .ico{font-size:1.6em;line-height:1}
+    .action:active{transform:scale(.92)}
+    .action.cast{background:radial-gradient(circle at 30% 30%,#56e57a,#1aa340 70%,#0d6f25)}
+    .action.charge{background:radial-gradient(circle at 30% 30%,#ffe066,#ff9800 70%,#c66200);animation:cglow .4s infinite alternate}
+    @keyframes cglow{from{box-shadow:0 8px 22px rgba(0,0,0,.5),inset 0 -6px 12px rgba(0,0,0,.3),0 0 0 rgba(255,200,0,0)}to{box-shadow:0 8px 22px rgba(0,0,0,.5),inset 0 -6px 12px rgba(0,0,0,.3),0 0 30px rgba(255,200,0,.8)}}
+    .action.hook{background:radial-gradient(circle at 30% 30%,#ff5b5b,#c00 70%,#700);animation:hk .25s infinite alternate}
+    @keyframes hk{from{transform:scale(1)}to{transform:scale(1.1)}}
+    .action.reel{background:radial-gradient(circle at 30% 30%,#ffd84a,#ff8800 70%,#b04000)}
+    .action.idle{filter:grayscale(.5) brightness(.75)}
+
+    .cancel{
+      position:absolute;
+      bottom:max(env(safe-area-inset-bottom,0),26px);
+      left:16px;
+      padding:9px 16px;
+      border-radius:16px;
+      background:rgba(30,30,30,.9);
+      border:2px solid rgba(255,255,255,.4);
+      color:#fff;
+      font-weight:900;
+      font-size:clamp(.8rem,2.6vw,1rem);
+      cursor:pointer;
+      z-index:25;
+      box-shadow:0 4px 10px rgba(0,0,0,.4);
+      -webkit-appearance:none;
+      outline:none;
+    }
+    .cancel:active{transform:scale(.95)}
+
+    /* Power/tension meters */
+    .meter{
+      position:absolute;
+      left:50%;
+      bottom:18%;
+      transform:translateX(-50%);
+      width:min(80vw,360px);
+      height:36px;
+      background:rgba(0,0,0,.55);
+      border:3px solid rgba(255,255,255,.5);
+      border-radius:20px;
+      overflow:hidden;
+      z-index:22;
+      pointer-events:none;
+      box-shadow:0 6px 14px rgba(0,0,0,.4);
+      display:none;
+    }
+    .meter.show{display:block}
+    .meter-fill{
+      height:100%;
+      width:0%;
+      background:linear-gradient(90deg,#34d058 0%,#ffe066 40%,#ff8800 70%,#ff3030 100%);
+      transition:width .04s linear;
+      border-radius:16px 0 0 16px;
+    }
+    .meter-label{
+      position:absolute;inset:0;
+      display:flex;align-items:center;justify-content:center;
+      font-family:'Bangers',cursive;
+      font-size:.95rem;
+      color:#fff;
+      text-shadow:1px 1px 2px #000;
+      z-index:2;
+      letter-spacing:.05em;
+    }
+
+    /* Catch reveal */
+    .reveal{
+      position:absolute;inset:0;
+      background:radial-gradient(ellipse at center,rgba(0,30,80,.5) 0%,rgba(0,0,0,.92) 80%);
+      display:none;align-items:center;justify-content:center;
+      z-index:80;
+      flex-direction:column;
+      gap:14px;
+      padding:14px;
+    }
+    .reveal.show{display:flex}
+    .reveal-fish{
+      width:clamp(220px,55vw,400px);
+      height:clamp(220px,55vw,400px);
+      filter:drop-shadow(0 0 40px rgba(255,200,0,.5)) drop-shadow(0 12px 20px rgba(0,0,0,.7));
+      animation:fhop 1.4s ease infinite;
+      display:flex;align-items:center;justify-content:center;
+      position:relative;
+    }
+    @keyframes fhop{
+      0%,100%{transform:translateY(0) rotate(-6deg) scale(1)}
+      50%{transform:translateY(-18px) rotate(6deg) scale(1.04)}
+    }
+    .reveal-fish canvas{width:100%;height:100%;display:block}
+    .reveal-name{
+      font-family:'Bangers',cursive;
+      font-size:clamp(2rem,8vw,3.4rem);
+      color:#ffd84a;
+      text-shadow:3px 3px 0 #000,0 0 20px rgba(255,200,0,.6);
+      letter-spacing:.05em;
+    }
+    .reveal-stats{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+    .reveal-stat{
+      background:rgba(255,255,255,.95);color:#000;
+      padding:7px 14px;border-radius:14px;
+      font-weight:900;font-size:clamp(.85rem,3vw,1.1rem);
+      border:2px solid #ffd84a;
+    }
+    .reveal-stat.pts{background:linear-gradient(180deg,#ffe066,#ff9800);color:#fff;text-shadow:1px 1px 0 #000}
+    .reveal-btn{
+      margin-top:10px;
+      padding:14px 28px;
+      border-radius:20px;
+      font-family:'Bangers',cursive;
+      font-size:clamp(1.2rem,4vw,1.6rem);
+      letter-spacing:.06em;
+      background:linear-gradient(180deg,#34d058,#0a8030);
+      color:#fff;
+      border:3px solid #fff;
+      cursor:pointer;
+      box-shadow:0 6px 14px rgba(0,0,0,.5);
+      text-shadow:2px 2px 0 #000;
+      -webkit-appearance:none;
+      outline:none;
+    }
+    .reveal-btn:active{transform:scale(.95)}
+
+    .mute{
+      position:absolute;
+      top:10px;right:10px;
+      width:42px;height:42px;
+      border-radius:50%;
+      background:rgba(20,40,60,.85);
+      border:2px solid rgba(255,255,255,.4);
+      color:#fff;
+      font-size:1.2rem;
+      cursor:pointer;
+      z-index:30;
+      display:flex;align-items:center;justify-content:center;
+      -webkit-appearance:none;
+      outline:none;
+    }
+    .home-btn{
+      position:absolute;
+      top:10px;right:60px;
+      width:42px;height:42px;
+      border-radius:50%;
+      background:rgba(20,40,60,.85);
+      border:2px solid rgba(255,255,255,.4);
+      color:#fff;
+      font-size:1.2rem;
+      cursor:pointer;
+      z-index:30;
+      display:flex;align-items:center;justify-content:center;
+      -webkit-appearance:none;
+      outline:none;
+      text-decoration:none;
+    }
+    .home-btn:active,.mute:active{transform:scale(.92)}
+  </style>
+</head>
+<body>
+<div id="game">
+  <div class="bg-scene"></div>
+  <img class="bg-photo" id="bgPhoto" alt="" />
+
+  <canvas id="cv"></canvas>
+
+  <div class="hud">
+    <div class="pill">🐻 Очки:<span class="v" id="vScore">0</span></div>
+    <div class="pill">🐟 Поймал:<span class="v" id="vCaught">0</span></div>
+    <div class="pill">🏆 Рекорд:<span class="v" id="vRecord">0</span></div>
+  </div>
+
+  <a href="../index.html" class="home-btn" title="В главное меню">🏠</a>
+  <button class="mute" id="muteBtn">🔊</button>
+
+  <div class="banner" id="banner">Готов</div>
+
+  <div class="meter" id="powerMeter">
+    <div class="meter-fill" id="powerFill"></div>
+    <div class="meter-label">УДЕРЖИВАЙ — СИЛА ЗАБРОСА</div>
+  </div>
+  <div class="meter" id="tensionMeter">
+    <div class="meter-fill" id="tensionFill"></div>
+    <div class="meter-label" id="tensionLabel">НАТЯЖЕНИЕ ЛЕСКИ</div>
+  </div>
+
+  <button class="cancel" id="cancelBtn" style="display:none">↩ Смотать</button>
+  <button class="action cast" id="actionBtn" style="display:none">
+    <span class="ico" id="actionIco">🎣</span>
+    <span id="actionText">ЗАБРОС</span>
+  </button>
+
+  <div class="reveal" id="reveal">
+    <div class="reveal-fish">
+      <canvas id="revealCv" width="400" height="400"></canvas>
+    </div>
+    <div class="reveal-name" id="revealName">Карась</div>
+    <div class="reveal-stats">
+      <div class="reveal-stat" id="revealWeight">1.2 кг</div>
+      <div class="reveal-stat pts" id="revealPoints">+5 очков</div>
+    </div>
+    <button class="reveal-btn" id="revealNext">ДАЛЬШЕ →</button>
+  </div>
+
+  <div class="menu" id="menu">
+    <div class="menu-card">
+      <h1>🎣 РЫБАЛКА</h1>
+      <div class="sub">СИМУЛЯТОР</div>
+      <p><b>1.</b> Зажми зелёную кнопку — копится сила</p>
+      <p><b>2.</b> Отпусти — поплавок летит в воду</p>
+      <p><b>3.</b> Поплавок дёрнется и уйдёт под воду — клюёт!</p>
+      <p><b>4.</b> Жми <b>ПОДСЕЧЬ</b> когда нырнёт</p>
+      <p><b>5.</b> Тапай <b>ТЯНИ</b>, не порви леску!</p>
+      <button class="start-btn" id="startBtn" type="button">▶ НАЧАТЬ ИГРУ</button>
+      <a href="../index.html" class="back-link">⬅ В МЕНЮ</a>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============== Top-level: bind start button BEFORE anything else ==============
+document.getElementById('startBtn').addEventListener('click', function(e){
+  e.preventDefault();
+  document.getElementById('menu').classList.add('hide');
+  if(window.__startFishing) window.__startFishing();
+});
+document.getElementById('startBtn').addEventListener('touchend', function(e){
+  e.preventDefault();
+  document.getElementById('menu').classList.add('hide');
+  if(window.__startFishing) window.__startFishing();
+}, {passive:false});
+</script>
+
+<script>
+(function(){
+'use strict';
+
+// ============== STATE ==============
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+let W=0, H=0, DPR=1;
+
+let phase = 'menu'; // menu|ready|charging|casting|waiting|nibble|bite|fight|catch|miss
+let score = 0, caught = 0;
+let record = parseInt(localStorage.getItem('fishingR2')||'0');
+let muted = localStorage.getItem('fishingM2')==='1';
+
+let charging = false, chargeStart = 0, castPower = 0;
+let floatX=-100, floatY=-100, floatTargetX=0, floatTargetY=0;
+let floatTilt=0, floatSubmerge=0;
+let waitTimer=0, nibbleEndTime=0, biteEndTime=0;
+let currentFish=null, visibleFish=[];
+let tensionPct=30, fishHP=100, fightEndTime=0;
+let lastTime=performance.now(), waterTime=0;
+let splashTime=-999, splashX=0, splashY=0;
+let castFlightStart=0, castFlightDur=700;
+let castStartX=0, castStartY=0;
+// Pulling phase (fish on hook coming out of water)
+let pullStart=0, pullDur=2400;
+let pullStartX=0, pullStartY=0;
+let pullEndX=0, pullEndY=0;
+let pullSplashed=false;
+let fishWag = 0;
+
+// ============== FISH ==============
+const FISH = [
+  {name:'Карась',     emoji:'🐟', minW:0.3, maxW:1.2, points:5,  rarity:.30, fightHP:30,  diff:0.6},
+  {name:'Окунь',      emoji:'🐠', minW:0.4, maxW:1.5, points:8,  rarity:.22, fightHP:38,  diff:0.7},
+  {name:'Лещ',        emoji:'🐡', minW:0.5, maxW:2.5, points:12, rarity:.18, fightHP:45,  diff:0.8},
+  {name:'Щука',       emoji:'🦈', minW:1.5, maxW:5.5, points:25, rarity:.10, fightHP:65,  diff:1.0},
+  {name:'Сом',        emoji:'🐬', minW:2.0, maxW:8.0, points:35, rarity:.06, fightHP:80,  diff:1.1},
+  {name:'Золотая',    emoji:'✨', minW:0.2, maxW:0.8, points:100,rarity:.02, fightHP:25,  diff:0.5},
+  {name:'Сапог',      emoji:'🥾', minW:0.5, maxW:1.0, points:-3, rarity:.12, fightHP:20,  diff:0.4, junk:true}
+];
+function pickFish(){
+  const r=Math.random(); let acc=0;
+  for(const f of FISH){ acc+=f.rarity; if(r<acc) return mkFish(f); }
+  return mkFish(FISH[0]);
+}
+function mkFish(t){
+  const w=+(t.minW+Math.random()*(t.maxW-t.minW)).toFixed(2);
+  const sz=(w-t.minW)/(t.maxW-t.minW||1);
+  return { name:t.name, emoji:t.emoji, weight:w,
+    points:Math.round(t.points*(1+sz*0.5)),
+    hp:t.fightHP*(0.7+sz*0.6), diff:t.diff, junk:!!t.junk };
+}
+
+// ============== CANVAS ==============
+function resize(){
+  DPR = Math.min(window.devicePixelRatio||1, 2);
+  W = window.innerWidth; H = window.innerHeight;
+  cv.width = W*DPR; cv.height = H*DPR;
+  cv.style.width = W+'px'; cv.style.height = H+'px';
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+}
+window.addEventListener('resize', resize);
+resize();
+
+// ============== AUDIO ==============
+let _ac = null;
+function audio(){
+  try{
+    if(!_ac){
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if(AC) _ac = new AC();
+    }
+    if(_ac && _ac.state==='suspended') _ac.resume();
+    return _ac;
+  }catch(e){ return null; }
+}
+function pTone(freq, dur, type='sine', vol=.18){
+  if(muted) return; const a=audio(); if(!a) return;
+  const o=a.createOscillator(), g=a.createGain();
+  o.type=type; o.frequency.value=freq;
+  g.gain.setValueAtTime(.0001, a.currentTime);
+  g.gain.exponentialRampToValueAtTime(vol, a.currentTime+.02);
+  g.gain.exponentialRampToValueAtTime(.0001, a.currentTime+dur);
+  o.connect(g); g.connect(a.destination);
+  o.start(); o.stop(a.currentTime+dur);
+}
+function pCast(){ if(muted) return; const a=audio(); if(!a) return;
+  const o=a.createOscillator(),g=a.createGain();
+  o.type='triangle'; o.frequency.setValueAtTime(800,a.currentTime);
+  o.frequency.exponentialRampToValueAtTime(180, a.currentTime+.4);
+  g.gain.setValueAtTime(.0001,a.currentTime);
+  g.gain.exponentialRampToValueAtTime(.18,a.currentTime+.05);
+  g.gain.exponentialRampToValueAtTime(.0001,a.currentTime+.4);
+  o.connect(g); g.connect(a.destination);
+  o.start(); o.stop(a.currentTime+.4);
+}
+function pSplash(){ if(muted) return; const a=audio(); if(!a) return;
+  const buf=a.createBuffer(1,a.sampleRate*.4,a.sampleRate);
+  const d=buf.getChannelData(0);
+  for(let i=0;i<d.length;i++){ const t=i/d.length; d[i]=(Math.random()*2-1)*(1-t)*Math.exp(-t*4); }
+  const src=a.createBufferSource(); src.buffer=buf;
+  const bp=a.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=900; bp.Q.value=2;
+  const g=a.createGain(); g.gain.value=.3;
+  src.connect(bp); bp.connect(g); g.connect(a.destination); src.start();
+}
+function pNibble(){ pTone(500,.08,'sine',.12); setTimeout(()=>pTone(540,.08,'sine',.12),60); }
+function pBite(){ if(muted) return; const a=audio(); if(!a) return;
+  const o=a.createOscillator(),g=a.createGain(),bp=a.createBiquadFilter();
+  o.type='sine'; o.frequency.setValueAtTime(280,a.currentTime);
+  o.frequency.exponentialRampToValueAtTime(80,a.currentTime+.4);
+  bp.type='lowpass'; bp.frequency.value=600;
+  g.gain.setValueAtTime(.0001,a.currentTime);
+  g.gain.exponentialRampToValueAtTime(.32,a.currentTime+.04);
+  g.gain.exponentialRampToValueAtTime(.0001,a.currentTime+.5);
+  o.connect(bp); bp.connect(g); g.connect(a.destination);
+  o.start(); o.stop(a.currentTime+.5);
+}
+function pHook(){ pTone(800,.1,'square',.2); setTimeout(()=>pTone(1200,.1,'square',.2),60); }
+function pReel(){ pTone(220,.15,'sawtooth',.15); }
+function pCatch(){
+  [523,659,784,1046].forEach((f,i)=>setTimeout(()=>pTone(f,.25,'triangle',.18), i*100));
+}
+function pBreak(){ if(muted) return; const a=audio(); if(!a) return;
+  const buf=a.createBuffer(1,a.sampleRate*.3,a.sampleRate);
+  const d=buf.getChannelData(0);
+  for(let i=0;i<d.length;i++){ const t=i/d.length; d[i]=(Math.random()*2-1)*Math.exp(-t*8); }
+  const src=a.createBufferSource(); src.buffer=buf;
+  const g=a.createGain(); g.gain.value=.4;
+  src.connect(g); g.connect(a.destination); src.start();
+}
+
+// ============== UI ELEMENTS ==============
+const banner = document.getElementById('banner');
+const actionBtn = document.getElementById('actionBtn');
+const actionIco = document.getElementById('actionIco');
+const actionText = document.getElementById('actionText');
+const cancelBtn = document.getElementById('cancelBtn');
+const powerMeter = document.getElementById('powerMeter');
+const powerFill = document.getElementById('powerFill');
+const tensionMeter = document.getElementById('tensionMeter');
+const tensionFill = document.getElementById('tensionFill');
+const tensionLabel = document.getElementById('tensionLabel');
+const reveal = document.getElementById('reveal');
+const muteBtn = document.getElementById('muteBtn');
+
+let bannerTimer = null;
+function setBanner(text, type='info', dur=0){
+  banner.textContent = text;
+  banner.className = 'banner show '+type;
+  if(bannerTimer){ clearTimeout(bannerTimer); bannerTimer=null; }
+  if(dur>0) bannerTimer = setTimeout(()=>banner.classList.remove('show'), dur);
+}
+function hideBanner(){ banner.classList.remove('show'); }
+
+function setAction(mode){
+  actionBtn.style.display='';
+  actionBtn.className = 'action '+mode;
+  if(mode==='cast'){ actionIco.textContent='🎣'; actionText.textContent='ЗАБРОС'; }
+  else if(mode==='charge'){ actionIco.textContent='💪'; actionText.textContent='ОТПУСТИ!'; }
+  else if(mode==='hook'){ actionIco.textContent='⚡'; actionText.textContent='ПОДСЕЧЬ!'; }
+  else if(mode==='reel'){ actionIco.textContent='🌀'; actionText.textContent='ТЯНИ!'; }
+  else if(mode==='idle'){ actionIco.textContent='⏳'; actionText.textContent='ЖДИ...'; }
+}
+function hideAction(){ actionBtn.style.display='none'; }
+function showCancel(s){ cancelBtn.style.display = s?'':'none'; }
+
+function updScore(){
+  document.getElementById('vScore').textContent = score;
+  document.getElementById('vCaught').textContent = caught;
+  document.getElementById('vRecord').textContent = record;
+}
+updScore();
+
+// Mute
+muteBtn.textContent = muted?'🔇':'🔊';
+muteBtn.addEventListener('click', e=>{
+  muted = !muted;
+  localStorage.setItem('fishingM2', muted?'1':'0');
+  muteBtn.textContent = muted?'🔇':'🔊';
+});
+
+// ============== PHASE TRANSITIONS ==============
+function toReady(){
+  phase='ready';
+  document.getElementById('menu').classList.add('hide');
+  reveal.classList.remove('show');
+  setAction('cast');
+  showCancel(false);
+  setBanner('🎣 Зажми и держи кнопку для заброса', 'info', 2500);
+  powerMeter.classList.remove('show');
+  tensionMeter.classList.remove('show');
+  floatX=-100; floatY=-100;
+  visibleFish=[];
+}
+window.__startFishing = toReady; // exposed to top-level start handler
+
+function startCharge(){
+  if(phase!=='ready') return;
+  phase='charging';
+  charging=true;
+  chargeStart=performance.now();
+  castPower=0;
+  setAction('charge');
+  powerMeter.classList.add('show');
+  setBanner('💪 СИЛА ЗАБРОСА', 'info');
+}
+function releaseCharge(){
+  if(phase!=='charging') return;
+  charging=false;
+  powerMeter.classList.remove('show');
+  doCast();
+}
+function doCast(){
+  phase='casting';
+  hideBanner(); hideAction();
+  pCast();
+  const power01 = Math.max(0.15, castPower/100);
+  const tip = getRodTip();
+  castStartX=tip.x; castStartY=tip.y;
+  floatTargetX = W*0.18 + (W*0.62)*power01;
+  floatTargetY = H*(0.55 + 0.15*power01);
+  castFlightStart = performance.now();
+  castFlightDur = 600 + 200*power01;
+  floatX=castStartX; floatY=castStartY;
+}
+function arrived(){
+  phase='waiting';
+  splashTime=performance.now(); splashX=floatX; splashY=floatY;
+  pSplash();
+  setBanner('🌊 Жди клёва...', 'info', 2000);
+  setAction('idle'); showCancel(true);
+  waitTimer = performance.now() + 2000 + Math.random()*4000;
+  visibleFish=[];
+  const cnt = 2 + Math.floor(Math.random()*3);
+  for(let i=0;i<cnt;i++){
+    visibleFish.push({
+      x: floatTargetX + (Math.random()-0.5)*W*0.4,
+      y: floatTargetY + 30 + Math.random()*(H*0.25),
+      vx: (Math.random()-0.5)*0.4,
+      size: 14 + Math.random()*22,
+      flip: Math.random()<0.5,
+      wagPhase: Math.random()*Math.PI*2
+    });
+  }
+}
+function startNibble(){
+  phase='nibble';
+  nibbleEndTime = performance.now() + 700 + Math.random()*800;
+  setBanner('🐟 Шевелится... подожди', 'info');
+  pNibble();
+}
+function startBite(){
+  phase='bite';
+  biteEndTime = performance.now() + 1800 + Math.random()*900;
+  currentFish = pickFish();
+  setBanner('⚡ ПОДСЕКАЙ!', 'alert');
+  setAction('hook'); showCancel(false);
+  pBite();
+}
+function missedBite(){
+  setBanner('🐟 Сорвалась...', 'alert', 1500);
+  pBreak();
+  setTimeout(reelIn, 800);
+}
+function hookIt(){
+  if(currentFish.junk){ doCatch(); return; }
+  phase='fight';
+  fishHP = currentFish.hp;
+  tensionPct = 30;
+  fightEndTime = performance.now() + 25000;
+  setAction('reel'); showCancel(false);
+  tensionMeter.classList.add('show');
+  setBanner('🎣 ТЯНИ! Не порви леску!', 'info');
+  pHook();
+}
+function reelTap(){
+  if(phase!=='fight') return;
+  fishHP -= 6 + Math.random()*4;
+  tensionPct += 4 + Math.random()*3;
+  if(tensionPct>100) tensionPct=100;
+  pReel();
+  if(fishHP<=0) startPulling();
+}
+function startPulling(){
+  phase='pulling';
+  tensionMeter.classList.remove('show');
+  hideAction(); showCancel(false);
+  setBanner('🎣 Вытаскиваем!', 'success');
+  // Start at current float pos, end at rod tip
+  const tip = getRodTip();
+  pullStartX = floatX; pullStartY = floatY;
+  pullEndX = tip.x - 20; pullEndY = tip.y + 60; // hang below tip
+  pullStart = performance.now();
+  pullSplashed = false;
+}
+function doCatch(){
+  phase='catch';
+  tensionMeter.classList.remove('show');
+  hideAction(); showCancel(false);
+  if(currentFish.junk){
+    score = Math.max(0, score + currentFish.points);
+    setBanner('🥾 '+currentFish.name+' '+currentFish.points+' очков', 'alert', 1500);
+    pBreak();
+    showReveal(currentFish);
+    return;
+  }
+  score += currentFish.points;
+  caught += 1;
+  if(score>record){ record=score; localStorage.setItem('fishingR2', record); }
+  updScore();
+  pCatch();
+  showReveal(currentFish);
+}
+function showReveal(f){
+  document.getElementById('revealName').textContent = f.name;
+  document.getElementById('revealWeight').textContent = f.weight+' кг';
+  const pt = f.points>=0 ? '+'+f.points+' очков' : f.points+' очков';
+  document.getElementById('revealPoints').textContent = pt;
+  document.getElementById('revealPoints').style.background = f.points>=0
+    ? 'linear-gradient(180deg,#ffe066,#ff9800)'
+    : 'linear-gradient(180deg,#888,#444)';
+  // Draw fish on reveal canvas
+  drawRevealFish(f);
+  reveal.classList.add('show');
+}
+let revealAnimRunning = false;
+function drawRevealFish(f){
+  const cv2 = document.getElementById('revealCv');
+  if(!cv2) return;
+  const c2 = cv2.getContext('2d');
+  cv2.width = 400; cv2.height = 400;
+  let frame = 0;
+  if(revealAnimRunning) return;
+  revealAnimRunning = true;
+  function step(){
+    if(!reveal.classList.contains('show')){ revealAnimRunning=false; return; }
+    c2.clearRect(0,0,400,400);
+    const wag = frame*0.08;
+    drawFishByName(c2, f.name, 200, 200, 110, Math.sin(frame*0.04)*0.1, wag);
+    frame++;
+    requestAnimationFrame(step);
+  }
+  step();
+}
+function reelIn(){
+  phase='ready';
+  reveal.classList.remove('show');
+  setAction('cast'); showCancel(false);
+  powerMeter.classList.remove('show'); tensionMeter.classList.remove('show');
+  setBanner('🎣 Удочка готова к забросу', 'info', 1500);
+  floatX=-100; floatY=-100; visibleFish=[]; currentFish=null;
+}
+
+// ============== BG IMAGE LOAD (non-blocking) ==============
+const bgPhoto = document.getElementById('bgPhoto');
+bgPhoto.onload = ()=>bgPhoto.classList.add('loaded');
+bgPhoto.onerror = ()=>{};
+bgPhoto.src = 'https://image.pollinations.ai/prompt/photorealistic+beautiful+lake+from+wooden+dock+pine+forest+mountains+blue+water+sunny+day?width=1024&height=576&seed=44288&nologo=true&model=turbo';
+
+// ============== INPUT ==============
+function aDown(e){
+  if(e){ e.preventDefault(); }
+  if(phase==='ready') startCharge();
+  else if(phase==='bite') hookIt();
+  else if(phase==='fight') reelTap();
+}
+function aUp(e){
+  if(e){ e.preventDefault(); }
+  if(phase==='charging') releaseCharge();
+}
+actionBtn.addEventListener('mousedown', aDown);
+actionBtn.addEventListener('mouseup', aUp);
+actionBtn.addEventListener('touchstart', aDown, {passive:false});
+actionBtn.addEventListener('touchend', aUp, {passive:false});
+actionBtn.addEventListener('touchcancel', aUp, {passive:false});
+actionBtn.addEventListener('mouseleave', e=>{ if(charging) releaseCharge(); });
+
+cancelBtn.addEventListener('click', e=>{ e.preventDefault(); reelIn(); });
+document.getElementById('revealNext').addEventListener('click', e=>{ e.preventDefault(); reelIn(); });
+
+cv.addEventListener('click', e=>{ if(phase==='bite') hookIt(); });
+
+// ============== ROD POSITION ==============
+function getHandle(){ return { x: W*0.85, y: H*0.94 }; }
+function getRodTip(){
+  const h = getHandle();
+  let tipX, tipY;
+  const baseLen = Math.min(W,H)*0.7;
+  if(phase==='charging'){
+    const t = Math.min(1, castPower/100);
+    const a = -Math.PI*0.95 + t*0.15;
+    tipX=h.x+Math.cos(a)*baseLen*0.85; tipY=h.y+Math.sin(a)*baseLen*0.85;
+  } else if(phase==='casting'){
+    const t = Math.min(1,(performance.now()-castFlightStart)/250);
+    const sw = Math.sin(t*Math.PI*0.5);
+    const a = -Math.PI*0.8 + sw*0.6;
+    tipX=h.x+Math.cos(a)*baseLen*0.9; tipY=h.y+Math.sin(a)*baseLen*0.9;
+  } else if(phase==='fight'){
+    const bend = 0.5 + Math.sin(performance.now()/250)*0.15 + tensionPct/300;
+    const a = -Math.PI*0.55 + bend*0.4;
+    tipX=h.x+Math.cos(a)*baseLen*0.78; tipY=h.y+Math.sin(a)*baseLen*0.78;
+  } else {
+    const a = -Math.PI*0.62;
+    tipX=h.x+Math.cos(a)*baseLen*0.95; tipY=h.y+Math.sin(a)*baseLen*0.95;
+  }
+  return {x:tipX, y:tipY};
+}
+
+// ============== UPDATE ==============
+function update(dt){
+  waterTime += dt;
+  fishWag += dt*8;
+  if(phase==='pulling'){
+    const t = (performance.now()-pullStart)/pullDur;
+    if(t >= 1){
+      // Fish reached top - hold for a moment then show reveal
+      doCatch();
+      return;
+    }
+    // Easing - slow start, fast pull, hang at end
+    let p;
+    if(t < 0.7){
+      p = (t/0.7)*0.85; // pull up to 85% during first 70% of time
+    } else {
+      p = 0.85 + (t-0.7)/0.3 * 0.15; // settle last 15%
+    }
+    floatX = pullStartX + (pullEndX-pullStartX)*p;
+    floatY = pullStartY + (pullEndY-pullStartY)*p;
+    // Splash when crossing water surface
+    const waterY = H*0.55;
+    if(!pullSplashed && floatY < waterY){
+      pullSplashed = true;
+      splashTime = performance.now();
+      splashX = floatX; splashY = waterY;
+      pSplash();
+    }
+    return;
+  }
+  if(charging){
+    const el = performance.now() - chargeStart;
+    const cyc = 1500;
+    const pos = (el%cyc)/cyc;
+    castPower = Math.sin(pos*Math.PI)*100;
+    powerFill.style.width = castPower+'%';
+  }
+  if(phase==='casting'){
+    const t = (performance.now()-castFlightStart)/castFlightDur;
+    if(t>=1){
+      floatX=floatTargetX; floatY=floatTargetY;
+      arrived();
+    } else {
+      floatX = castStartX + (floatTargetX-castStartX)*t;
+      const arc = -150*Math.sin(t*Math.PI);
+      floatY = castStartY + (floatTargetY-castStartY)*t + arc;
+    }
+  }
+  if(phase==='waiting' && performance.now()>=waitTimer) startNibble();
+  if(phase==='nibble' && performance.now()>=nibbleEndTime){
+    if(Math.random()<0.65) startBite();
+    else { phase='waiting'; setBanner('🌊 Тише... возможно ещё клюнет','info',1500);
+      waitTimer = performance.now() + 2500 + Math.random()*3500;
+    }
+  }
+  if(phase==='bite'){
+    floatSubmerge = Math.min(80, floatSubmerge + dt*150);
+    floatTilt = Math.sin(performance.now()/80)*0.4;
+    if(performance.now()>=biteEndTime){ missedBite(); floatSubmerge=0; }
+  } else {
+    floatSubmerge = Math.max(0, floatSubmerge - dt*120);
+    floatTilt *= 0.92;
+  }
+  if(phase==='fight'){
+    tensionPct = Math.max(0, tensionPct - dt*18);
+    if(Math.random() < dt*0.6) tensionPct += 3 + Math.random()*5*currentFish.diff;
+    tensionFill.style.width = Math.min(100,tensionPct)+'%';
+    let lab='НАТЯЖЕНИЕ ЛЕСКИ';
+    if(tensionPct<30) lab='🟢 МОЖНО ТЯНУТЬ!';
+    else if(tensionPct<65) lab='🟡 ОСТОРОЖНО...';
+    else if(tensionPct<88) lab='🟠 ОСЛАБЬ ЛЕСКУ!';
+    else lab='🔴 ПОРВЕТСЯ!';
+    tensionLabel.textContent = lab;
+    if(tensionPct>=100){
+      setBanner('💥 ЛЕСКА ПОРВАЛАСЬ!','alert',1800);
+      pBreak(); tensionMeter.classList.remove('show');
+      setTimeout(reelIn, 1500); phase='miss';
+    }
+    if(performance.now()>fightEndTime){
+      setBanner('🐟 Рыба сорвалась!','alert',1800);
+      pBreak(); tensionMeter.classList.remove('show');
+      setTimeout(reelIn, 1500); phase='miss';
+    }
+    floatX += Math.sin(performance.now()/350)*1.5;
+    floatY += Math.sin(performance.now()/200)*0.8;
+  }
+  visibleFish.forEach(f=>{
+    f.x += f.vx*dt*60;
+    f.wagPhase += dt*4;
+    if(f.x<-50) f.x=W+50;
+    if(f.x>W+50) f.x=-50;
+  });
+}
+
+// ============== RENDER ==============
+function drawShimmer(){
+  ctx.save();
+  const yStart = H*0.55;
+  ctx.globalCompositeOperation='screen';
+  ctx.strokeStyle='rgba(255,255,255,0.15)';
+  ctx.lineWidth=1.2;
+  for(let row=0;row<6;row++){
+    const y = yStart + row*(H*0.06);
+    ctx.beginPath();
+    const amp=1.5+row*0.5, freq=0.018-row*0.001, off=waterTime*(2+row*0.5);
+    for(let x=0;x<=W;x+=8){
+      const yy=y+Math.sin((x+off*30)*freq)*amp;
+      if(x===0) ctx.moveTo(x,yy); else ctx.lineTo(x,yy);
+    }
+    ctx.globalAlpha = 0.4 - row*0.04;
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+function drawFishUnder(){
+  if(!visibleFish.length) return;
+  visibleFish.forEach(f=>{
+    ctx.save();
+    ctx.translate(f.x,f.y);
+    if(f.flip) ctx.scale(-1,1);
+    const wag = Math.sin(f.wagPhase)*0.3;
+    ctx.fillStyle = 'rgba(20,40,60,0.5)';
+    ctx.beginPath(); ctx.ellipse(0,0,f.size,f.size*0.4,0,0,Math.PI*2); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(-f.size*0.95,0);
+    ctx.lineTo(-f.size*1.4,-f.size*0.3-wag*5);
+    ctx.lineTo(-f.size*1.4,f.size*0.3+wag*5);
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
+  });
+}
+function drawFloat(){
+  if(floatX<0) return;
+  if(phase==='casting'){
+    ctx.fillStyle='#cc3030';
+    ctx.beginPath(); ctx.arc(floatX,floatY,6,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=1.2; ctx.stroke();
+    return;
+  }
+  ctx.save();
+  ctx.translate(floatX,floatY);
+  ctx.rotate(floatTilt);
+  const totalH=26, sub=floatSubmerge;
+  const visH = Math.max(8, totalH - sub*0.3);
+  ctx.fillStyle='rgba(0,0,0,.25)';
+  ctx.beginPath(); ctx.ellipse(0,4,14,4,0,0,Math.PI*2); ctx.fill();
+  if(sub>0){ ctx.fillStyle='rgba(180,30,30,0.6)'; ctx.fillRect(-1.2,0,2.4,sub); }
+  const grad = ctx.createRadialGradient(-3,-visH+5,1, 0,-visH+8,12);
+  grad.addColorStop(0,'#ff7070'); grad.addColorStop(0.6,'#cc1818'); grad.addColorStop(1,'#700606');
+  ctx.fillStyle=grad;
+  ctx.beginPath(); ctx.arc(0,-visH+10,10,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#f5f5f5';
+  ctx.beginPath(); ctx.ellipse(0,-visH+18,9,4,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#333';
+  ctx.beginPath(); ctx.arc(0,-visH+2,4,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='#333'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(0,-visH+2); ctx.lineTo(0,-visH-8); ctx.stroke();
+  ctx.restore();
+  if(phase==='waiting'||phase==='nibble'||phase==='fight'){
+    const it = phase==='nibble'?2:phase==='fight'?3:1;
+    for(let i=0;i<3;i++){
+      const t = ((waterTime*0.6+i*0.33)%1);
+      const r = 8+t*60*it;
+      ctx.strokeStyle='rgba(255,255,255,'+(0.6*(1-t))+')';
+      ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.ellipse(floatX,floatY+5,r,r*0.35,0,0,Math.PI*2); ctx.stroke();
+    }
+  }
+}
+function drawSplash(){
+  const el = (performance.now()-splashTime)/1000;
+  if(el>0.6) return;
+  const t = el/0.6;
+  ctx.strokeStyle='rgba(255,255,255,'+(1-t)+')';
+  ctx.lineWidth=2.5;
+  for(let i=0;i<10;i++){
+    const a = Math.PI + (i/9)*Math.PI;
+    const len = 35+t*50;
+    const x1 = splashX+Math.cos(a)*8;
+    const y1 = splashY+Math.sin(a)*4;
+    const x2 = splashX+Math.cos(a)*(8+len);
+    const y2 = splashY+Math.sin(a)*(4+len*0.4)-t*25;
+    ctx.beginPath();
+    ctx.moveTo(x1,y1);
+    ctx.quadraticCurveTo((x1+x2)/2,y1-18-t*12,x2,y2);
+    ctx.stroke();
+  }
+  ctx.fillStyle='rgba(255,255,255,'+(0.8*(1-t))+')';
+  for(let i=0;i<14;i++){
+    const a = Math.random()*Math.PI*2;
+    const r = 5+Math.random()*30+t*20;
+    const x = splashX+Math.cos(a)*r;
+    const y = splashY+Math.sin(a)*r*0.5-t*15;
+    ctx.beginPath(); ctx.arc(x,y,2+Math.random()*3,0,Math.PI*2); ctx.fill();
+  }
+  ctx.strokeStyle='rgba(255,255,255,'+(0.7*(1-t))+')';
+  ctx.lineWidth=1.8;
+  for(let i=0;i<3;i++){
+    const r = 10+i*15+t*40;
+    ctx.beginPath(); ctx.ellipse(splashX,splashY+3,r,r*0.35,0,0,Math.PI*2); ctx.stroke();
+  }
+}
+function drawLine(){
+  if(phase==='ready'||phase==='charging'||phase==='menu') return;
+  const tip = getRodTip();
+  let endX = floatX, endY = floatY;
+  if(floatX<0){ endX=tip.x; endY=tip.y+5; }
+  ctx.strokeStyle='rgba(0,0,0,.3)';
+  ctx.lineWidth=phase==='fight'?2.5:2;
+  ctx.beginPath(); ctx.moveTo(tip.x+1,tip.y+2);
+  const sagY = (tip.y+endY)/2 + 12 + (phase==='fight'?-8:0);
+  const midX = (tip.x+endX)/2 + (phase==='fight'?Math.sin(performance.now()/180)*4:0);
+  ctx.quadraticCurveTo(midX+1,sagY+2,endX+1,endY+2); ctx.stroke();
+  ctx.strokeStyle = phase==='fight'?'rgba(255,250,200,.95)':'rgba(255,255,255,.95)';
+  ctx.lineWidth = phase==='fight'?1.8:1.4;
+  ctx.beginPath(); ctx.moveTo(tip.x,tip.y);
+  ctx.quadraticCurveTo(midX,sagY,endX,endY); ctx.stroke();
+}
+function bezX(p0,p1,p2,t){ const u=1-t; return u*u*p0+2*u*t*p1+t*t*p2; }
+function bezY(p0,p1,p2,t){ const u=1-t; return u*u*p0+2*u*t*p1+t*t*p2; }
+function drawRod(){
+  const handle = getHandle();
+  const tip = getRodTip();
+  const midX=(handle.x+tip.x)/2, midY=(handle.y+tip.y)/2;
+  let bend = 0;
+  if(phase==='fight') bend = 30 + tensionPct*0.4;
+  else if(phase==='bite') bend = 22;
+  else if(phase==='casting'){ const t = Math.min(1,(performance.now()-castFlightStart)/150); bend = (1-t)*20; }
+  const dx = tip.x-handle.x, dy = tip.y-handle.y;
+  const len = Math.sqrt(dx*dx+dy*dy)||1;
+  const nx = -dy/len, ny = dx/len;
+  const cx = midX + nx*bend, cy = midY + ny*bend;
+  // shadow
+  ctx.strokeStyle='rgba(0,0,0,.4)';
+  ctx.lineWidth=10; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(handle.x+4,handle.y+5);
+  ctx.quadraticCurveTo(cx+4,cy+5,tip.x+4,tip.y+5); ctx.stroke();
+  // rod body
+  const segs=18;
+  for(let i=0;i<segs;i++){
+    const t1=i/segs, t2=(i+1)/segs;
+    const x1=bezX(handle.x,cx,tip.x,t1), y1=bezY(handle.y,cy,tip.y,t1);
+    const x2=bezX(handle.x,cx,tip.x,t2), y2=bezY(handle.y,cy,tip.y,t2);
+    const w = 9 - t1*7.5;
+    ctx.lineWidth = Math.max(1.2,w);
+    const c = Math.floor(50 - t1*30);
+    ctx.strokeStyle = `rgb(${c},${c},${c+5})`;
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    if(i%2===0){
+      ctx.strokeStyle = `rgba(255,255,255,${0.15-t1*0.1})`;
+      ctx.lineWidth = Math.max(.5,w*0.3);
+      ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    }
+  }
+  // guides
+  ctx.fillStyle='#888'; ctx.strokeStyle='#222'; ctx.lineWidth=1;
+  for(let i=2;i<=14;i+=3){
+    const t=i/15;
+    const gx=bezX(handle.x,cx,tip.x,t), gy=bezY(handle.y,cy,tip.y,t);
+    ctx.beginPath(); ctx.arc(gx,gy,3-t*1.5,0,Math.PI*2); ctx.fill(); ctx.stroke();
+  }
+  // reel
+  const rodAng = Math.atan2(cy-handle.y, cx-handle.x);
+  drawReel(handle.x, handle.y, rodAng);
+  // grip
+  const gripBackX = handle.x - Math.cos(rodAng)*45;
+  const gripBackY = handle.y - Math.sin(rodAng)*45;
+  ctx.lineWidth=16; ctx.lineCap='round';
+  const gg = ctx.createLinearGradient(handle.x,handle.y,gripBackX,gripBackY);
+  gg.addColorStop(0,'#a8742e'); gg.addColorStop(0.5,'#c4894a'); gg.addColorStop(1,'#8c5e22');
+  ctx.strokeStyle=gg;
+  ctx.beginPath(); ctx.moveTo(handle.x,handle.y); ctx.lineTo(gripBackX,gripBackY); ctx.stroke();
+  ctx.fillStyle='rgba(80,50,15,.4)';
+  for(let i=0;i<14;i++){
+    const tx=i/13;
+    const px=handle.x-Math.cos(rodAng)*45*tx;
+    const py=handle.y-Math.sin(rodAng)*45*tx;
+    const off=(i%2)*4-2;
+    ctx.beginPath(); ctx.arc(px-Math.sin(rodAng)*off, py+Math.cos(rodAng)*off, 1.4, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.fillStyle='#1a1a1a';
+  ctx.beginPath(); ctx.arc(gripBackX,gripBackY,9,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='#444'; ctx.lineWidth=1.5; ctx.stroke();
+  // hand
+  drawHand(handle.x - Math.cos(rodAng)*20, handle.y - Math.sin(rodAng)*20, rodAng);
+}
+function drawReel(rx,ry,rodAng){
+  const ox = Math.cos(rodAng+Math.PI/2)*10;
+  const oy = Math.sin(rodAng+Math.PI/2)*10;
+  const cx = rx+ox, cy = ry+oy;
+  ctx.save(); ctx.translate(cx,cy); ctx.rotate(rodAng+Math.PI/2);
+  ctx.fillStyle='#222'; ctx.fillRect(-4,-6,8,12);
+  ctx.fillStyle='#1a1a1a';
+  ctx.beginPath(); ctx.ellipse(0,0,16,20,0,0,Math.PI*2); ctx.fill();
+  const rg = ctx.createRadialGradient(-4,-3,2, 0,0,18);
+  rg.addColorStop(0,'#f0f0f0'); rg.addColorStop(0.4,'#a0a0a0'); rg.addColorStop(1,'#3a3a3a');
+  ctx.fillStyle=rg;
+  ctx.beginPath(); ctx.ellipse(0,0,13,17,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#0a0a0a';
+  ctx.beginPath(); ctx.ellipse(0,0,8,11,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#e6e6e6';
+  ctx.beginPath(); ctx.ellipse(0,0,7,10,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#222';
+  ctx.beginPath(); ctx.arc(0,0,2,0,Math.PI*2); ctx.fill();
+  let cAng = performance.now()/200;
+  if(phase==='fight') cAng = performance.now()/80;
+  if(phase==='casting') cAng += performance.now()/40;
+  ctx.strokeStyle='#aaa'; ctx.lineWidth=4; ctx.lineCap='round';
+  const hx=Math.cos(cAng)*18, hy=Math.sin(cAng)*18;
+  ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(hx,hy); ctx.stroke();
+  const kg = ctx.createRadialGradient(hx-1,hy-1,0,hx,hy,5);
+  kg.addColorStop(0,'#ff8888'); kg.addColorStop(1,'#cc2020');
+  ctx.fillStyle=kg;
+  ctx.beginPath(); ctx.arc(hx,hy,5,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='#600'; ctx.lineWidth=1; ctx.stroke();
+  ctx.strokeStyle='#888'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.arc(0,0,14,Math.PI*0.2,Math.PI*0.8); ctx.stroke();
+  ctx.restore();
+}
+function drawHand(hx,hy,rodAng){
+  ctx.save();
+  // Plaid sleeve
+  const sg = ctx.createLinearGradient(W*1.05,H*1.05,hx,hy);
+  sg.addColorStop(0,'#3a1818'); sg.addColorStop(0.5,'#7a2020'); sg.addColorStop(1,'#a83030');
+  ctx.fillStyle=sg; ctx.strokeStyle='#400'; ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.moveTo(W*1.1,H*1.05);
+  ctx.quadraticCurveTo(W*0.95,H*0.97,hx-25,hy+30);
+  ctx.lineTo(hx+15,hy-10);
+  ctx.quadraticCurveTo(W*1.05,H*0.95,W*1.15,H*1.0);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  // Plaid pattern
+  ctx.strokeStyle='rgba(0,0,0,.3)'; ctx.lineWidth=1;
+  for(let i=0;i<6;i++){
+    const t=i/5;
+    ctx.beginPath();
+    ctx.moveTo(W*0.94+t*40,H*0.94);
+    ctx.lineTo(W*1.0+t*40,H*1.05);
+    ctx.stroke();
+  }
+  // Cuff
+  ctx.fillStyle='#1a0808';
+  ctx.beginPath(); ctx.ellipse(hx-3,hy+12,24,10,rodAng+Math.PI/2,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='#333'; ctx.lineWidth=1; ctx.stroke();
+  // Hand
+  ctx.fillStyle='#e8a878'; ctx.strokeStyle='#a26a3e'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.ellipse(hx,hy,18,14,rodAng,0,Math.PI*2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle='rgba(255,220,180,.5)';
+  ctx.beginPath(); ctx.ellipse(hx-3,hy-3,8,5,rodAng,0,Math.PI*2); ctx.fill();
+  // Fingers
+  ctx.fillStyle='#dca070'; ctx.strokeStyle='#a26a3e'; ctx.lineWidth=1.2;
+  for(let i=0;i<4;i++){
+    const fa = rodAng + Math.PI/2 + (i-1.5)*0.18;
+    const fx = hx+Math.cos(fa)*8, fy = hy+Math.sin(fa)*8;
+    ctx.beginPath(); ctx.ellipse(fx,fy,5,9,fa,0,Math.PI*2); ctx.fill(); ctx.stroke();
+  }
+  // Thumb
+  const ta = rodAng - Math.PI/2.8;
+  ctx.beginPath(); ctx.ellipse(hx+Math.cos(ta)*12,hy+Math.sin(ta)*12,5,8,ta,0,Math.PI*2); ctx.fill(); ctx.stroke();
+  ctx.restore();
+}
+function drawDock(){
+  const dh = H*0.07;
+  const g = ctx.createLinearGradient(0,H-dh,0,H);
+  g.addColorStop(0,'rgba(100,60,25,.85)'); g.addColorStop(1,'rgba(60,35,15,.95)');
+  ctx.fillStyle=g; ctx.fillRect(0,H-dh,W,dh);
+  ctx.strokeStyle='rgba(0,0,0,.4)'; ctx.lineWidth=1.5;
+  for(let i=0;i<8;i++){
+    const x = (i+0.5)*W/8;
+    ctx.beginPath(); ctx.moveTo(x,H-dh); ctx.lineTo(x,H); ctx.stroke();
+  }
+}
+
+// ============== FISH DRAWERS ==============
+function drawCarp(c, sz, wag){
+  // Карась — round golden body
+  const bg = c.createLinearGradient(0,-sz*0.5,0,sz*0.5);
+  bg.addColorStop(0,'#f4d030'); bg.addColorStop(0.5,'#daa520'); bg.addColorStop(1,'#8b6914');
+  c.fillStyle=bg; c.strokeStyle='#5c4709'; c.lineWidth=Math.max(1,sz*0.04);
+  // Body
+  c.beginPath(); c.ellipse(0,0,sz,sz*0.55,0,0,Math.PI*2); c.fill(); c.stroke();
+  // Tail
+  c.fillStyle='#b58a18';
+  c.beginPath();
+  c.moveTo(-sz*0.95,0);
+  c.lineTo(-sz*1.5+Math.sin(wag)*sz*0.06,-sz*0.45);
+  c.lineTo(-sz*1.4+Math.sin(wag+0.4)*sz*0.05,0);
+  c.lineTo(-sz*1.5+Math.sin(wag)*sz*0.06,sz*0.45);
+  c.closePath(); c.fill(); c.stroke();
+  // Dorsal
+  c.fillStyle='#a07810';
+  c.beginPath();
+  c.moveTo(-sz*0.05,-sz*0.55);
+  c.lineTo(-sz*0.2,-sz*0.85);
+  c.lineTo(-sz*0.45,-sz*0.5);
+  c.closePath(); c.fill(); c.stroke();
+  // Belly fin
+  c.fillStyle='#a07810';
+  c.beginPath();
+  c.moveTo(sz*0.1,sz*0.5);
+  c.lineTo(sz*0.0,sz*0.7);
+  c.lineTo(-sz*0.2,sz*0.5);
+  c.closePath(); c.fill(); c.stroke();
+  // Gill curve
+  c.beginPath();
+  c.moveTo(sz*0.42,-sz*0.3);
+  c.quadraticCurveTo(sz*0.55,0,sz*0.42,sz*0.3);
+  c.stroke();
+  // Eye
+  c.fillStyle='#fff';
+  c.beginPath(); c.arc(sz*0.6,-sz*0.18,sz*0.09,0,Math.PI*2); c.fill();
+  c.fillStyle='#000';
+  c.beginPath(); c.arc(sz*0.62,-sz*0.18,sz*0.05,0,Math.PI*2); c.fill();
+  c.fillStyle='#fff';
+  c.beginPath(); c.arc(sz*0.63,-sz*0.2,sz*0.02,0,Math.PI*2); c.fill();
+  // Mouth
+  c.strokeStyle='#5c4709'; c.lineWidth=Math.max(1,sz*0.04);
+  c.beginPath();
+  c.moveTo(sz*0.92,sz*0.02); c.lineTo(sz*0.83,sz*0.08); c.stroke();
+  // Scales
+  c.strokeStyle='rgba(92,71,9,.35)'; c.lineWidth=Math.max(0.6,sz*0.015);
+  for(let i=-3;i<=3;i++){
+    for(let j=-1;j<=1;j++){
+      c.beginPath();
+      c.arc(i*sz*0.18, j*sz*0.18, sz*0.12, Math.PI*1.15, Math.PI*1.85);
+      c.stroke();
+    }
+  }
+}
+function drawPerch(c, sz, wag){
+  // Окунь — green/yellow with vertical stripes
+  const bg = c.createLinearGradient(0,-sz*0.5,0,sz*0.5);
+  bg.addColorStop(0,'#9bb96d'); bg.addColorStop(0.5,'#5e8038'); bg.addColorStop(1,'#3a5520');
+  c.fillStyle=bg; c.strokeStyle='#1a3010'; c.lineWidth=Math.max(1,sz*0.04);
+  // Body (more elongated)
+  c.beginPath(); c.ellipse(0,0,sz*1.05,sz*0.45,0,0,Math.PI*2); c.fill(); c.stroke();
+  // Tail (orange)
+  c.fillStyle='#ff8800';
+  c.beginPath();
+  c.moveTo(-sz*1.0,0);
+  c.lineTo(-sz*1.55+Math.sin(wag)*sz*0.06,-sz*0.4);
+  c.lineTo(-sz*1.45+Math.sin(wag+0.3)*sz*0.05,0);
+  c.lineTo(-sz*1.55+Math.sin(wag)*sz*0.06,sz*0.4);
+  c.closePath(); c.fill(); c.stroke();
+  // Spiny dorsal
+  c.fillStyle='#5e8038';
+  c.beginPath();
+  c.moveTo(-sz*0.5,-sz*0.45);
+  for(let i=0;i<6;i++){
+    const x = -sz*0.5 + i*sz*0.18;
+    c.lineTo(x+sz*0.08,-sz*0.85);
+    c.lineTo(x+sz*0.16,-sz*0.45);
+  }
+  c.closePath(); c.fill(); c.stroke();
+  // Vertical stripes
+  c.fillStyle='rgba(20,40,15,.55)';
+  for(let i=0;i<5;i++){
+    const sx = -sz*0.7 + i*sz*0.32;
+    c.beginPath();
+    c.moveTo(sx,-sz*0.4);
+    c.quadraticCurveTo(sx+sz*0.04,0,sx,sz*0.4);
+    c.lineTo(sx+sz*0.08,sz*0.4);
+    c.quadraticCurveTo(sx+sz*0.12,0,sx+sz*0.08,-sz*0.4);
+    c.closePath(); c.fill();
+  }
+  // Belly fin orange
+  c.fillStyle='#ff8800';
+  c.beginPath();
+  c.moveTo(sz*0.1,sz*0.4);
+  c.lineTo(-sz*0.05,sz*0.65);
+  c.lineTo(-sz*0.25,sz*0.4);
+  c.closePath(); c.fill(); c.stroke();
+  // Pectoral fin
+  c.fillStyle='#daa520';
+  c.beginPath();
+  c.moveTo(sz*0.35,sz*0.15);
+  c.lineTo(sz*0.25,sz*0.5);
+  c.lineTo(sz*0.05,sz*0.25);
+  c.closePath(); c.fill(); c.stroke();
+  // Gill
+  c.strokeStyle='#1a3010';
+  c.beginPath();
+  c.moveTo(sz*0.45,-sz*0.25); c.quadraticCurveTo(sz*0.55,0,sz*0.45,sz*0.25); c.stroke();
+  // Eye
+  c.fillStyle='#fff';
+  c.beginPath(); c.arc(sz*0.65,-sz*0.13,sz*0.09,0,Math.PI*2); c.fill();
+  c.fillStyle='#000';
+  c.beginPath(); c.arc(sz*0.67,-sz*0.13,sz*0.05,0,Math.PI*2); c.fill();
+  c.fillStyle='#fff';
+  c.beginPath(); c.arc(sz*0.68,-sz*0.15,sz*0.02,0,Math.PI*2); c.fill();
+  // Mouth
+  c.strokeStyle='#1a3010';
+  c.beginPath();
+  c.moveTo(sz*0.95,sz*0.02); c.lineTo(sz*0.85,sz*0.1); c.stroke();
+}
+function drawBream(c, sz, wag){
+  // Лещ — tall narrow silver body
+  const bg = c.createLinearGradient(0,-sz*0.7,0,sz*0.7);
+  bg.addColorStop(0,'#e8eaed'); bg.addColorStop(0.5,'#9aa0a8'); bg.addColorStop(1,'#5a606a');
+  c.fillStyle=bg; c.strokeStyle='#3a3e44'; c.lineWidth=Math.max(1,sz*0.04);
+  // Body (tall, diamond-ish)
+  c.beginPath();
+  c.moveTo(sz*0.95,0);
+  c.quadraticCurveTo(sz*0.6,-sz*0.7,-sz*0.2,-sz*0.75);
+  c.quadraticCurveTo(-sz*0.7,-sz*0.5,-sz*0.95,0);
+  c.quadraticCurveTo(-sz*0.7,sz*0.5,-sz*0.2,sz*0.75);
+  c.quadraticCurveTo(sz*0.6,sz*0.7,sz*0.95,0);
+  c.closePath(); c.fill(); c.stroke();
+  // Tail forked
+  c.fillStyle='#7a808a';
+  c.beginPath();
+  c.moveTo(-sz*0.95,-sz*0.05);
+  c.lineTo(-sz*1.5+Math.sin(wag)*sz*0.07,-sz*0.5);
+  c.lineTo(-sz*1.25,0);
+  c.lineTo(-sz*1.5+Math.sin(wag)*sz*0.07,sz*0.5);
+  c.lineTo(-sz*0.95,sz*0.05);
+  c.closePath(); c.fill(); c.stroke();
+  // Dorsal fin
+  c.fillStyle='#7a808a';
+  c.beginPath();
+  c.moveTo(-sz*0.1,-sz*0.65);
+  c.lineTo(-sz*0.45,-sz*1.0);
+  c.lineTo(-sz*0.5,-sz*0.7);
+  c.closePath(); c.fill(); c.stroke();
+  // Belly fin
+  c.beginPath();
+  c.moveTo(sz*0.0,sz*0.65);
+  c.lineTo(-sz*0.2,sz*0.95);
+  c.lineTo(-sz*0.4,sz*0.7);
+  c.closePath(); c.fill(); c.stroke();
+  // Eye
+  c.fillStyle='#fff';
+  c.beginPath(); c.arc(sz*0.55,-sz*0.18,sz*0.1,0,Math.PI*2); c.fill();
+  c.fillStyle='#000';
+  c.beginPath(); c.arc(sz*0.56,-sz*0.18,sz*0.06,0,Math.PI*2); c.fill();
+  c.fillStyle='#fff';
+  c.beginPath(); c.arc(sz*0.58,-sz*0.2,sz*0.02,0,Math.PI*2); c.fill();
+  // Gill
+  c.strokeStyle='#3a3e44';
+  c.beginPath(); c.moveTo(sz*0.42,-sz*0.4); c.quadraticCurveTo(sz*0.55,0,sz*0.42,sz*0.4); c.stroke();
+  // Mouth
+  c.beginPath(); c.moveTo(sz*0.92,sz*0.0); c.lineTo(sz*0.85,sz*0.08); c.stroke();
+  // Silver scales shimmer
+  c.strokeStyle='rgba(255,255,255,.4)'; c.lineWidth=Math.max(0.5,sz*0.012);
+  for(let i=-3;i<=3;i++) for(let j=-2;j<=2;j++){
+    c.beginPath();
+    c.arc(i*sz*0.18,j*sz*0.2,sz*0.1,Math.PI*1.15,Math.PI*1.85);
+    c.stroke();
+  }
+}
+function drawPike(c, sz, wag){
+  // Щука — long, toothy, dark green with stripes
+  const bg = c.createLinearGradient(0,-sz*0.4,0,sz*0.4);
+  bg.addColorStop(0,'#7a9050'); bg.addColorStop(0.5,'#3d5a25'); bg.addColorStop(1,'#1a2a10');
+  c.fillStyle=bg; c.strokeStyle='#0d1a08'; c.lineWidth=Math.max(1,sz*0.04);
+  // Long body
+  c.beginPath();
+  c.moveTo(sz*1.1,sz*0.05); // pointed snout
+  c.quadraticCurveTo(sz*0.9,-sz*0.4,sz*0.3,-sz*0.4);
+  c.quadraticCurveTo(-sz*0.8,-sz*0.35,-sz*1.1,-sz*0.1);
+  c.quadraticCurveTo(-sz*1.0,sz*0.0,-sz*1.1,sz*0.1);
+  c.quadraticCurveTo(-sz*0.8,sz*0.35,sz*0.3,sz*0.4);
+  c.quadraticCurveTo(sz*0.9,sz*0.4,sz*1.1,sz*0.05);
+  c.closePath(); c.fill(); c.stroke();
+  // Tail
+  c.fillStyle='#3d5a25';
+  c.beginPath();
+  c.moveTo(-sz*1.1,-sz*0.05);
+  c.lineTo(-sz*1.6+Math.sin(wag)*sz*0.08,-sz*0.45);
+  c.lineTo(-sz*1.4+Math.sin(wag+0.3)*sz*0.06,0);
+  c.lineTo(-sz*1.6+Math.sin(wag)*sz*0.08,sz*0.45);
+  c.lineTo(-sz*1.1,sz*0.05);
+  c.closePath(); c.fill(); c.stroke();
+  // Vertical pale stripes
+  c.fillStyle='rgba(220,220,150,.4)';
+  for(let i=0;i<6;i++){
+    const sx = -sz*0.8 + i*sz*0.25;
+    c.beginPath();
+    c.moveTo(sx,-sz*0.35);
+    c.lineTo(sx+sz*0.05,sz*0.35);
+    c.lineTo(sx+sz*0.13,sz*0.35);
+    c.lineTo(sx+sz*0.08,-sz*0.35);
+    c.closePath(); c.fill();
+  }
+  // Dorsal back near tail
+  c.fillStyle='#3d5a25';
+  c.beginPath();
+  c.moveTo(-sz*0.5,-sz*0.35);
+  c.lineTo(-sz*0.7,-sz*0.7);
+  c.lineTo(-sz*0.95,-sz*0.4);
+  c.closePath(); c.fill(); c.stroke();
+  // Belly fin
+  c.beginPath();
+  c.moveTo(-sz*0.6,sz*0.35);
+  c.lineTo(-sz*0.8,sz*0.65);
+  c.lineTo(-sz*0.95,sz*0.4);
+  c.closePath(); c.fill(); c.stroke();
+  // Mouth open with teeth
+  c.fillStyle='#400';
+  c.beginPath();
+  c.moveTo(sz*1.1,sz*0.05);
+  c.lineTo(sz*0.85,sz*0.18);
+  c.quadraticCurveTo(sz*0.95,sz*0.05,sz*1.1,sz*0.05);
+  c.closePath(); c.fill();
+  // Teeth
+  c.fillStyle='#fff';
+  for(let i=0;i<4;i++){
+    const tx = sz*0.85+i*sz*0.06;
+    c.beginPath();
+    c.moveTo(tx,sz*0.12);
+    c.lineTo(tx+sz*0.025,sz*0.18);
+    c.lineTo(tx+sz*0.05,sz*0.12);
+    c.closePath(); c.fill();
+  }
+  // Eye
+  c.fillStyle='#fff';
+  c.beginPath(); c.arc(sz*0.7,-sz*0.18,sz*0.08,0,Math.PI*2); c.fill();
+  c.fillStyle='#000';
+  c.beginPath(); c.arc(sz*0.72,-sz*0.18,sz*0.05,0,Math.PI*2); c.fill();
+  c.fillStyle='#fff';
+  c.beginPath(); c.arc(sz*0.73,-sz*0.2,sz*0.018,0,Math.PI*2); c.fill();
+  // Gill
+  c.strokeStyle='#0d1a08';
+  c.beginPath(); c.moveTo(sz*0.4,-sz*0.3); c.quadraticCurveTo(sz*0.5,0,sz*0.4,sz*0.3); c.stroke();
+}
+function drawCatfish(c, sz, wag){
+  // Сом — long dark grey with whiskers and flat head
+  const bg = c.createLinearGradient(0,-sz*0.4,0,sz*0.4);
+  bg.addColorStop(0,'#5a6068'); bg.addColorStop(0.5,'#3a3e44'); bg.addColorStop(1,'#1a1c20');
+  c.fillStyle=bg; c.strokeStyle='#101216'; c.lineWidth=Math.max(1,sz*0.04);
+  // Body - elongated, rounder belly
+  c.beginPath();
+  c.moveTo(sz*1.0,sz*0.0);
+  c.quadraticCurveTo(sz*0.85,-sz*0.35,sz*0.2,-sz*0.4);
+  c.quadraticCurveTo(-sz*0.7,-sz*0.35,-sz*1.0,-sz*0.1);
+  c.lineTo(-sz*1.0,sz*0.1);
+  c.quadraticCurveTo(-sz*0.7,sz*0.5,sz*0.2,sz*0.5);
+  c.quadraticCurveTo(sz*0.85,sz*0.4,sz*1.0,sz*0.0);
+  c.closePath(); c.fill(); c.stroke();
+  // Tail
+  c.fillStyle='#3a3e44';
+  c.beginPath();
+  c.moveTo(-sz*1.0,-sz*0.05);
+  c.lineTo(-sz*1.5+Math.sin(wag)*sz*0.08,-sz*0.4);
+  c.lineTo(-sz*1.35,0);
+  c.lineTo(-sz*1.5+Math.sin(wag)*sz*0.08,sz*0.4);
+  c.lineTo(-sz*1.0,sz*0.05);
+  c.closePath(); c.fill(); c.stroke();
+  // Whiskers (barbels) - 4 of them, top and bottom
+  c.strokeStyle='#101216'; c.lineWidth=Math.max(1.2,sz*0.04);
+  c.lineCap='round';
+  // Top whiskers
+  c.beginPath();
+  c.moveTo(sz*0.95,-sz*0.1);
+  c.quadraticCurveTo(sz*1.3,-sz*0.3,sz*1.5,-sz*0.4);
+  c.stroke();
+  c.beginPath();
+  c.moveTo(sz*0.92,-sz*0.05);
+  c.quadraticCurveTo(sz*1.25,-sz*0.15,sz*1.45,-sz*0.2);
+  c.stroke();
+  // Bottom whiskers (longer)
+  c.beginPath();
+  c.moveTo(sz*0.92,sz*0.15);
+  c.quadraticCurveTo(sz*1.4,sz*0.4,sz*1.7,sz*0.55);
+  c.stroke();
+  c.beginPath();
+  c.moveTo(sz*0.88,sz*0.2);
+  c.quadraticCurveTo(sz*1.35,sz*0.55,sz*1.6,sz*0.7);
+  c.stroke();
+  // Mouth (wide flat)
+  c.strokeStyle='#101216'; c.lineWidth=Math.max(1,sz*0.05);
+  c.beginPath();
+  c.moveTo(sz*0.98,sz*0.05); c.lineTo(sz*0.78,sz*0.18); c.stroke();
+  // Small belly fins (pectoral)
+  c.fillStyle='#3a3e44';
+  c.beginPath();
+  c.moveTo(sz*0.4,sz*0.4);
+  c.lineTo(sz*0.2,sz*0.7);
+  c.lineTo(sz*0.0,sz*0.4);
+  c.closePath(); c.fill(); c.stroke();
+  // Eye (small)
+  c.fillStyle='#fff';
+  c.beginPath(); c.arc(sz*0.7,-sz*0.18,sz*0.06,0,Math.PI*2); c.fill();
+  c.fillStyle='#000';
+  c.beginPath(); c.arc(sz*0.71,-sz*0.18,sz*0.04,0,Math.PI*2); c.fill();
+}
+function drawGoldfish(c, sz, wag){
+  // Золотая — fancy goldfish with bright gold body and flowing fins
+  const bg = c.createRadialGradient(0,0,0,0,0,sz*1.1);
+  bg.addColorStop(0,'#fff5a0'); bg.addColorStop(0.5,'#ffd700'); bg.addColorStop(1,'#cc8800');
+  c.fillStyle=bg; c.strokeStyle='#7a4a00'; c.lineWidth=Math.max(1,sz*0.04);
+  // Plump body
+  c.beginPath(); c.ellipse(0,0,sz*0.95,sz*0.7,0,0,Math.PI*2); c.fill(); c.stroke();
+  // Flowing tail (multiple layers)
+  c.fillStyle='rgba(255,215,0,.7)';
+  c.beginPath();
+  c.moveTo(-sz*0.85,0);
+  c.quadraticCurveTo(-sz*1.4,-sz*0.7,-sz*1.6+Math.sin(wag)*sz*0.1,-sz*0.4);
+  c.quadraticCurveTo(-sz*1.3,-sz*0.1,-sz*1.5+Math.sin(wag+0.5)*sz*0.08,sz*0.3);
+  c.quadraticCurveTo(-sz*1.4,sz*0.7,-sz*0.85,sz*0.05);
+  c.closePath(); c.fill(); c.stroke();
+  // Dorsal flowing fin
+  c.fillStyle='rgba(255,215,0,.7)';
+  c.beginPath();
+  c.moveTo(-sz*0.1,-sz*0.65);
+  c.quadraticCurveTo(-sz*0.4,-sz*1.2,-sz*0.7,-sz*0.7);
+  c.quadraticCurveTo(-sz*0.5,-sz*0.4,-sz*0.1,-sz*0.65);
+  c.closePath(); c.fill(); c.stroke();
+  // Belly fins
+  c.beginPath();
+  c.moveTo(sz*0.1,sz*0.6);
+  c.quadraticCurveTo(-sz*0.1,sz*1.0,-sz*0.4,sz*0.7);
+  c.closePath(); c.fill(); c.stroke();
+  // Sparkles
+  c.fillStyle='#fff';
+  for(let i=0;i<5;i++){
+    const ang = i*Math.PI*0.4 + waterTime;
+    const x = Math.cos(ang)*sz*0.5;
+    const y = Math.sin(ang)*sz*0.3;
+    c.beginPath(); c.arc(x,y,sz*0.04,0,Math.PI*2); c.fill();
+  }
+  // Big eye
+  c.fillStyle='#fff';
+  c.beginPath(); c.arc(sz*0.55,-sz*0.2,sz*0.13,0,Math.PI*2); c.fill();
+  c.strokeStyle='#7a4a00'; c.lineWidth=Math.max(1,sz*0.03); c.stroke();
+  c.fillStyle='#000';
+  c.beginPath(); c.arc(sz*0.57,-sz*0.2,sz*0.07,0,Math.PI*2); c.fill();
+  c.fillStyle='#fff';
+  c.beginPath(); c.arc(sz*0.59,-sz*0.22,sz*0.025,0,Math.PI*2); c.fill();
+  // Mouth
+  c.strokeStyle='#7a4a00';
+  c.beginPath(); c.arc(sz*0.85,sz*0.05,sz*0.06,0,Math.PI*2); c.stroke();
+}
+function drawBoot(c, sz, wag){
+  // Сапог — old leather boot
+  c.fillStyle='#5b3a18'; c.strokeStyle='#2a1a08'; c.lineWidth=Math.max(1,sz*0.04);
+  // Boot shape (sole + upper)
+  c.beginPath();
+  c.moveTo(-sz*0.8,sz*0.5);
+  c.lineTo(sz*1.0,sz*0.5);
+  c.lineTo(sz*1.0,sz*0.3);
+  c.lineTo(sz*0.0,sz*0.3);
+  c.lineTo(sz*0.0,-sz*0.7);
+  c.lineTo(-sz*0.6,-sz*0.7);
+  c.lineTo(-sz*0.8,sz*0.5);
+  c.closePath(); c.fill(); c.stroke();
+  // Heel
+  c.fillStyle='#3a2208';
+  c.fillRect(-sz*0.85,sz*0.3,sz*0.25,sz*0.2);
+  c.strokeRect(-sz*0.85,sz*0.3,sz*0.25,sz*0.2);
+  // Boot opening
+  c.fillStyle='#1a0d04';
+  c.beginPath(); c.ellipse(-sz*0.3,-sz*0.7,sz*0.3,sz*0.1,0,0,Math.PI*2); c.fill();
+  // Algae/moss patches
+  c.fillStyle='rgba(60,120,40,.7)';
+  c.beginPath(); c.arc(-sz*0.3,sz*0.35,sz*0.15,0,Math.PI*2); c.fill();
+  c.beginPath(); c.arc(sz*0.4,sz*0.42,sz*0.12,0,Math.PI*2); c.fill();
+  c.beginPath(); c.arc(-sz*0.5,-sz*0.2,sz*0.1,0,Math.PI*2); c.fill();
+  // Drips of water
+  c.fillStyle='rgba(150,200,230,.6)';
+  for(let i=0;i<4;i++){
+    const x = -sz*0.6 + i*sz*0.4;
+    c.beginPath(); c.ellipse(x,sz*0.55,sz*0.04,sz*0.08,0,0,Math.PI*2); c.fill();
+  }
+  // Laces
+  c.strokeStyle='#1a0d04'; c.lineWidth=Math.max(1,sz*0.025);
+  for(let i=0;i<4;i++){
+    const y = -sz*0.5 + i*sz*0.18;
+    c.beginPath();
+    c.moveTo(-sz*0.45,y); c.lineTo(-sz*0.05,y+sz*0.08);
+    c.stroke();
+  }
+}
+function drawFishByName(c, name, x, y, sz, angle, wag){
+  c.save();
+  c.translate(x,y);
+  c.rotate(angle||0);
+  if(name==='Карась') drawCarp(c,sz,wag);
+  else if(name==='Окунь') drawPerch(c,sz,wag);
+  else if(name==='Лещ') drawBream(c,sz,wag);
+  else if(name==='Щука') drawPike(c,sz,wag);
+  else if(name==='Сом') drawCatfish(c,sz,wag);
+  else if(name==='Золотая') drawGoldfish(c,sz,wag);
+  else if(name==='Сапог') drawBoot(c,sz,wag);
+  else drawCarp(c,sz,wag);
+  c.restore();
+}
+// Fish on hook - drawn in canvas during pulling phase
+function drawFishOnHook(){
+  if(!currentFish) return;
+  // Compute size based on fish weight
+  const baseSz = Math.min(W,H)*0.06;
+  const maxW = currentFish.weight;
+  const sz = baseSz * (0.7 + Math.min(1, maxW/3)*0.6);
+  // Hook fish at floatX, floatY
+  // Fish hangs vertically with tail down (rotated 90deg)
+  // Fish wags during pulling
+  let angle = Math.PI/2; // hanging down
+  // Slight sway
+  angle += Math.sin(performance.now()/180)*0.15;
+  // Water drops if recently came out of water
+  const t = phase==='pulling'?(performance.now()-pullStart)/pullDur:0;
+  if(phase==='pulling' && pullSplashed){
+    const sinceSplash = (performance.now()-splashTime)/1000;
+    if(sinceSplash < 0.8){
+      // Drip drops
+      ctx.fillStyle='rgba(150,200,230,.7)';
+      for(let i=0;i<3;i++){
+        const dx = floatX + (Math.random()-0.5)*sz*1.5;
+        const dy = floatY + sz*0.5 + sinceSplash*60 + i*15;
+        ctx.beginPath();
+        ctx.ellipse(dx,dy,2,5,0,0,Math.PI*2); ctx.fill();
+      }
+    }
+  }
+  drawFishByName(ctx, currentFish.name, floatX, floatY, sz, angle, fishWag);
+  // Hook visible at mouth of fish
+  ctx.strokeStyle='#888'; ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.arc(floatX, floatY-sz*0.85, sz*0.12, 0, Math.PI);
+  ctx.stroke();
+}
+function render(){
+  ctx.clearRect(0,0,W,H);
+  drawShimmer();
+  drawFishUnder();
+  if(performance.now()-splashTime<600) drawSplash();
+  drawDock();
+  if(phase!=='pulling') drawFloat();
+  drawLine();
+  drawRod();
+  if(phase==='pulling') drawFishOnHook();
+}
+
+// ============== LOOP ==============
+function loop(now){
+  const dt = Math.min(0.05,(now-lastTime)/1000);
+  lastTime = now;
+  update(dt);
+  render();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+})();
+</script>
+</body>
+</html>
