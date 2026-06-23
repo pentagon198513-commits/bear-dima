@@ -69,6 +69,65 @@
 
     #root { position: relative; z-index: 1; }
 
+    /* === FALLBACK: показывается если React/Tailwind/Babel с CDN не загрузились === */
+    .fb-wrap {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 24px 16px;
+      text-align: center;
+      font-family: 'Nunito', system-ui, sans-serif;
+    }
+    .fb-title {
+      font-family: 'Bangers', 'Nunito', sans-serif;
+      font-size: clamp(2rem, 8vw, 3.5rem);
+      color: #0066ff;
+      -webkit-text-stroke: 2px #000;
+      text-shadow: 3px 3px 0 #ff6b00, 5px 5px 14px rgba(0,0,0,0.3);
+      margin: 16px 0 8px;
+      letter-spacing: 0.05em;
+    }
+    .fb-sub {
+      font-size: 1.1rem;
+      color: #5d3a1a;
+      margin: 0 0 24px;
+      font-weight: 700;
+    }
+    .fb-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 16px;
+      padding: 0 8px;
+    }
+    .fb-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 24px 12px;
+      min-height: 160px;
+      border: 4px solid #fff;
+      border-radius: 24px;
+      color: #fff;
+      text-decoration: none;
+      box-shadow: 0 6px 0 rgba(0,0,0,0.25), 0 10px 30px rgba(0,0,0,0.2);
+      transition: transform 0.15s;
+      font-family: 'Bangers', 'Nunito', sans-serif;
+      letter-spacing: 0.03em;
+    }
+    .fb-card:active { transform: translateY(3px); box-shadow: 0 3px 0 rgba(0,0,0,0.25); }
+    .fb-emoji { font-size: 3rem; line-height: 1; filter: drop-shadow(0 3px 4px rgba(0,0,0,0.3)); }
+    .fb-name {
+      font-size: 1.1rem;
+      text-shadow: 2px 2px 0 #000;
+    }
+    .fb-foot {
+      margin-top: 28px;
+      color: #5d3a1a;
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
     /* Хром для логотипа */
     .chrome-text {
       background: linear-gradient(
@@ -426,7 +485,47 @@
   </style>
 </head>
 <body>
-  <div id="root"></div>
+  <div id="root">
+    <!-- Резервный каталог: показывается если React/Tailwind/Babel не загрузились с CDN.
+         При успешной загрузке React стирает этот блок через root.render(). -->
+    <div class="fb-wrap">
+      <h1 class="fb-title">🐻 МЕДВЕДЬ — ИГРЫ ДИМЫ 🏎️</h1>
+      <p class="fb-sub">Тапни на игру, чтобы начать!</p>
+      <div class="fb-grid">
+        <a class="fb-card" href="games/hunt.html" style="background:linear-gradient(135deg,#3d6e2a,#8b6914)">
+          <div class="fb-emoji">🦆</div><div class="fb-name">ОХОТА НА УТОК</div>
+        </a>
+        <a class="fb-card" href="games/fishing.html" style="background:linear-gradient(135deg,#1976d2,#5db8ff)">
+          <div class="fb-emoji">🎣</div><div class="fb-name">РЫБАЛКА</div>
+        </a>
+        <a class="fb-card" href="games/snake.html" style="background:linear-gradient(135deg,#0066ff,#00c6ff)">
+          <div class="fb-emoji">🐍</div><div class="fb-name">ЗМЕЙКА</div>
+        </a>
+        <a class="fb-card" href="games/memory.html" style="background:linear-gradient(135deg,#ff6b00,#e11d48)">
+          <div class="fb-emoji">🃏</div><div class="fb-name">НАЙДИ ПАРЫ</div>
+        </a>
+        <a class="fb-card" href="games/maze.html" style="background:linear-gradient(135deg,#39ff14,#0d7a00)">
+          <div class="fb-emoji">🌀</div><div class="fb-name">ЛАБИРИНТ</div>
+        </a>
+        <a class="fb-card" href="games/bubble.html" style="background:linear-gradient(135deg,#ff00ff,#ffcc00)">
+          <div class="fb-emoji">🎈</div><div class="fb-name">ЛОПНИ ШАРИКИ</div>
+        </a>
+        <a class="fb-card" href="games/puzzle.html" style="background:linear-gradient(135deg,#b24592,#f15f79)">
+          <div class="fb-emoji">🧩</div><div class="fb-name">СОБЕРИ ПАЗЛ</div>
+        </a>
+        <a class="fb-card" href="games/tictactoe.html" style="background:linear-gradient(135deg,#ff6b00,#ffcc00)">
+          <div class="fb-emoji">❌</div><div class="fb-name">КРЕСТИКИ-НОЛИКИ</div>
+        </a>
+        <a class="fb-card" href="games/battleship.html" style="background:linear-gradient(135deg,#0a1428,#0066ff)">
+          <div class="fb-emoji">🚢</div><div class="fb-name">МОРСКОЙ БОЙ</div>
+        </a>
+        <a class="fb-card" href="games/chess.html" style="background:linear-gradient(135deg,#5d3a1a,#b58863)">
+          <div class="fb-emoji">♟</div><div class="fb-name">ШАХМАТЫ</div>
+        </a>
+      </div>
+      <p class="fb-foot">🐻 Сделано с любовью для Димы</p>
+    </div>
+  </div>
 
   <script type="text/babel" data-presets="env,react">
     const { useState, useMemo } = React;
@@ -467,6 +566,13 @@
         bg: 'linear-gradient(135deg,#ff00ff,#ffcc00)',
       },
       {
+        id: 'hunt', name: 'ОХОТА НА УТОК',
+        emoji: '🦆',
+        desc: 'Двустволка! Стреляй по уткам!',
+        href: 'games/hunt.html',
+        bg: 'linear-gradient(135deg,#3d6e2a,#8b6914)',
+      },
+      {
         id: 'puzzle', name: 'СОБЕРИ ПАЗЛ',
         emoji: '🧩',
         desc: 'Картинка из кусочков',
@@ -493,13 +599,6 @@
         desc: 'Классика! Играй онлайн!',
         href: 'games/chess.html',
         bg: 'linear-gradient(135deg,#5d3a1a,#b58863)',
-      },
-      {
-        id: 'hunt', name: 'ОХОТА НА УТОК',
-        emoji: '🦆',
-        desc: 'Двустволка и мишка-охотник!',
-        href: 'games/hunt.html',
-        bg: 'linear-gradient(135deg,#5db8ff,#4a8c3a)',
       },
       {
         id: 'fishing', name: 'РЫБАЛКА',

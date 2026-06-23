@@ -212,6 +212,9 @@
     }
 
     function startGame() {
+      // Предзагружаем картинку — иначе плитки рендерятся пустыми до загрузки файла
+      const preload = new Image();
+      preload.src = getImageUrl(currentImage);
       previewImg.src = getImageUrl(currentImage);
       shuffleTiles();
       moves = 0;
@@ -222,7 +225,8 @@
       winModal.classList.remove('show');
       if (timerId) clearInterval(timerId);
       timerId = setInterval(() => { seconds++; timerEl.textContent = seconds + 'с'; }, 1000);
-      renderGrid();
+      if (preload.complete) renderGrid();
+      else preload.onload = renderGrid;
       renderPicker();
     }
 
@@ -248,6 +252,17 @@
     document.getElementById('sfxBtn').addEventListener('click', () => { BearSound.toggleSfx(); refreshSoundBtns(); });
     document.getElementById('musBtn').addEventListener('click', () => { BearSound.toggleMusic(); refreshSoundBtns(); });
     window.addEventListener('load', () => setTimeout(refreshSoundBtns, 100));
+
+    // Пауза таймера при скрытии вкладки
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        if (timerId) { clearInterval(timerId); timerId = null; }
+      } else if (!won) {
+        if (!timerId) {
+          timerId = setInterval(() => { seconds++; timerEl.textContent = seconds + 'с'; }, 1000);
+        }
+      }
+    });
 
     startGame();
   </script>
