@@ -92,6 +92,15 @@
       margin: 0 0 24px;
       font-weight: 700;
     }
+    .fb-section {
+      margin: 28px 0 14px;
+      font-family: 'Bangers', 'Nunito', sans-serif;
+      font-size: clamp(1.8rem, 6vw, 2.8rem);
+      color: #ff6b00;
+      -webkit-text-stroke: 1px #000;
+      text-shadow: 2px 2px 0 #ffcc00;
+      letter-spacing: 0.04em;
+    }
     .fb-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -120,6 +129,25 @@
     .fb-name {
       font-size: 1.1rem;
       text-shadow: 2px 2px 0 #000;
+    }
+    .fb-car {
+      background: #fff;
+      color: #1f2937;
+      text-shadow: none;
+      padding: 10px;
+      justify-content: flex-start;
+    }
+    .fb-car img {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      border-radius: 16px;
+      background: #fff3d6;
+    }
+    .fb-car .fb-name {
+      color: #1f2937;
+      text-shadow: none;
+      font-size: 1rem;
     }
     .fb-foot {
       margin-top: 28px;
@@ -491,6 +519,7 @@
     <div class="fb-wrap">
       <h1 class="fb-title">🐻 МЕДВЕДЬ — ИГРЫ ДИМЫ 🏎️</h1>
       <p class="fb-sub">Тапни на игру, чтобы начать!</p>
+      <h2 class="fb-section">🎮 ИГРЫ</h2>
       <div class="fb-grid">
         <a class="fb-card" href="games/hunt.html" style="background:linear-gradient(135deg,#3d6e2a,#8b6914)">
           <div class="fb-emoji">🦆</div><div class="fb-name">ОХОТА НА УТОК</div>
@@ -521,6 +550,57 @@
         </a>
         <a class="fb-card" href="games/chess.html" style="background:linear-gradient(135deg,#5d3a1a,#b58863)">
           <div class="fb-emoji">♟</div><div class="fb-name">ШАХМАТЫ</div>
+        </a>
+      </div>
+      <h2 class="fb-section">🏎️ HOT WHEELS</h2>
+      <div class="fb-grid">
+        <a class="fb-card fb-car" href="img/cars/bone_shaker.jpg">
+          <img src="img/cars/bone_shaker.jpg" alt="Bone Shaker" /><div class="fb-name">BONE SHAKER</div>
+        </a>
+        <a class="fb-card fb-car" href="img/cars/twin_mill.jpg">
+          <img src="img/cars/twin_mill.jpg" alt="Twin Mill" /><div class="fb-name">TWIN MILL</div>
+        </a>
+        <a class="fb-card fb-car" href="img/cars/deora_ii.jpg">
+          <img src="img/cars/deora_ii.jpg" alt="Deora II" /><div class="fb-name">DEORA II</div>
+        </a>
+        <a class="fb-card fb-car" href="img/cars/rip_rod.jpg">
+          <img src="img/cars/rip_rod.jpg" alt="Rip Rod" /><div class="fb-name">RIP ROD</div>
+        </a>
+        <a class="fb-card fb-car" href="img/cars/rodger_dodger.jpg">
+          <img src="img/cars/rodger_dodger.jpg" alt="Rodger Dodger" /><div class="fb-name">RODGER DODGER</div>
+        </a>
+        <a class="fb-card fb-car" href="img/cars/gazella_gt.jpg">
+          <img src="img/cars/gazella_gt.jpg" alt="Gazella GT" /><div class="fb-name">GAZELLA GT</div>
+        </a>
+        <a class="fb-card fb-car" href="img/cars/dragon_blaster.jpg">
+          <img src="img/cars/dragon_blaster.jpg" alt="Dragon Blaster" /><div class="fb-name">DRAGON BLASTER</div>
+        </a>
+      </div>
+      <h2 class="fb-section">🛻 МОНСТР ТРАКИ</h2>
+      <div class="fb-grid">
+        <a class="fb-card fb-car" href="img/cars/bigfoot.jpg">
+          <img src="img/cars/bigfoot.jpg" alt="Bigfoot" /><div class="fb-name">BIGFOOT</div>
+        </a>
+        <a class="fb-card fb-car" href="img/cars/grave_digger.jpg">
+          <img src="img/cars/grave_digger.jpg" alt="Grave Digger" /><div class="fb-name">GRAVE DIGGER</div>
+        </a>
+        <a class="fb-card fb-car" href="img/cars/monster_mutt.jpg">
+          <img src="img/cars/monster_mutt.jpg" alt="Monster Mutt" /><div class="fb-name">MONSTER MUTT</div>
+        </a>
+        <a class="fb-card fb-car" href="img/cars/el_toro_loco.jpg">
+          <img src="img/cars/el_toro_loco.jpg" alt="El Toro Loco" /><div class="fb-name">EL TORO LOCO</div>
+        </a>
+        <a class="fb-card fb-car" href="img/cars/max_d.jpg">
+          <img src="img/cars/max_d.jpg" alt="Max-D" /><div class="fb-name">MAX-D</div>
+        </a>
+        <a class="fb-card fb-car" href="img/cars/megalodon.jpg">
+          <img src="img/cars/megalodon.jpg" alt="Megalodon" /><div class="fb-name">MEGALODON</div>
+        </a>
+        <a class="fb-card fb-car" href="img/cars/earthshaker.jpg">
+          <img src="img/cars/earthshaker.jpg" alt="Earthshaker" /><div class="fb-name">EARTHSHAKER</div>
+        </a>
+        <a class="fb-card fb-car" href="img/cars/zombie.jpg">
+          <img src="img/cars/zombie.jpg" alt="Zombie" /><div class="fb-name">ZOMBIE</div>
         </a>
       </div>
       <p class="fb-foot">🐻 Сделано с любовью для Димы</p>
