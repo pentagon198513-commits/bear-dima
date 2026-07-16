@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="game.css" />
   <script src="sounds.js?v=4" defer></script>
   <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
-  <script src="multiplayer.js?v=4"></script>
+  <script src="multiplayer.js?v=5"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
   <style>
     .lobby{text-align:center;padding:16px}
@@ -67,8 +67,8 @@
     </div>
     <button class="lobby-btn" onclick="createRoom()">🏠 СОЗДАТЬ ИГРУ</button>
     <div class="or-divider">— ИЛИ —</div>
-    <p>Введи 4 цифры от друга:</p>
-    <input class="code-input" id="joinCode" maxlength="4" placeholder="1234" inputmode="numeric" pattern="[0-9]*" />
+    <p>Введи 6 цифр от друга:</p>
+    <input class="code-input" id="joinCode" maxlength="6" placeholder="123456" inputmode="numeric" pattern="[0-9]*" />
     <br /><button class="lobby-btn green" onclick="joinRoom()">🚀 ПОДКЛЮЧИТЬСЯ</button>
     <div class="or-divider">— ИЛИ —</div>
     <button class="lobby-btn blue" onclick="startLocal()">🤝 ВДВОЁМ НА ОДНОМ</button>
@@ -381,7 +381,7 @@
     let joinRetry = null;
     async function joinRoom() {
       const code = document.getElementById('joinCode').value.trim();
-      if (!code || code.length < 4) { alert('Введи 4 цифры!'); return; }
+      if (!code || code.length !== 6) { alert('Введи 6 цифр!'); return; }
       mode = 'online'; myColor = 'b'; flipped = true;
       try {
         await BearMP.connect(code, 'guest', handleMsg, onNetStatus);

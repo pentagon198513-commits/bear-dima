@@ -13,15 +13,25 @@
     connected: false,
 
     generateCode() {
-      return String(Math.floor(1000 + Math.random() * 9000));
+      const bytes = new Uint32Array(1);
+      if (window.crypto && window.crypto.getRandomValues) {
+        window.crypto.getRandomValues(bytes);
+        return String(100000 + (bytes[0] % 900000));
+      }
+      return String(Math.floor(100000 + Math.random() * 900000));
     },
 
     connect(code, role, onMessage, onStatus) {
-      this.code = code;
+      const normalizedCode = String(code || '').replace(/\D/g, '').slice(0, 6);
+      if (normalizedCode.length !== 6) {
+        return Promise.reject(new Error('Введи 6 цифр кода комнаты'));
+      }
+
+      this.code = normalizedCode;
       this.role = role;
       this.onMessage = onMessage;
       this.onStatus = onStatus || null;
-      this.topic = 'bear-game-2026/' + code;
+      this.topic = 'bear-game-2026/v2/' + normalizedCode;
       this.connected = false;
 
       return new Promise((resolve, reject) => {
@@ -81,6 +91,7 @@
         this.client.on('message', (topic, payload) => {
           try {
             const msg = JSON.parse(payload.toString());
+            if (msg._room !== this.code) return;
             // Игнорируем свои сообщения (эхо от брокера)
             if (msg._from === this.role) return;
             if (this.onMessage) this.onMessage(msg);
@@ -91,6 +102,7 @@
 
     send(data) {
       if (!this.client || !this.connected) return;
+      data._room = this.code;
       data._from = this.role;
       const payload = JSON.stringify(data);
       const client = this.client;
