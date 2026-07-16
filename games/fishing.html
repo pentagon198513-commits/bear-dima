@@ -773,11 +773,51 @@ function reelIn(){
   floatX=-100; floatY=-100; visibleFish=[]; currentFish=null;
 }
 
-// ============== BG IMAGE LOAD (non-blocking) ==============
+// ============== LOCAL BG IMAGE (non-blocking) ==============
 const bgPhoto = document.getElementById('bgPhoto');
 bgPhoto.onload = ()=>bgPhoto.classList.add('loaded');
 bgPhoto.onerror = ()=>{};
-bgPhoto.src = 'https://image.pollinations.ai/prompt/photorealistic+beautiful+lake+from+wooden+dock+pine+forest+mountains+blue+water+sunny+day?width=1024&height=576&seed=44288&nologo=true&model=turbo';
+bgPhoto.src = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 576">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#79c7f2"/>
+      <stop offset=".48" stop-color="#d9f3ff"/>
+      <stop offset="1" stop-color="#4f9fc5"/>
+    </linearGradient>
+    <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#58b8d4"/>
+      <stop offset=".52" stop-color="#1f78a8"/>
+      <stop offset="1" stop-color="#0d3d68"/>
+    </linearGradient>
+    <linearGradient id="dock" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6b3f1f"/>
+      <stop offset=".5" stop-color="#a66b38"/>
+      <stop offset="1" stop-color="#5c351a"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="576" fill="url(#sky)"/>
+  <circle cx="830" cy="86" r="52" fill="#fff3a6" opacity=".9"/>
+  <path d="M0 255 L80 180 L160 232 L260 145 L375 232 L510 125 L660 245 L775 165 L910 242 L1024 178 V315 H0Z" fill="#697f93" opacity=".78"/>
+  <path d="M0 292 C120 228 240 295 350 246 C470 192 585 295 720 235 C850 178 930 258 1024 220 V350 H0Z" fill="#2f6f48"/>
+  <path d="M0 332 C160 304 285 332 410 306 C575 270 710 333 875 296 C940 281 992 286 1024 292 V576 H0Z" fill="url(#water)"/>
+  <g opacity=".38" stroke="#d6f7ff" stroke-width="3">
+    <path d="M35 376 C120 360 190 392 282 374"/>
+    <path d="M420 390 C520 370 610 406 735 382"/>
+    <path d="M110 462 C250 430 370 480 520 450"/>
+    <path d="M645 486 C770 458 884 496 1005 468"/>
+  </g>
+  <g transform="translate(0 398)">
+    <path d="M0 178 L430 88 L640 178 Z" fill="url(#dock)"/>
+    <g stroke="#4b2b14" stroke-width="7" opacity=".75">
+      <path d="M50 168 L432 86"/>
+      <path d="M160 178 L485 102"/>
+      <path d="M280 178 L545 128"/>
+      <path d="M18 156 L574 156"/>
+      <path d="M110 132 L505 132"/>
+    </g>
+  </g>
+</svg>`);
 
 // ============== INPUT ==============
 function aDown(e){

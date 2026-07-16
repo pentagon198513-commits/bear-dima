@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="game.css" />
   <script src="sounds.js?v=4" defer></script>
   <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
-  <script src="multiplayer.js?v=4"></script>
+  <script src="multiplayer.js?v=5"></script>
   <style>
     .lobby { text-align:center; padding:16px; }
     .lobby h2 { font-family:'Bangers',sans-serif; font-size:clamp(1.4rem,5vw,2.2rem); color:var(--hw-red); margin:8px 0; }
@@ -177,8 +177,8 @@
     </div>
     <button class="lobby-btn" onclick="createRoom()">🏠 СОЗДАТЬ ИГРУ</button>
     <div class="or-divider">— ИЛИ —</div>
-    <p>Введи 4 цифры от друга:</p>
-    <input class="code-input" id="joinCode" maxlength="4" placeholder="1234" inputmode="numeric" pattern="[0-9]*" />
+    <p>Введи 6 цифр от друга:</p>
+    <input class="code-input" id="joinCode" maxlength="6" placeholder="123456" inputmode="numeric" pattern="[0-9]*" />
     <br /><button class="lobby-btn green" onclick="joinRoom()">🚀 ПОДКЛЮЧИТЬСЯ</button>
     <br /><button class="lobby-btn gray" onclick="startBot()">🤖 ИГРАТЬ С БОТОМ</button>
   </div>
@@ -745,7 +745,7 @@
     let joinRetry = null;
     async function joinRoom() {
       const code = document.getElementById('joinCode').value.trim();
-      if (!code || code.length < 4) { alert('Введи 4 цифры!'); return; }
+      if (!code || code.length !== 6) { alert('Введи 6 цифр!'); return; }
       resetGameState();
       BearMP.disconnect();
       try {
