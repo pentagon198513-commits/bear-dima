@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#101820" />
-  <title>МЕДВЕДЬ — Машинки и игры Димы</title>
+  <meta name="theme-color" content="#09111f" />
+  <title>МЕДВЕДЬ - Машинки и игры Димы</title>
 
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
@@ -15,19 +15,22 @@
 
   <style>
     :root {
-      --ink: #101820;
-      --paper: #fff8e8;
-      --muted: #667085;
-      --line: rgba(16, 24, 32, 0.14);
-      --hot: #ff5a1f;
-      --sun: #ffd23f;
-      --blue: #1473ff;
-      --sky: #d9f7ff;
-      --green: #29d33d;
-      --pink: #f04480;
-      --shadow: 0 18px 45px rgba(16, 24, 32, 0.16);
-      --hard-shadow: 0 8px 0 rgba(16, 24, 32, 0.22);
+      --ink: #09111f;
+      --text: #f8fbff;
+      --soft: rgba(248, 251, 255, 0.74);
+      --muted: #718198;
+      --line: rgba(255, 255, 255, 0.16);
+      --panel: rgba(255, 255, 255, 0.08);
+      --panel-strong: rgba(255, 255, 255, 0.13);
+      --yellow: #ffd84d;
+      --orange: #ff7a1a;
+      --red: #ff3f5f;
+      --blue: #23a7ff;
+      --cyan: #37e4ff;
+      --green: #58e56f;
+      --violet: #9a7cff;
       --radius: 8px;
+      --shadow: 0 24px 70px rgba(0, 0, 0, 0.38);
     }
 
     * { box-sizing: border-box; }
@@ -41,356 +44,551 @@
     body {
       margin: 0;
       min-height: 100vh;
-      color: var(--ink);
+      color: var(--text);
       font-family: Arial, "Segoe UI", system-ui, sans-serif;
       background:
-        linear-gradient(90deg, rgba(255, 210, 63, 0.16) 1px, transparent 1px),
-        linear-gradient(0deg, rgba(255, 210, 63, 0.16) 1px, transparent 1px),
-        linear-gradient(135deg, #fff3c7 0%, #ecfbff 52%, #fff8e8 100%);
-      background-size: 26px 26px, 26px 26px, auto;
+        radial-gradient(circle at 10% 5%, rgba(255, 216, 77, 0.32), transparent 28rem),
+        radial-gradient(circle at 92% 12%, rgba(35, 167, 255, 0.35), transparent 27rem),
+        radial-gradient(circle at 72% 88%, rgba(255, 63, 95, 0.24), transparent 25rem),
+        linear-gradient(135deg, #07101f 0%, #111827 48%, #07101f 100%);
       overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      background:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+      background-size: 42px 42px;
+      mask-image: linear-gradient(180deg, rgba(0,0,0,0.7), rgba(0,0,0,0.2));
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      background:
+        linear-gradient(115deg, transparent 0 36%, rgba(255,255,255,0.09) 37%, transparent 45%),
+        linear-gradient(245deg, transparent 0 50%, rgba(255,216,77,0.08) 51%, transparent 62%);
     }
 
     a { color: inherit; }
     button, input { font: inherit; }
-
-    .app {
-      min-height: 100vh;
-    }
+    img { max-width: 100%; }
 
     .topbar {
       position: sticky;
       top: 0;
-      z-index: 20;
-      border-bottom: 1px solid rgba(16, 24, 32, 0.1);
-      background: rgba(255, 248, 232, 0.86);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+      z-index: 30;
+      border-bottom: 1px solid var(--line);
+      background: rgba(7, 16, 31, 0.78);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
     }
 
     .topbar-inner {
-      width: min(1180px, calc(100% - 28px));
-      min-height: 62px;
+      width: min(1220px, calc(100% - 32px));
+      min-height: 72px;
       margin: 0 auto;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 16px;
+      gap: 18px;
     }
 
     .brand {
       display: inline-flex;
       align-items: center;
-      gap: 10px;
-      text-decoration: none;
+      gap: 12px;
       min-width: 0;
+      text-decoration: none;
     }
 
     .brand-mark {
-      width: 42px;
-      height: 42px;
+      width: 48px;
+      height: 48px;
       display: grid;
       place-items: center;
-      border: 2px solid var(--ink);
+      border: 1px solid rgba(255, 255, 255, 0.34);
       border-radius: var(--radius);
-      background: linear-gradient(135deg, #ffb86b, #ff5a1f);
-      box-shadow: 4px 4px 0 var(--ink);
-      font-size: 25px;
+      background:
+        radial-gradient(circle at 32% 24%, rgba(255,255,255,0.9), transparent 0.35rem),
+        linear-gradient(135deg, #ffb84d, #ff5a1f 48%, #9a4dff);
+      box-shadow: 0 12px 28px rgba(255, 122, 26, 0.28);
+      font-size: 28px;
       flex: 0 0 auto;
     }
 
-    .brand-text {
-      display: grid;
-      line-height: 1;
-    }
-
     .brand-name {
-      font-weight: 950;
+      display: block;
+      font-size: 1.1rem;
+      font-weight: 1000;
+      line-height: 1;
       letter-spacing: 0;
-      font-size: 1.05rem;
     }
 
     .brand-sub {
+      display: block;
       margin-top: 4px;
-      color: var(--muted);
-      font-size: 0.78rem;
+      color: var(--soft);
+      font-size: 0.8rem;
       font-weight: 800;
     }
 
     .nav-actions {
       display: flex;
       align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
       justify-content: flex-end;
+      gap: 9px;
+      flex-wrap: wrap;
     }
 
-    .chip {
-      border: 2px solid var(--ink);
+    .nav-btn,
+    .hero-btn,
+    .filter-btn,
+    .surprise-btn {
+      border: 1px solid rgba(255, 255, 255, 0.22);
       border-radius: var(--radius);
-      background: #fff;
-      color: var(--ink);
-      min-height: 42px;
-      padding: 9px 12px;
-      font-weight: 900;
+      background: rgba(255, 255, 255, 0.09);
+      color: var(--text);
       text-decoration: none;
-      box-shadow: 3px 3px 0 rgba(16, 24, 32, 0.2);
       cursor: pointer;
-      transition: transform 0.14s ease, box-shadow 0.14s ease, background 0.14s ease;
+      transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
     }
 
-    .chip:hover, .chip:focus-visible {
+    .nav-btn {
+      min-height: 42px;
+      padding: 10px 13px;
+      font-weight: 900;
+    }
+
+    .nav-btn:hover,
+    .nav-btn:focus-visible,
+    .hero-btn:hover,
+    .hero-btn:focus-visible,
+    .filter-btn:hover,
+    .filter-btn:focus-visible,
+    .surprise-btn:hover,
+    .surprise-btn:focus-visible {
       transform: translateY(-2px);
-      box-shadow: 5px 5px 0 rgba(16, 24, 32, 0.24);
+      border-color: rgba(255, 255, 255, 0.44);
+      background: rgba(255, 255, 255, 0.15);
       outline: none;
     }
 
-    .chip:active {
-      transform: translateY(1px);
-      box-shadow: 2px 2px 0 rgba(16, 24, 32, 0.2);
+    .page {
+      min-height: 100vh;
     }
 
     .hero {
-      width: min(1180px, calc(100% - 28px));
+      position: relative;
+      min-height: calc(100svh - 72px);
+      padding: 48px 0 36px;
+      overflow: hidden;
+    }
+
+    .hero-inner {
+      width: min(1220px, calc(100% - 32px));
+      min-height: calc(100svh - 156px);
       margin: 0 auto;
-      min-height: calc(100svh - 62px);
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(320px, 470px);
+      grid-template-columns: minmax(0, 0.95fr) minmax(360px, 1.05fr);
       align-items: center;
-      gap: 34px;
-      padding: 38px 0 34px;
+      gap: clamp(26px, 5vw, 58px);
     }
 
     .hero-copy {
+      position: relative;
+      z-index: 3;
       min-width: 0;
     }
 
     .eyebrow {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      margin: 0 0 14px;
-      border: 2px solid var(--ink);
-      border-radius: var(--radius);
-      background: #fff;
-      padding: 8px 11px;
-      font-weight: 950;
-      box-shadow: 4px 4px 0 rgba(16, 24, 32, 0.18);
+      gap: 9px;
+      min-height: 38px;
+      margin: 0 0 18px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 8px 13px;
+      color: var(--soft);
+      font-weight: 900;
+      box-shadow: 0 12px 34px rgba(0, 0, 0, 0.18);
     }
 
     .hero-title {
       margin: 0;
-      font-size: clamp(3.3rem, 12vw, 8.8rem);
-      line-height: 0.82;
+      max-width: 760px;
+      font-size: clamp(4.1rem, 12vw, 9.4rem);
+      line-height: 0.84;
       letter-spacing: 0;
       font-weight: 1000;
       text-transform: uppercase;
-      color: var(--ink);
-      text-shadow:
-        5px 5px 0 var(--sun),
-        10px 10px 0 var(--hot);
+    }
+
+    .hero-title span {
+      display: block;
+      color: transparent;
+      background:
+        linear-gradient(90deg, #fff 0%, #ffd84d 34%, #ff7a1a 62%, #37e4ff 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      filter: drop-shadow(0 18px 30px rgba(0,0,0,0.42));
+    }
+
+    .mobile-showcase {
+      display: none;
     }
 
     .hero-lead {
-      max-width: 650px;
-      margin: 28px 0 0;
-      font-size: clamp(1.05rem, 2.4vw, 1.45rem);
-      line-height: 1.35;
-      color: #344054;
-      font-weight: 850;
+      max-width: 660px;
+      margin: 24px 0 0;
+      color: var(--soft);
+      font-size: clamp(1.08rem, 2.4vw, 1.46rem);
+      line-height: 1.38;
+      font-weight: 800;
     }
 
     .hero-actions {
-      margin-top: 28px;
       display: flex;
-      gap: 12px;
       flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 30px;
     }
 
-    .primary-btn, .secondary-btn {
+    .hero-btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 9px;
-      min-height: 52px;
-      border-radius: var(--radius);
-      border: 3px solid var(--ink);
-      padding: 12px 16px;
-      font-weight: 950;
-      text-decoration: none;
-      cursor: pointer;
-      box-shadow: 5px 5px 0 var(--ink);
-      transition: transform 0.14s ease, box-shadow 0.14s ease;
+      gap: 10px;
+      min-height: 56px;
+      padding: 13px 18px;
+      font-weight: 1000;
     }
 
-    .primary-btn {
+    .hero-btn.primary {
+      border-color: rgba(255, 216, 77, 0.74);
+      color: #111827;
+      background: linear-gradient(135deg, #ffe66b, #ff8a22);
+      box-shadow: 0 18px 42px rgba(255, 122, 26, 0.28);
+    }
+
+    .hero-btn.secondary {
+      border-color: rgba(55, 228, 255, 0.48);
+      background: rgba(35, 167, 255, 0.16);
+      box-shadow: 0 18px 42px rgba(35, 167, 255, 0.16);
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      max-width: 560px;
+      margin-top: 28px;
+    }
+
+    .hero-stat {
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.08);
+      padding: 13px;
+      box-shadow: 0 15px 36px rgba(0, 0, 0, 0.18);
+    }
+
+    .hero-stat strong {
+      display: block;
+      font-size: 1.75rem;
+      line-height: 1;
       color: #fff;
-      background: linear-gradient(135deg, var(--blue), #00a7ff);
     }
 
-    .secondary-btn {
-      color: var(--ink);
-      background: #fff;
+    .hero-stat span {
+      display: block;
+      margin-top: 5px;
+      color: var(--soft);
+      font-size: 0.82rem;
+      font-weight: 850;
     }
 
-    .primary-btn:hover, .secondary-btn:hover,
-    .primary-btn:focus-visible, .secondary-btn:focus-visible {
-      transform: translateY(-2px);
-      box-shadow: 7px 7px 0 var(--ink);
-      outline: none;
-    }
-
-    .primary-btn:active, .secondary-btn:active {
-      transform: translateY(2px);
-      box-shadow: 2px 2px 0 var(--ink);
-    }
-
-    .hero-panel {
+    .showroom {
       position: relative;
-      min-height: 540px;
-      border: 4px solid var(--ink);
-      border-radius: var(--radius);
-      overflow: hidden;
-      background:
-        linear-gradient(180deg, rgba(255,255,255,0.86), rgba(255,255,255,0.58)),
-        linear-gradient(135deg, #e4fbff, #fff1b8);
-      box-shadow: var(--shadow), 9px 9px 0 var(--ink);
+      min-height: 610px;
       isolation: isolate;
     }
 
-    .track {
+    .showroom::before {
+      content: "";
       position: absolute;
-      left: -15%;
-      right: -20%;
-      bottom: 82px;
-      height: 112px;
-      transform: rotate(-7deg);
+      left: 4%;
+      right: 4%;
+      bottom: 64px;
+      height: 44%;
+      z-index: -1;
+      border-radius: 50% 50% 8px 8px;
       background:
-        repeating-linear-gradient(90deg, #fff 0 22px, #101820 22px 44px),
-        linear-gradient(#101820, #101820);
-      background-size: 100% 18px, 100% 100%;
-      background-repeat: repeat-x, no-repeat;
-      background-position: 0 22px, 0 0;
-      border-block: 5px solid var(--ink);
-      z-index: 1;
+        radial-gradient(ellipse at center, rgba(255, 216, 77, 0.46), transparent 58%),
+        radial-gradient(ellipse at center, rgba(55, 228, 255, 0.24), transparent 70%);
+      filter: blur(10px);
     }
 
-    .hero-car {
+    .garage-wall {
       position: absolute;
-      width: 78%;
-      left: 11%;
-      bottom: 118px;
-      z-index: 4;
-      filter: drop-shadow(0 24px 20px rgba(16, 24, 32, 0.28));
-      animation: carFloat 3.3s ease-in-out infinite;
+      inset: 0 0 118px;
+      z-index: -2;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(255,255,255,0.05) 1px, transparent 1px),
+        linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.03));
+      background-size: 34px 34px, 34px 34px, auto;
+      box-shadow: inset 0 0 80px rgba(0,0,0,0.42), var(--shadow);
     }
 
-    .hero-car img {
+    .garage-lights {
+      position: absolute;
+      left: 10%;
+      right: 10%;
+      top: 30px;
+      height: 14px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--yellow), var(--cyan), var(--red), var(--green));
+      box-shadow: 0 0 30px rgba(55, 228, 255, 0.44), 0 0 60px rgba(255, 216, 77, 0.24);
+    }
+
+    .main-car {
+      position: absolute;
+      left: 14%;
+      right: 8%;
+      bottom: 130px;
+      z-index: 5;
+      animation: carHover 3.5s ease-in-out infinite;
+      filter: drop-shadow(0 34px 28px rgba(0,0,0,0.52));
+    }
+
+    .main-car img {
       width: 100%;
-      aspect-ratio: 1 / 1;
+      aspect-ratio: 16 / 10;
       object-fit: cover;
-      border: 4px solid var(--ink);
-      border-radius: var(--radius);
-      background: #fff;
-    }
-
-    .hero-badge {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      right: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      z-index: 5;
-    }
-
-    .hero-badge span {
-      border: 3px solid var(--ink);
-      border-radius: var(--radius);
-      background: #fff;
-      padding: 8px 10px;
-      font-weight: 950;
-      box-shadow: 4px 4px 0 rgba(16, 24, 32, 0.2);
-    }
-
-    .mini-stats {
-      position: absolute;
-      left: 20px;
-      right: 20px;
-      bottom: 18px;
-      z-index: 5;
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-    }
-
-    .mini-stat {
-      border: 3px solid var(--ink);
-      border-radius: var(--radius);
-      background: #fff;
-      padding: 12px 10px;
-      text-align: center;
-      box-shadow: 4px 4px 0 rgba(16, 24, 32, 0.18);
-    }
-
-    .mini-stat strong {
       display: block;
-      font-size: 1.35rem;
-      line-height: 1;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: var(--radius);
+      box-shadow: 0 26px 70px rgba(0,0,0,0.36);
     }
 
-    .mini-stat span {
+    .floating-car {
+      position: absolute;
+      z-index: 4;
+      width: 34%;
+      min-width: 155px;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 24px 48px rgba(0,0,0,0.32);
+    }
+
+    .floating-car img {
       display: block;
-      margin-top: 5px;
-      color: var(--muted);
-      font-size: 0.75rem;
-      font-weight: 900;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
     }
 
-    @keyframes carFloat {
-      0%, 100% { transform: translateY(0) rotate(-2deg); }
-      50% { transform: translateY(-10px) rotate(1.5deg); }
+    .floating-car.one {
+      top: 116px;
+      left: 0;
+      transform: rotate(-9deg);
     }
 
-    .section {
-      width: min(1180px, calc(100% - 28px));
+    .floating-car.two {
+      top: 82px;
+      right: 0;
+      transform: rotate(8deg);
+    }
+
+    .speed-label {
+      position: absolute;
+      right: 5%;
+      bottom: 340px;
+      z-index: 8;
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      border-radius: var(--radius);
+      background: rgba(9, 17, 31, 0.74);
+      padding: 12px 14px;
+      font-weight: 1000;
+      box-shadow: 0 18px 36px rgba(0,0,0,0.28);
+    }
+
+    .road {
+      position: absolute;
+      left: -12%;
+      right: -12%;
+      bottom: 0;
+      height: 190px;
+      z-index: 2;
+      transform: perspective(520px) rotateX(58deg);
+      transform-origin: bottom;
+      background:
+        repeating-linear-gradient(90deg, transparent 0 70px, rgba(255,255,255,0.78) 70px 120px, transparent 120px 190px),
+        linear-gradient(90deg, transparent 0 47%, rgba(255,216,77,0.9) 47% 53%, transparent 53%),
+        linear-gradient(180deg, #293241, #101828);
+      border-top: 3px solid rgba(255, 255, 255, 0.22);
+      box-shadow: 0 -24px 70px rgba(0,0,0,0.28);
+      animation: roadMove 1.5s linear infinite;
+    }
+
+    @keyframes carHover {
+      0%, 100% { transform: translateY(0) rotate(-1deg); }
+      50% { transform: translateY(-12px) rotate(1deg); }
+    }
+
+    @keyframes roadMove {
+      from { background-position: 0 0, 0 0, 0 0; }
+      to { background-position: 190px 0, 0 0, 0 0; }
+    }
+
+    .band {
+      position: relative;
+      padding: 56px 0;
+    }
+
+    .band.light {
+      color: #101828;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.96), rgba(237, 249, 255, 0.96)),
+        radial-gradient(circle at 12% 20%, rgba(255,216,77,0.34), transparent 20rem);
+    }
+
+    .band.dark {
+      background: rgba(0, 0, 0, 0.12);
+    }
+
+    .wrap {
+      width: min(1220px, calc(100% - 32px));
       margin: 0 auto;
-      padding: 34px 0;
     }
 
     .section-head {
       display: flex;
       align-items: end;
       justify-content: space-between;
-      gap: 18px;
-      margin-bottom: 18px;
+      gap: 22px;
+      margin-bottom: 22px;
     }
+
+    .section-kicker {
+      margin: 0 0 8px;
+      color: var(--orange);
+      font-weight: 1000;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.76rem;
+    }
+
+    .band.dark .section-kicker { color: var(--yellow); }
 
     .section-title {
       margin: 0;
-      font-size: clamp(2rem, 5vw, 3.5rem);
-      line-height: 0.95;
+      font-size: clamp(2rem, 5vw, 4.4rem);
+      line-height: 0.92;
       font-weight: 1000;
+      letter-spacing: 0;
       text-transform: uppercase;
-      text-shadow: 3px 3px 0 #fff, 6px 6px 0 rgba(255, 90, 31, 0.26);
     }
 
     .section-note {
-      max-width: 450px;
+      max-width: 510px;
       margin: 0;
-      color: #475467;
-      line-height: 1.35;
+      color: #526174;
       font-weight: 800;
+      line-height: 1.35;
     }
 
-    .control-deck {
+    .band.dark .section-note {
+      color: var(--soft);
+    }
+
+    .game-strip {
       display: grid;
-      grid-template-columns: 1fr auto;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 12px;
-      margin: 18px 0 20px;
+    }
+
+    .game-tile {
+      position: relative;
+      min-height: 190px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.26);
+      border-radius: var(--radius);
+      padding: 16px;
+      color: #fff;
+      text-decoration: none;
+      background: var(--game-bg);
+      box-shadow: 0 22px 46px rgba(0,0,0,0.24);
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .game-tile::after {
+      content: "";
+      position: absolute;
+      inset: auto -25% -35% -25%;
+      height: 70%;
+      background: radial-gradient(ellipse at center, rgba(255,255,255,0.36), transparent 62%);
+    }
+
+    .game-tile:hover,
+    .game-tile:focus-visible {
+      transform: translateY(-6px);
+      box-shadow: 0 30px 62px rgba(0,0,0,0.32);
+      outline: none;
+    }
+
+    .game-icon {
+      position: relative;
+      z-index: 2;
+      font-size: 3.6rem;
+      filter: drop-shadow(0 14px 18px rgba(0,0,0,0.26));
+    }
+
+    .game-tile h3,
+    .game-tile p {
+      position: relative;
+      z-index: 2;
+      margin: 0;
+    }
+
+    .game-tile h3 {
+      font-size: 1.04rem;
+      line-height: 1.05;
+      font-weight: 1000;
+      text-transform: uppercase;
+    }
+
+    .game-tile p {
+      margin-top: 7px;
+      color: rgba(255,255,255,0.82);
+      font-size: 0.85rem;
+      font-weight: 800;
+      line-height: 1.26;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) auto;
       align-items: center;
+      gap: 14px;
+      margin: 24px 0;
     }
 
     .search {
@@ -399,533 +597,674 @@
 
     .search input {
       width: 100%;
-      min-height: 54px;
-      border: 3px solid var(--ink);
+      min-height: 58px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
       border-radius: var(--radius);
-      background: #fff;
-      padding: 12px 14px 12px 42px;
-      font-weight: 850;
-      box-shadow: 5px 5px 0 rgba(16, 24, 32, 0.16);
+      background: rgba(255, 255, 255, 0.11);
+      color: var(--text);
+      padding: 13px 16px 13px 46px;
       outline: none;
+      font-weight: 850;
+      box-shadow: 0 18px 44px rgba(0,0,0,0.16);
+    }
+
+    .search input::placeholder {
+      color: rgba(248, 251, 255, 0.56);
     }
 
     .search input:focus {
-      box-shadow: 7px 7px 0 var(--blue);
+      border-color: rgba(55, 228, 255, 0.7);
+      box-shadow: 0 0 0 4px rgba(55, 228, 255, 0.14), 0 18px 44px rgba(0,0,0,0.16);
     }
 
-    .search-icon {
+    .search span {
       position: absolute;
-      left: 14px;
+      left: 16px;
       top: 50%;
       transform: translateY(-50%);
       pointer-events: none;
-      font-size: 1.15rem;
+      font-size: 1.16rem;
     }
 
-    .tabs {
+    .filters {
       display: flex;
       flex-wrap: wrap;
       justify-content: flex-end;
       gap: 8px;
     }
 
-    .tab {
+    .filter-btn {
       min-height: 48px;
-      border: 3px solid var(--ink);
-      border-radius: var(--radius);
-      padding: 10px 13px;
-      background: #fff;
-      color: var(--ink);
+      padding: 10px 14px;
       font-weight: 950;
-      cursor: pointer;
-      box-shadow: 4px 4px 0 rgba(16, 24, 32, 0.18);
-      transition: transform 0.14s ease, background 0.14s ease, box-shadow 0.14s ease;
     }
 
-    .tab[aria-selected="true"] {
-      background: var(--sun);
-      box-shadow: 4px 4px 0 var(--ink);
+    .filter-btn[aria-selected="true"] {
+      color: #101828;
+      border-color: transparent;
+      background: linear-gradient(135deg, #ffe66b, #ff8a22);
+      box-shadow: 0 16px 34px rgba(255, 122, 26, 0.24);
     }
 
-    .tab:hover, .tab:focus-visible {
-      transform: translateY(-2px);
-      outline: none;
-    }
-
-    .grid {
+    .collection-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 18px;
       align-items: stretch;
     }
 
-    .item {
+    .car-card {
       position: relative;
       display: flex;
       flex-direction: column;
       min-height: 100%;
-      border: 3px solid var(--ink);
-      border-radius: var(--radius);
-      background: #fff;
       overflow: hidden;
-      color: var(--ink);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.07)),
+        rgba(255,255,255,0.08);
+      color: #fff;
       text-decoration: none;
-      box-shadow: 6px 6px 0 rgba(16, 24, 32, 0.22);
-      transition: transform 0.16s ease, box-shadow 0.16s ease;
+      box-shadow: 0 24px 56px rgba(0,0,0,0.26);
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
     }
 
-    .item:hover, .item:focus-visible {
-      transform: translateY(-5px);
-      box-shadow: 9px 9px 0 var(--ink);
+    .car-card:hover,
+    .car-card:focus-visible {
+      transform: translateY(-7px);
+      border-color: rgba(255, 255, 255, 0.38);
+      box-shadow: 0 34px 74px rgba(0,0,0,0.36);
       outline: none;
     }
 
-    .item-media {
+    .car-media {
       position: relative;
-      aspect-ratio: 1 / 1;
-      background: var(--item-bg, linear-gradient(135deg, #fff, #e4fbff));
+      aspect-ratio: 16 / 12;
       overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 12%, rgba(255,255,255,0.28), transparent 48%),
+        linear-gradient(135deg, rgba(35,167,255,0.2), rgba(255,122,26,0.18));
     }
 
-    .item-media img {
+    .car-media::after {
+      content: "";
+      position: absolute;
+      left: 8%;
+      right: 8%;
+      bottom: 9%;
+      height: 22%;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.35);
+      filter: blur(18px);
+    }
+
+    .car-media img {
+      position: relative;
+      z-index: 2;
       width: 100%;
       height: 100%;
       object-fit: cover;
       display: block;
-      transition: transform 0.22s ease;
+      transition: transform 0.24s ease;
     }
 
-    .item:hover .item-media img {
-      transform: scale(1.05);
+    .car-card:hover .car-media img {
+      transform: scale(1.06);
     }
 
-    .game-emoji {
-      min-height: 100%;
-      display: grid;
-      place-items: center;
-      font-size: clamp(4rem, 18vw, 7rem);
-      filter: drop-shadow(0 10px 10px rgba(16, 24, 32, 0.24));
-    }
-
-    .item-tag {
+    .car-badge {
       position: absolute;
-      top: 10px;
-      left: 10px;
-      max-width: calc(100% - 20px);
-      border: 2px solid var(--ink);
-      border-radius: var(--radius);
-      background: #fff;
-      padding: 6px 8px;
+      z-index: 4;
+      top: 12px;
+      left: 12px;
+      max-width: calc(100% - 24px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 999px;
+      background: rgba(9, 17, 31, 0.76);
+      padding: 7px 10px;
+      color: #fff;
       font-size: 0.78rem;
       font-weight: 950;
-      box-shadow: 3px 3px 0 rgba(16, 24, 32, 0.18);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      backdrop-filter: blur(10px);
     }
 
-    .item-body {
+    .car-body {
       display: flex;
       flex-direction: column;
-      gap: 9px;
+      gap: 10px;
       flex: 1;
-      padding: 13px;
+      padding: 16px;
     }
 
-    .item-title {
+    .car-name {
       margin: 0;
-      font-size: 1.18rem;
-      line-height: 1.06;
+      font-size: 1.26rem;
+      line-height: 1.02;
       font-weight: 1000;
       text-transform: uppercase;
     }
 
-    .item-desc {
+    .car-desc {
       margin: 0;
-      color: var(--muted);
-      line-height: 1.28;
+      color: var(--soft);
+      line-height: 1.3;
       font-weight: 800;
       font-size: 0.92rem;
     }
 
-    .item-action {
+    .store-line {
       margin-top: auto;
-      display: inline-flex;
+      display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 7px;
-      min-height: 42px;
-      border: 2px solid var(--ink);
+      justify-content: space-between;
+      gap: 10px;
+      min-height: 46px;
       border-radius: var(--radius);
-      background: var(--action-bg, linear-gradient(135deg, var(--hot), var(--pink)));
-      color: #fff;
-      font-weight: 950;
-      box-shadow: 3px 3px 0 rgba(16, 24, 32, 0.2);
+      background: linear-gradient(135deg, rgba(255,216,77,0.96), rgba(255,122,26,0.96));
+      color: #101828;
+      padding: 11px 12px;
+      font-weight: 1000;
     }
 
-    .game-card .item-action {
-      --action-bg: linear-gradient(135deg, var(--blue), #00a7ff);
+    .store-line span:last-child {
+      font-size: 1.12rem;
     }
 
     .empty {
       display: none;
-      border: 3px dashed var(--ink);
+      border: 1px dashed rgba(255,255,255,0.3);
       border-radius: var(--radius);
-      background: rgba(255,255,255,0.62);
+      background: rgba(255,255,255,0.08);
       padding: 28px;
+      color: var(--soft);
       text-align: center;
       font-weight: 900;
-      color: #475467;
     }
 
     .empty.show { display: block; }
 
-    .featured {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(280px, 420px);
-      gap: 16px;
-      align-items: stretch;
+    .garage-strip {
+      position: relative;
+      overflow: hidden;
+      border-block: 1px solid rgba(255,255,255,0.13);
+      background: rgba(0,0,0,0.22);
+      padding: 18px 0;
     }
 
-    .feature-main {
-      border: 4px solid var(--ink);
+    .garage-track {
+      display: flex;
+      gap: 14px;
+      width: max-content;
+      animation: shelfMove 34s linear infinite;
+    }
+
+    .garage-mini {
+      width: 180px;
+      height: 122px;
       border-radius: var(--radius);
-      background:
-        linear-gradient(135deg, rgba(20, 115, 255, 0.16), rgba(255, 210, 63, 0.3)),
-        #fff;
-      padding: clamp(18px, 4vw, 28px);
-      box-shadow: var(--hard-shadow);
-      display: grid;
-      align-content: center;
-      min-height: 260px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.08);
+      box-shadow: 0 16px 34px rgba(0,0,0,0.24);
     }
 
-    .feature-title {
+    .garage-mini img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    @keyframes shelfMove {
+      from { transform: translateX(0); }
+      to { transform: translateX(-50%); }
+    }
+
+    .final-band {
+      padding: 58px 0 66px;
+      color: #101828;
+      background:
+        linear-gradient(135deg, rgba(255,216,77,0.96), rgba(255,255,255,0.96) 46%, rgba(214,248,255,0.96));
+    }
+
+    .final-inner {
+      width: min(1220px, calc(100% - 32px));
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 22px;
+      align-items: center;
+    }
+
+    .final-inner h2 {
       margin: 0;
-      font-size: clamp(2rem, 6vw, 4rem);
-      line-height: 0.95;
+      font-size: clamp(2rem, 5vw, 4rem);
+      line-height: 0.94;
       text-transform: uppercase;
       font-weight: 1000;
     }
 
-    .feature-copy {
-      margin: 14px 0 0;
-      color: #344054;
-      font-weight: 850;
+    .final-inner p {
+      max-width: 680px;
+      margin: 12px 0 0;
+      color: #4c5b70;
       line-height: 1.35;
-      max-width: 650px;
+      font-weight: 850;
     }
 
-    .feature-side {
-      display: grid;
-      gap: 16px;
-    }
-
-    .quick-card {
-      border: 3px solid var(--ink);
-      border-radius: var(--radius);
-      background: #fff;
-      padding: 16px;
-      box-shadow: 5px 5px 0 rgba(16, 24, 32, 0.2);
-    }
-
-    .quick-card h3 {
-      margin: 0 0 8px;
-      font-size: 1.1rem;
-      text-transform: uppercase;
-    }
-
-    .quick-card p {
-      margin: 0;
-      color: var(--muted);
-      line-height: 1.32;
-      font-weight: 800;
+    .surprise-btn {
+      min-height: 58px;
+      padding: 14px 18px;
+      color: #fff;
+      border-color: transparent;
+      background: linear-gradient(135deg, #101828, #263244);
+      font-weight: 1000;
+      box-shadow: 0 18px 40px rgba(16,24,40,0.22);
     }
 
     .footer {
-      width: min(1180px, calc(100% - 28px));
-      margin: 20px auto 0;
-      padding: 30px 0 42px;
-      color: #475467;
-      font-weight: 850;
+      width: min(1220px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 26px 0 38px;
+      color: var(--soft);
       text-align: center;
+      font-weight: 850;
     }
 
-    @media (max-width: 880px) {
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+      }
+    }
+
+    @media (max-width: 980px) {
       .hero {
         min-height: auto;
-        grid-template-columns: 1fr;
-        padding-top: 26px;
       }
 
-      .hero-panel {
-        min-height: 440px;
-      }
-
-      .hero-car {
-        width: 70%;
-        left: 15%;
-      }
-
-      .control-deck {
+      .hero-inner {
+        min-height: auto;
         grid-template-columns: 1fr;
       }
 
-      .tabs {
+      .showroom {
+        min-height: 520px;
+      }
+
+      .game-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .controls,
+      .final-inner {
+        grid-template-columns: 1fr;
+      }
+
+      .filters {
         justify-content: stretch;
       }
 
-      .tab {
+      .filter-btn {
         flex: 1 1 auto;
-      }
-
-      .featured {
-        grid-template-columns: 1fr;
       }
     }
 
-    @media (max-width: 560px) {
+    @media (max-width: 640px) {
+      .topbar-inner,
+      .wrap,
+      .final-inner {
+        width: min(100% - 20px, 1220px);
+      }
+
       .topbar-inner {
-        width: min(100% - 18px, 1180px);
+        min-height: 66px;
       }
 
       .brand-sub {
         display: none;
       }
 
-      .nav-actions .chip {
-        min-height: 38px;
-        padding: 8px 9px;
-        font-size: 0.85rem;
+      .nav-actions {
+        gap: 6px;
       }
 
-      .hero, .section, .footer {
-        width: min(100% - 18px, 1180px);
+      .nav-btn {
+        min-height: 38px;
+        padding: 8px 9px;
+        font-size: 0.84rem;
+      }
+
+      .hero {
+        padding-top: 30px;
+      }
+
+      .hero-inner {
+        width: min(100% - 20px, 1220px);
       }
 
       .hero-title {
-        font-size: clamp(3rem, 18vw, 5.6rem);
+        font-size: clamp(3.5rem, 18vw, 5.8rem);
       }
 
-      .hero-panel {
-        min-height: 380px;
+      .mobile-showcase {
+        display: grid;
+        grid-template-columns: 1.35fr 0.9fr;
+        gap: 8px;
+        margin: 16px 0 18px;
       }
 
-      .hero-badge {
-        align-items: start;
-        flex-direction: column;
+      .mobile-showcase img {
+        width: 100%;
+        height: 100%;
+        min-height: 104px;
+        object-fit: cover;
+        display: block;
+        border: 1px solid rgba(255, 255, 255, 0.28);
+        border-radius: var(--radius);
+        box-shadow: 0 18px 36px rgba(0,0,0,0.28);
       }
 
-      .mini-stats {
+      .mobile-showcase-stack {
+        display: grid;
+        gap: 8px;
+      }
+
+      .mobile-showcase-stack img {
+        min-height: 48px;
+      }
+
+      .hero-lead {
+        margin-top: 0;
+      }
+
+      .hero-stats {
         grid-template-columns: 1fr;
       }
 
-      .grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
+      .showroom {
+        min-height: 420px;
       }
 
-      .item-title {
-        font-size: 0.98rem;
+      .garage-wall {
+        bottom: 82px;
       }
 
-      .item-desc {
-        display: none;
+      .floating-car {
+        width: 38%;
+        min-width: 118px;
       }
 
-      .item-body {
-        padding: 10px;
+      .floating-car.one {
+        top: 96px;
       }
 
-      .item-action {
-        min-height: 38px;
+      .floating-car.two {
+        top: 78px;
+      }
+
+      .main-car {
+        left: 8%;
+        right: 8%;
+        bottom: 106px;
+      }
+
+      .speed-label {
+        right: 4%;
+        bottom: 282px;
+        padding: 9px 10px;
         font-size: 0.84rem;
+      }
+
+      .road {
+        height: 145px;
+      }
+
+      .band {
+        padding: 42px 0;
+      }
+
+      .section-head {
+        display: block;
+      }
+
+      .section-note {
+        margin-top: 10px;
+      }
+
+      .game-strip {
+        grid-template-columns: 1fr;
+      }
+
+      .game-tile {
+        min-height: 142px;
+      }
+
+      .collection-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .garage-mini {
+        width: 142px;
+        height: 98px;
       }
     }
   </style>
 </head>
 <body>
-  <div class="app">
+  <div class="page">
     <header class="topbar">
       <div class="topbar-inner">
         <a class="brand" href="#top" aria-label="На главный экран">
           <span class="brand-mark">🐻</span>
-          <span class="brand-text">
+          <span>
             <span class="brand-name">МЕДВЕДЬ</span>
-            <span class="brand-sub">игры и машинки Димы</span>
+            <span class="brand-sub">гараж, игры и машинки Димы</span>
           </span>
         </a>
         <nav class="nav-actions" aria-label="Быстрые переходы">
-          <a class="chip" href="#catalog">Каталог</a>
-          <a class="chip" href="#games">Игры</a>
-          <button class="chip" id="randomBtn" type="button">Случайно</button>
+          <a class="nav-btn" href="#games">Игры</a>
+          <a class="nav-btn" href="#catalog">Машинки</a>
+          <button class="nav-btn" id="randomBtn" type="button">Случайно</button>
         </nav>
       </div>
     </header>
 
     <main id="top">
       <section class="hero" aria-labelledby="heroTitle">
-        <div class="hero-copy">
-          <p class="eyebrow">🏁 гараж, игры и быстрые ссылки в магазины</p>
-          <h1 class="hero-title" id="heroTitle">Медведь</h1>
-          <p class="hero-lead">
-            Современный экран для Димы: сначала видно любимые игры, потом машинки Hot Wheels и монстр-траки.
-            Нажал на модель — сразу открылся магазин с ассортиментом.
-          </p>
-          <div class="hero-actions">
-            <a class="primary-btn" href="#catalog">🏎️ Смотреть машинки</a>
-            <a class="secondary-btn" href="#games">🎮 Играть</a>
-          </div>
-        </div>
-
-        <div class="hero-panel" aria-label="Главная машинка">
-          <div class="hero-badge">
-            <span>🔥 новый гараж</span>
-            <span>15 моделей</span>
-          </div>
-          <div class="hero-car">
-            <img src="img/cars/grave_digger.jpg" alt="Monster Truck Grave Digger" />
-          </div>
-          <div class="track" aria-hidden="true"></div>
-          <div class="mini-stats" aria-label="Статистика сайта">
-            <div class="mini-stat"><strong>10</strong><span>игр</span></div>
-            <div class="mini-stat"><strong>7</strong><span>Hot Wheels</span></div>
-            <div class="mini-stat"><strong>8</strong><span>монстр-траков</span></div>
-          </div>
-        </div>
-      </section>
-
-      <section class="section" aria-labelledby="featureTitle">
-        <div class="featured">
-          <div class="feature-main">
-            <h2 class="feature-title" id="featureTitle">Заходить стало интереснее</h2>
-            <p class="feature-copy">
-              Главная страница больше не ждёт внешние библиотеки. Она загружается сама, быстро показывает карточки,
-              умеет искать модели и сохраняет прямые переходы в магазины.
+        <div class="hero-inner">
+          <div class="hero-copy">
+            <p class="eyebrow">🏁 домашний гараж с быстрыми покупками</p>
+            <h1 class="hero-title" id="heroTitle"><span>МЕДВЕДЬ</span></h1>
+            <div class="mobile-showcase" aria-hidden="true">
+              <img src="img/cars/grave_digger.jpg" alt="" />
+              <span class="mobile-showcase-stack">
+                <img src="img/cars/bone_shaker.jpg" alt="" />
+                <img src="img/cars/megalodon.jpg" alt="" />
+              </span>
+            </div>
+            <p class="hero-lead">
+              Главная теперь выглядит как яркая витрина: игры запускаются сразу, машинки показываются крупно,
+              а ссылки на магазины открывают ассортимент нужной модели.
             </p>
+            <div class="hero-actions">
+              <a class="hero-btn primary" href="#catalog">🏎️ Смотреть коллекцию</a>
+              <a class="hero-btn secondary" href="#games">🎮 Запустить игру</a>
+            </div>
+            <div class="hero-stats" aria-label="Что есть на сайте">
+              <div class="hero-stat"><strong>10</strong><span>игр для быстрого старта</span></div>
+              <div class="hero-stat"><strong>15</strong><span>карточек машинок</span></div>
+              <div class="hero-stat"><strong>3</strong><span>магазина с ассортиментом</span></div>
+            </div>
           </div>
-          <div class="feature-side">
-            <div class="quick-card">
-              <h3>🔎 Поиск</h3>
-              <p>Можно быстро найти Bone Shaker, Bigfoot, рыбалку или любую игру.</p>
+
+          <div class="showroom" aria-label="Витрина машинок">
+            <div class="garage-wall"></div>
+            <div class="garage-lights"></div>
+            <div class="floating-car one">
+              <img src="img/cars/bone_shaker.jpg" alt="Bone Shaker" />
             </div>
-            <div class="quick-card">
-              <h3>🛒 Магазины</h3>
-              <p>Карточки машинок ведут в Ozon, Wildberries или Яндекс Маркет.</p>
+            <div class="floating-car two">
+              <img src="img/cars/megalodon.jpg" alt="Megalodon" />
             </div>
+            <div class="speed-label">⚡ витрина Димы</div>
+            <div class="main-car">
+              <img src="img/cars/grave_digger.jpg" alt="Monster Truck Grave Digger" />
+            </div>
+            <div class="road" aria-hidden="true"></div>
           </div>
         </div>
       </section>
 
-      <section class="section" id="catalog" aria-labelledby="catalogTitle">
-        <div class="section-head">
-          <div>
-            <h2 class="section-title" id="catalogTitle">Каталог</h2>
-            <p class="section-note">Фильтруй игры и машинки. Карточки машинок открывают магазины в новой вкладке.</p>
+      <section class="band light" id="games" aria-labelledby="gamesTitle">
+        <div class="wrap">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">быстрый запуск</p>
+              <h2 class="section-title" id="gamesTitle">Игровая панель</h2>
+            </div>
+            <p class="section-note">Крупные яркие плитки, чтобы ребёнок сразу видел любимую игру и нажимал без лишних поисков.</p>
           </div>
+          <div class="game-strip" id="gameGrid"></div>
         </div>
-
-        <div class="control-deck">
-          <label class="search" for="searchInput">
-            <span class="search-icon">🔎</span>
-            <input id="searchInput" type="search" placeholder="Найти машинку или игру..." autocomplete="off" />
-          </label>
-          <div class="tabs" role="tablist" aria-label="Фильтр каталога">
-            <button class="tab" type="button" data-filter="all" aria-selected="true">Все</button>
-            <button class="tab" type="button" data-filter="games" aria-selected="false">Игры</button>
-            <button class="tab" type="button" data-filter="hotwheels" aria-selected="false">Hot Wheels</button>
-            <button class="tab" type="button" data-filter="monster" aria-selected="false">Монстр траки</button>
-          </div>
-        </div>
-
-        <div class="grid" id="catalogGrid"></div>
-        <div class="empty" id="emptyState">Ничего не нашлось. Попробуй другое слово.</div>
       </section>
 
-      <section class="section" id="games" aria-labelledby="gamesTitle">
-        <div class="section-head">
-          <div>
-            <h2 class="section-title" id="gamesTitle">Быстрый старт</h2>
-            <p class="section-note">Самые заметные игры вынесены отдельно, чтобы ребёнок мог быстро начать.</p>
+      <div class="garage-strip" aria-hidden="true">
+        <div class="garage-track" id="garageTrack"></div>
+      </div>
+
+      <section class="band dark" id="catalog" aria-labelledby="catalogTitle">
+        <div class="wrap">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">витрина коллекции</p>
+              <h2 class="section-title" id="catalogTitle">Машинки и игры</h2>
+            </div>
+            <p class="section-note">Фильтры и поиск остались. Карточки машинок ведут в магазины, карточки игр запускают игры.</p>
           </div>
+
+          <div class="controls">
+            <label class="search" for="searchInput">
+              <span>🔎</span>
+              <input id="searchInput" type="search" placeholder="Найти Bone Shaker, Bigfoot, рыбалку..." autocomplete="off" />
+            </label>
+            <div class="filters" role="tablist" aria-label="Фильтр каталога">
+              <button class="filter-btn" type="button" data-filter="all" aria-selected="true">Все</button>
+              <button class="filter-btn" type="button" data-filter="games" aria-selected="false">Игры</button>
+              <button class="filter-btn" type="button" data-filter="hotwheels" aria-selected="false">Hot Wheels</button>
+              <button class="filter-btn" type="button" data-filter="monster" aria-selected="false">Монстр-траки</button>
+            </div>
+          </div>
+
+          <div class="collection-grid" id="catalogGrid"></div>
+          <div class="empty" id="emptyState">Ничего не нашлось. Попробуй другое слово.</div>
         </div>
-        <div class="grid" id="gameGrid"></div>
+      </section>
+
+      <section class="final-band">
+        <div class="final-inner">
+          <div>
+            <h2>Каждый заход как в гараж с новинками</h2>
+            <p>Дизайн стал более визуальным: фото крупнее, движение заметнее, кнопки понятнее, а магазины сохранены для покупки нужной модели.</p>
+          </div>
+          <button class="surprise-btn" id="surpriseBtn" type="button">🎲 Открыть случайное</button>
+        </div>
       </section>
     </main>
 
     <footer class="footer">
-      🐻 Сделано для Димы. Машинки можно смотреть, сравнивать и открывать в магазинах.
+      🐻 Сделано для Димы. Играй, смотри машинки и открывай магазины с ассортиментом.
     </footer>
   </div>
 
   <script>
     const games = [
-      { id: 'hunt', type: 'game', name: 'ОХОТА НА УТОК', desc: 'Двустволка, утки и раунды', emoji: '🦆', href: 'games/hunt.html', bg: 'linear-gradient(135deg,#516b22,#b48722)' },
-      { id: 'fishing', type: 'game', name: 'РЫБАЛКА', desc: 'Забрасывай удочку и тяни рыбу', emoji: '🎣', href: 'games/fishing.html', bg: 'linear-gradient(135deg,#1976d2,#7bdcff)' },
-      { id: 'snake', type: 'game', name: 'ЗМЕЙКА', desc: 'Машинка ест колёса', emoji: '🐍', href: 'games/snake.html', bg: 'linear-gradient(135deg,#1473ff,#00c6ff)' },
-      { id: 'memory', type: 'game', name: 'НАЙДИ ПАРЫ', desc: 'Переворачивай карточки', emoji: '🃏', href: 'games/memory.html', bg: 'linear-gradient(135deg,#ff5a1f,#f04480)' },
-      { id: 'maze', type: 'game', name: 'ЛАБИРИНТ', desc: 'Веди мишку до финиша', emoji: '🌀', href: 'games/maze.html', bg: 'linear-gradient(135deg,#29d33d,#087f23)' },
-      { id: 'bubble', type: 'game', name: 'ЛОПНИ ШАРИКИ', desc: 'Лопай шарики на скорость', emoji: '🎈', href: 'games/bubble.html', bg: 'linear-gradient(135deg,#ff1fd2,#ffd23f)' },
-      { id: 'puzzle', type: 'game', name: 'СОБЕРИ ПАЗЛ', desc: 'Собери картинку машинки', emoji: '🧩', href: 'games/puzzle.html', bg: 'linear-gradient(135deg,#b24592,#f15f79)' },
-      { id: 'tictactoe', type: 'game', name: 'КРЕСТИКИ-НОЛИКИ', desc: 'Можно играть вдвоём', emoji: '❌', href: 'games/tictactoe.html', bg: 'linear-gradient(135deg,#ff8a00,#ffd23f)' },
-      { id: 'battleship', type: 'game', name: 'МОРСКОЙ БОЙ', desc: 'Корабли, выстрелы и бот', emoji: '🚢', href: 'games/battleship.html', bg: 'linear-gradient(135deg,#0a2f6d,#1473ff)' },
-      { id: 'chess', type: 'game', name: 'ШАХМАТЫ', desc: 'Шахматы с ботом и другом', emoji: '♟', href: 'games/chess.html', bg: 'linear-gradient(135deg,#5d3a1a,#b58863)' }
+      { id: 'hunt', type: 'game', name: 'ОХОТА НА УТОК', desc: 'Двустволка, утки и раунды', emoji: '🦆', href: 'games/hunt.html', bg: 'linear-gradient(135deg,#46651d,#d39b26)' },
+      { id: 'fishing', type: 'game', name: 'РЫБАЛКА', desc: 'Забрасывай удочку и тяни рыбу', emoji: '🎣', href: 'games/fishing.html', bg: 'linear-gradient(135deg,#1167c8,#37e4ff)' },
+      { id: 'snake', type: 'game', name: 'ЗМЕЙКА', desc: 'Машинка ест колёса', emoji: '🐍', href: 'games/snake.html', bg: 'linear-gradient(135deg,#164cff,#31d86b)' },
+      { id: 'memory', type: 'game', name: 'НАЙДИ ПАРЫ', desc: 'Переворачивай карточки', emoji: '🃏', href: 'games/memory.html', bg: 'linear-gradient(135deg,#ff3f5f,#ff8a22)' },
+      { id: 'maze', type: 'game', name: 'ЛАБИРИНТ', desc: 'Веди мишку до финиша', emoji: '🌀', href: 'games/maze.html', bg: 'linear-gradient(135deg,#16a34a,#37e4ff)' },
+      { id: 'bubble', type: 'game', name: 'ЛОПНИ ШАРИКИ', desc: 'Лопай шарики на скорость', emoji: '🎈', href: 'games/bubble.html', bg: 'linear-gradient(135deg,#f72585,#ffd84d)' },
+      { id: 'puzzle', type: 'game', name: 'СОБЕРИ ПАЗЛ', desc: 'Собери картинку машинки', emoji: '🧩', href: 'games/puzzle.html', bg: 'linear-gradient(135deg,#8b5cf6,#58e56f)' },
+      { id: 'tictactoe', type: 'game', name: 'КРЕСТИКИ-НОЛИКИ', desc: 'Можно играть вдвоём', emoji: '❌', href: 'games/tictactoe.html', bg: 'linear-gradient(135deg,#ff7a1a,#ffd84d)' },
+      { id: 'battleship', type: 'game', name: 'МОРСКОЙ БОЙ', desc: 'Корабли, выстрелы и бот', emoji: '🚢', href: 'games/battleship.html', bg: 'linear-gradient(135deg,#0b3a75,#23a7ff)' },
+      { id: 'chess', type: 'game', name: 'ШАХМАТЫ', desc: 'Шахматы с ботом и другом', emoji: '♟', href: 'games/chess.html', bg: 'linear-gradient(135deg,#53351e,#b68855)' }
     ];
 
     const toys = [
       { id: 'bone-shaker', type: 'hotwheels', name: 'BONE SHAKER', desc: 'Классический Hot Wheels с черепом', img: 'img/cars/bone_shaker.jpg', store: 'Ozon', href: 'https://www.ozon.ru/search/?text=hot+wheels+bone+shaker' },
-      { id: 'twin-mill', type: 'hotwheels', name: 'TWIN MILL', desc: 'Два мотора и гоночный силуэт', img: 'img/cars/twin_mill.jpg', store: 'WB', href: 'https://www.wildberries.ru/catalog/0/search.aspx?search=hot%20wheels%20twin%20mill' },
-      { id: 'deora-ii', type: 'hotwheels', name: 'DEORA II', desc: 'Футуристичная машинка для коллекции', img: 'img/cars/deora_ii.jpg', store: 'Маркет', href: 'https://market.yandex.ru/search?text=hot%20wheels%20deora' },
+      { id: 'twin-mill', type: 'hotwheels', name: 'TWIN MILL', desc: 'Два мотора и гоночный силуэт', img: 'img/cars/twin_mill.jpg', store: 'Wildberries', href: 'https://www.wildberries.ru/catalog/0/search.aspx?search=hot%20wheels%20twin%20mill' },
+      { id: 'deora-ii', type: 'hotwheels', name: 'DEORA II', desc: 'Футуристичная машинка для коллекции', img: 'img/cars/deora_ii.jpg', store: 'Яндекс Маркет', href: 'https://market.yandex.ru/search?text=hot%20wheels%20deora' },
       { id: 'rip-rod', type: 'hotwheels', name: 'RIP ROD', desc: 'Низкая, быстрая и яркая', img: 'img/cars/rip_rod.jpg', store: 'Ozon', href: 'https://www.ozon.ru/search/?text=hot+wheels+rip+rod' },
-      { id: 'rodger-dodger', type: 'hotwheels', name: 'RODGER DODGER', desc: 'Мощная классика Hot Wheels', img: 'img/cars/rodger_dodger.jpg', store: 'WB', href: 'https://www.wildberries.ru/catalog/0/search.aspx?search=hot%20wheels%20rodger%20dodger' },
-      { id: 'gazella-gt', type: 'hotwheels', name: 'GAZELLA GT', desc: 'Спортивная модель для гонок', img: 'img/cars/gazella_gt.jpg', store: 'Маркет', href: 'https://market.yandex.ru/search?text=hot%20wheels%20gazella' },
+      { id: 'rodger-dodger', type: 'hotwheels', name: 'RODGER DODGER', desc: 'Мощная классика Hot Wheels', img: 'img/cars/rodger_dodger.jpg', store: 'Wildberries', href: 'https://www.wildberries.ru/catalog/0/search.aspx?search=hot%20wheels%20rodger%20dodger' },
+      { id: 'gazella-gt', type: 'hotwheels', name: 'GAZELLA GT', desc: 'Спортивная модель для гонок', img: 'img/cars/gazella_gt.jpg', store: 'Яндекс Маркет', href: 'https://market.yandex.ru/search?text=hot%20wheels%20gazella' },
       { id: 'dragon-blaster', type: 'hotwheels', name: 'DRAGON BLASTER', desc: 'Драконья тема и яркий корпус', img: 'img/cars/dragon_blaster.jpg', store: 'Ozon', href: 'https://www.ozon.ru/search/?text=hot+wheels+dragon' },
       { id: 'bigfoot', type: 'monster', name: 'BIGFOOT', desc: 'Легендарный монстр-трак', img: 'img/cars/bigfoot.jpg', store: 'Ozon', href: 'https://www.ozon.ru/search/?text=monster+trucks+bigfoot' },
-      { id: 'grave-digger', type: 'monster', name: 'GRAVE DIGGER', desc: 'Зелёный огонь и огромные колёса', img: 'img/cars/grave_digger.jpg', store: 'WB', href: 'https://www.wildberries.ru/catalog/0/search.aspx?search=monster%20jam%20grave%20digger' },
-      { id: 'monster-mutt', type: 'monster', name: 'MONSTER MUTT', desc: 'Монстр-трак с характером', img: 'img/cars/monster_mutt.jpg', store: 'Маркет', href: 'https://market.yandex.ru/search?text=monster%20mutt' },
+      { id: 'grave-digger', type: 'monster', name: 'GRAVE DIGGER', desc: 'Зелёный огонь и огромные колёса', img: 'img/cars/grave_digger.jpg', store: 'Wildberries', href: 'https://www.wildberries.ru/catalog/0/search.aspx?search=monster%20jam%20grave%20digger' },
+      { id: 'monster-mutt', type: 'monster', name: 'MONSTER MUTT', desc: 'Монстр-трак с характером', img: 'img/cars/monster_mutt.jpg', store: 'Яндекс Маркет', href: 'https://market.yandex.ru/search?text=monster%20mutt' },
       { id: 'el-toro-loco', type: 'monster', name: 'EL TORO LOCO', desc: 'Бык на больших колёсах', img: 'img/cars/el_toro_loco.jpg', store: 'Ozon', href: 'https://www.ozon.ru/search/?text=monster+jam+el+toro+loco' },
-      { id: 'max-d', type: 'monster', name: 'MAX-D', desc: 'Шипы, металл и трюки', img: 'img/cars/max_d.jpg', store: 'WB', href: 'https://www.wildberries.ru/catalog/0/search.aspx?search=monster%20jam%20max-d' },
-      { id: 'megalodon', type: 'monster', name: 'MEGALODON', desc: 'Акула среди монстр-траков', img: 'img/cars/megalodon.jpg', store: 'Маркет', href: 'https://market.yandex.ru/search?text=monster%20jam%20megalodon' },
+      { id: 'max-d', type: 'monster', name: 'MAX-D', desc: 'Шипы, металл и трюки', img: 'img/cars/max_d.jpg', store: 'Wildberries', href: 'https://www.wildberries.ru/catalog/0/search.aspx?search=monster%20jam%20max-d' },
+      { id: 'megalodon', type: 'monster', name: 'MEGALODON', desc: 'Акула среди монстр-траков', img: 'img/cars/megalodon.jpg', store: 'Яндекс Маркет', href: 'https://market.yandex.ru/search?text=monster%20jam%20megalodon' },
       { id: 'earthshaker', type: 'monster', name: 'EARTHSHAKER', desc: 'Строительный монстр-трак', img: 'img/cars/earthshaker.jpg', store: 'Ozon', href: 'https://www.ozon.ru/search/?text=monster+truck+earthshaker' },
-      { id: 'zombie', type: 'monster', name: 'ZOMBIE', desc: 'Зомби-стиль и большие колёса', img: 'img/cars/zombie.jpg', store: 'WB', href: 'https://www.wildberries.ru/catalog/0/search.aspx?search=monster%20jam%20zombie' }
+      { id: 'zombie', type: 'monster', name: 'ZOMBIE', desc: 'Зомби-стиль и большие колёса', img: 'img/cars/zombie.jpg', store: 'Wildberries', href: 'https://www.wildberries.ru/catalog/0/search.aspx?search=monster%20jam%20zombie' }
     ];
 
     const catalog = [...games, ...toys];
     const catalogGrid = document.getElementById('catalogGrid');
     const gameGrid = document.getElementById('gameGrid');
+    const garageTrack = document.getElementById('garageTrack');
     const searchInput = document.getElementById('searchInput');
     const emptyState = document.getElementById('emptyState');
-    const tabs = Array.from(document.querySelectorAll('.tab'));
+    const filterButtons = Array.from(document.querySelectorAll('.filter-btn'));
     const randomBtn = document.getElementById('randomBtn');
+    const surpriseBtn = document.getElementById('surpriseBtn');
 
     let activeFilter = 'all';
 
     function typeLabel(type) {
       if (type === 'game') return 'Игра';
       if (type === 'hotwheels') return 'Hot Wheels';
-      return 'Монстр трак';
+      return 'Монстр-трак';
     }
 
-    function cardTemplate(item) {
+    function gameTile(item) {
+      return `
+        <a class="game-tile" href="${item.href}" style="--game-bg:${item.bg}">
+          <span class="game-icon" aria-hidden="true">${item.emoji}</span>
+          <span>
+            <h3>${item.name}</h3>
+            <p>${item.desc}</p>
+          </span>
+        </a>
+      `;
+    }
+
+    function catalogCard(item) {
       const isGame = item.type === 'game';
       const target = isGame ? '' : ' target="_blank" rel="noopener noreferrer"';
-      const classes = isGame ? 'item game-card' : 'item';
+      const label = isGame ? typeLabel(item.type) : `${typeLabel(item.type)} - ${item.store}`;
       const media = isGame
-        ? `<div class="game-emoji" aria-hidden="true">${item.emoji}</div>`
+        ? `<div class="game-icon" aria-hidden="true">${item.emoji}</div>`
         : `<img src="${item.img}" alt="${item.name}" loading="lazy" />`;
       const action = isGame ? 'Играть' : `Открыть ${item.store}`;
-      const tag = isGame ? typeLabel(item.type) : `${typeLabel(item.type)} · ${item.store}`;
 
       return `
-        <a class="${classes}" href="${item.href}"${target} style="--item-bg:${item.bg || 'linear-gradient(135deg,#fff,#e4fbff)'}">
-          <div class="item-media">
+        <a class="car-card" href="${item.href}"${target}>
+          <div class="car-media" style="${isGame ? `background:${item.bg}` : ''}">
             ${media}
-            <span class="item-tag">${tag}</span>
+            <span class="car-badge">${label}</span>
           </div>
-          <div class="item-body">
-            <h3 class="item-title">${item.name}</h3>
-            <p class="item-desc">${item.desc}</p>
-            <span class="item-action">${isGame ? '🎮' : '🛒'} ${action}</span>
+          <div class="car-body">
+            <h3 class="car-name">${item.name}</h3>
+            <p class="car-desc">${item.desc}</p>
+            <span class="store-line"><span>${action}</span><span>${isGame ? '🎮' : '🛒'}</span></span>
           </div>
         </a>
       `;
@@ -947,31 +1286,41 @@
 
     function renderCatalog() {
       const items = catalog.filter((item) => matchesFilter(item) && matchesSearch(item));
-      catalogGrid.innerHTML = items.map(cardTemplate).join('');
+      catalogGrid.innerHTML = items.map(catalogCard).join('');
       emptyState.classList.toggle('show', items.length === 0);
     }
 
     function renderGames() {
-      gameGrid.innerHTML = games.slice(0, 6).map(cardTemplate).join('');
+      gameGrid.innerHTML = games.slice(0, 5).map(gameTile).join('');
     }
 
-    tabs.forEach((tab) => {
-      tab.addEventListener('click', () => {
-        activeFilter = tab.dataset.filter;
-        tabs.forEach((item) => item.setAttribute('aria-selected', String(item === tab)));
+    function renderGarageStrip() {
+      const stripItems = [...toys, ...toys];
+      garageTrack.innerHTML = stripItems
+        .map((item) => `<div class="garage-mini"><img src="${item.img}" alt="" loading="lazy" /></div>`)
+        .join('');
+    }
+
+    function openRandom() {
+      const item = catalog[Math.floor(Math.random() * catalog.length)];
+      window.open(item.href, item.type === 'game' ? '_self' : '_blank', 'noopener,noreferrer');
+    }
+
+    filterButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        activeFilter = button.dataset.filter;
+        filterButtons.forEach((item) => item.setAttribute('aria-selected', String(item === button)));
         renderCatalog();
       });
     });
 
     searchInput.addEventListener('input', renderCatalog);
+    randomBtn.addEventListener('click', openRandom);
+    surpriseBtn.addEventListener('click', openRandom);
 
-    randomBtn.addEventListener('click', () => {
-      const item = catalog[Math.floor(Math.random() * catalog.length)];
-      window.open(item.href, item.type === 'game' ? '_self' : '_blank', 'noopener,noreferrer');
-    });
-
-    renderCatalog();
     renderGames();
+    renderGarageStrip();
+    renderCatalog();
   </script>
 </body>
 </html>
