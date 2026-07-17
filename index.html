@@ -185,6 +185,19 @@
       min-height: 100vh;
     }
 
+    .page::before {
+      content: "";
+      position: fixed;
+      inset: 72px 0 auto;
+      height: 4px;
+      z-index: 25;
+      pointer-events: none;
+      background: linear-gradient(90deg, var(--yellow), var(--cyan), var(--red), var(--green), var(--yellow));
+      background-size: 220% 100%;
+      box-shadow: 0 0 28px rgba(55, 228, 255, 0.34);
+      animation: neonFlow 7s linear infinite;
+    }
+
     .hero {
       position: relative;
       min-height: calc(100svh - 72px);
@@ -323,6 +336,18 @@
       isolation: isolate;
     }
 
+    .showroom::after {
+      content: "";
+      position: absolute;
+      inset: 16px 18px 132px;
+      z-index: -1;
+      border-radius: var(--radius);
+      background:
+        linear-gradient(105deg, transparent 0 28%, rgba(255,255,255,0.16) 29%, transparent 38%),
+        linear-gradient(255deg, transparent 0 58%, rgba(55,228,255,0.12) 59%, transparent 70%);
+      animation: lightSweep 6s ease-in-out infinite;
+    }
+
     .showroom::before {
       content: "";
       position: absolute;
@@ -453,6 +478,16 @@
     @keyframes roadMove {
       from { background-position: 0 0, 0 0, 0 0; }
       to { background-position: 190px 0, 0 0, 0 0; }
+    }
+
+    @keyframes neonFlow {
+      from { background-position: 0 0; }
+      to { background-position: 220% 0; }
+    }
+
+    @keyframes lightSweep {
+      0%, 100% { opacity: 0.38; transform: translateX(-10px); }
+      50% { opacity: 0.85; transform: translateX(10px); }
     }
 
     .band {
@@ -819,6 +854,280 @@
       display: block;
     }
 
+    .cinema {
+      position: relative;
+      padding: 68px 0;
+      overflow: hidden;
+      background:
+        linear-gradient(90deg, rgba(255,255,255,0.045) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(255,255,255,0.035) 1px, transparent 1px),
+        linear-gradient(135deg, rgba(8,16,31,0.98), rgba(15,23,42,0.94));
+      background-size: 38px 38px, 38px 38px, auto;
+      border-block: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .cinema::before {
+      content: "";
+      position: absolute;
+      left: -8%;
+      right: -8%;
+      top: 0;
+      height: 42%;
+      pointer-events: none;
+      background:
+        linear-gradient(110deg, transparent 0 26%, rgba(255,216,77,0.12) 27%, transparent 43%),
+        linear-gradient(250deg, transparent 0 50%, rgba(55,228,255,0.12) 51%, transparent 70%);
+    }
+
+    .spotlight {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+      gap: 18px;
+      align-items: stretch;
+      z-index: 1;
+    }
+
+    .spotlight-stage {
+      position: relative;
+      min-height: 520px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: var(--radius);
+      background:
+        radial-gradient(ellipse at center 30%, rgba(255,216,77,0.24), transparent 48%),
+        linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.05));
+      box-shadow: var(--shadow);
+      isolation: isolate;
+    }
+
+    .spotlight-stage::before {
+      content: "";
+      position: absolute;
+      left: 8%;
+      right: 8%;
+      bottom: 10%;
+      height: 26%;
+      z-index: -1;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.48);
+      filter: blur(22px);
+    }
+
+    .spotlight-stage::after {
+      content: "";
+      position: absolute;
+      inset: auto -10% 0;
+      height: 38%;
+      z-index: -2;
+      background:
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.16) 0 1px, transparent 1px 52px),
+        linear-gradient(180deg, transparent, rgba(0,0,0,0.32));
+      transform: perspective(620px) rotateX(62deg);
+      transform-origin: bottom;
+    }
+
+    .spotlight-image {
+      position: absolute;
+      left: 8%;
+      right: 8%;
+      bottom: 12%;
+      display: block;
+      width: 84%;
+      aspect-ratio: 16 / 10;
+      object-fit: cover;
+      border: 1px solid rgba(255,255,255,0.28);
+      border-radius: var(--radius);
+      box-shadow: 0 34px 86px rgba(0,0,0,0.44);
+      transform: rotate(-1deg);
+      animation: stageFloat 4s ease-in-out infinite;
+    }
+
+    .spotlight-label {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      right: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      z-index: 3;
+    }
+
+    .spotlight-label span {
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 999px;
+      background: rgba(9, 17, 31, 0.68);
+      padding: 9px 12px;
+      color: rgba(255,255,255,0.9);
+      font-weight: 950;
+      backdrop-filter: blur(12px);
+    }
+
+    .spotlight-panel {
+      display: flex;
+      flex-direction: column;
+      min-height: 520px;
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.13), rgba(255,255,255,0.07)),
+        rgba(255,255,255,0.08);
+      padding: clamp(18px, 3vw, 28px);
+      box-shadow: 0 24px 64px rgba(0,0,0,0.26);
+    }
+
+    .spotlight-panel h3 {
+      margin: 0;
+      font-size: clamp(2rem, 5vw, 4rem);
+      line-height: 0.92;
+      text-transform: uppercase;
+      font-weight: 1000;
+    }
+
+    .spotlight-panel p {
+      margin: 16px 0 0;
+      color: var(--soft);
+      font-weight: 850;
+      line-height: 1.38;
+    }
+
+    .spotlight-meta {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .spotlight-chip {
+      min-height: 76px;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: var(--radius);
+      background: rgba(255,255,255,0.08);
+      padding: 12px;
+      font-weight: 950;
+    }
+
+    .spotlight-chip small {
+      display: block;
+      margin-bottom: 7px;
+      color: rgba(255,255,255,0.56);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .spotlight-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-height: 56px;
+      margin-top: 18px;
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, #ffe66b, #ff7a1a);
+      color: #101828;
+      font-weight: 1000;
+      text-decoration: none;
+      box-shadow: 0 20px 42px rgba(255,122,26,0.22);
+    }
+
+    .thumb-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: auto;
+      padding-top: 18px;
+    }
+
+    .thumb-btn {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: var(--radius);
+      background: rgba(255,255,255,0.07);
+      cursor: pointer;
+      padding: 0;
+      aspect-ratio: 1 / 0.78;
+    }
+
+    .thumb-btn[aria-pressed="true"] {
+      border-color: rgba(255,216,77,0.92);
+      box-shadow: 0 0 0 3px rgba(255,216,77,0.15);
+    }
+
+    .thumb-btn img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+      opacity: 0.82;
+      transition: transform 0.18s ease, opacity 0.18s ease;
+    }
+
+    .thumb-btn:hover img,
+    .thumb-btn[aria-pressed="true"] img {
+      opacity: 1;
+      transform: scale(1.08);
+    }
+
+    .visual-lanes {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .visual-lane {
+      min-height: 152px;
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.05)),
+        rgba(255,255,255,0.07);
+      padding: 15px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .visual-lane::after {
+      content: "";
+      position: absolute;
+      left: -20%;
+      right: -20%;
+      bottom: 18px;
+      height: 34px;
+      background:
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.38) 0 22px, transparent 22px 48px),
+        linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.02));
+      transform: rotate(-3deg);
+      opacity: 0.65;
+    }
+
+    .visual-lane strong {
+      position: relative;
+      z-index: 2;
+      display: block;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+    }
+
+    .visual-lane span {
+      position: relative;
+      z-index: 2;
+      display: block;
+      margin-top: 8px;
+      color: var(--soft);
+      font-weight: 800;
+      line-height: 1.32;
+    }
+
+    @keyframes stageFloat {
+      0%, 100% { transform: translateY(0) rotate(-1deg); }
+      50% { transform: translateY(-12px) rotate(1deg); }
+    }
+
     @keyframes shelfMove {
       from { transform: translateX(0); }
       to { transform: translateX(-50%); }
@@ -904,8 +1213,14 @@
       }
 
       .controls,
-      .final-inner {
+      .final-inner,
+      .spotlight {
         grid-template-columns: 1fr;
+      }
+
+      .spotlight-stage,
+      .spotlight-panel {
+        min-height: 430px;
       }
 
       .filters {
@@ -1051,6 +1366,40 @@
         grid-template-columns: 1fr;
       }
 
+      .spotlight-stage,
+      .spotlight-panel {
+        min-height: auto;
+      }
+
+      .spotlight-stage {
+        aspect-ratio: 1 / 0.82;
+      }
+
+      .spotlight-label {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .spotlight-label span {
+        padding: 7px 9px;
+        font-size: 0.82rem;
+      }
+
+      .spotlight-image {
+        left: 6%;
+        right: 6%;
+        bottom: 12%;
+        width: 88%;
+      }
+
+      .thumb-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .visual-lanes {
+        grid-template-columns: 1fr;
+      }
+
       .garage-mini {
         width: 142px;
         height: 98px;
@@ -1140,6 +1489,45 @@
         <div class="garage-track" id="garageTrack"></div>
       </div>
 
+      <section class="cinema" aria-labelledby="spotlightTitle">
+        <div class="wrap">
+          <div class="section-head">
+            <div>
+              <p class="section-kicker">главная сцена</p>
+              <h2 class="section-title" id="spotlightTitle">Выбор машинки</h2>
+            </div>
+            <p class="section-note">Большая витрина показывает модель крупно, как на выставке. Мини-фото снизу переключают машинки.</p>
+          </div>
+
+          <div class="spotlight">
+            <div class="spotlight-stage" aria-label="Крупная машинка">
+              <div class="spotlight-label">
+                <span id="spotlightType">Monster Truck</span>
+                <span id="spotlightStore">магазин</span>
+              </div>
+              <img class="spotlight-image" id="spotlightImage" src="img/cars/grave_digger.jpg" alt="Grave Digger" />
+            </div>
+
+            <aside class="spotlight-panel" aria-label="Описание выбранной машинки">
+              <h3 id="spotlightName">GRAVE DIGGER</h3>
+              <p id="spotlightDesc">Зелёный огонь и огромные колёса</p>
+              <div class="spotlight-meta">
+                <div class="spotlight-chip"><small>тип</small><span id="spotlightKind">Монстр-трак</span></div>
+                <div class="spotlight-chip"><small>где смотреть</small><span id="spotlightShop">Wildberries</span></div>
+              </div>
+              <a class="spotlight-link" id="spotlightLink" href="https://www.wildberries.ru/catalog/0/search.aspx?search=monster%20jam%20grave%20digger" target="_blank" rel="noopener noreferrer">🛒 Открыть ассортимент</a>
+              <div class="thumb-grid" id="thumbGrid"></div>
+            </aside>
+          </div>
+
+          <div class="visual-lanes" aria-label="Что стало удобнее">
+            <div class="visual-lane"><strong>Сразу видно машинки</strong><span>Большие фото работают как витрина в магазине игрушек.</span></div>
+            <div class="visual-lane"><strong>Быстрее играть</strong><span>Игры вынесены отдельной панелью, чтобы не искать их среди моделей.</span></div>
+            <div class="visual-lane"><strong>Магазины сохранены</strong><span>Карточка модели открывает нужный ассортимент в новой вкладке.</span></div>
+          </div>
+        </div>
+      </section>
+
       <section class="band dark" id="catalog" aria-labelledby="catalogTitle">
         <div class="wrap">
           <div class="section-head">
@@ -1220,6 +1608,15 @@
     const catalogGrid = document.getElementById('catalogGrid');
     const gameGrid = document.getElementById('gameGrid');
     const garageTrack = document.getElementById('garageTrack');
+    const thumbGrid = document.getElementById('thumbGrid');
+    const spotlightImage = document.getElementById('spotlightImage');
+    const spotlightName = document.getElementById('spotlightName');
+    const spotlightDesc = document.getElementById('spotlightDesc');
+    const spotlightType = document.getElementById('spotlightType');
+    const spotlightStore = document.getElementById('spotlightStore');
+    const spotlightKind = document.getElementById('spotlightKind');
+    const spotlightShop = document.getElementById('spotlightShop');
+    const spotlightLink = document.getElementById('spotlightLink');
     const searchInput = document.getElementById('searchInput');
     const emptyState = document.getElementById('emptyState');
     const filterButtons = Array.from(document.querySelectorAll('.filter-btn'));
@@ -1227,6 +1624,7 @@
     const surpriseBtn = document.getElementById('surpriseBtn');
 
     let activeFilter = 'all';
+    let spotlightIndex = 8;
 
     function typeLabel(type) {
       if (type === 'game') return 'Игра';
@@ -1301,6 +1699,32 @@
         .join('');
     }
 
+    function renderSpotlight(index = spotlightIndex) {
+      spotlightIndex = (index + toys.length) % toys.length;
+      const item = toys[spotlightIndex];
+      const kind = typeLabel(item.type);
+      spotlightImage.src = item.img;
+      spotlightImage.alt = item.name;
+      spotlightName.textContent = item.name;
+      spotlightDesc.textContent = item.desc;
+      spotlightType.textContent = kind;
+      spotlightStore.textContent = item.store;
+      spotlightKind.textContent = kind;
+      spotlightShop.textContent = item.store;
+      spotlightLink.href = item.href;
+      thumbGrid.querySelectorAll('.thumb-btn').forEach((button) => {
+        button.setAttribute('aria-pressed', String(Number(button.dataset.index) === spotlightIndex));
+      });
+    }
+
+    function renderThumbs() {
+      thumbGrid.innerHTML = toys.map((item, index) => `
+        <button class="thumb-btn" type="button" data-index="${index}" aria-label="Показать ${item.name}" aria-pressed="${index === spotlightIndex}">
+          <img src="${item.img}" alt="" loading="lazy" />
+        </button>
+      `).join('');
+    }
+
     function openRandom() {
       const item = catalog[Math.floor(Math.random() * catalog.length)];
       window.open(item.href, item.type === 'game' ? '_self' : '_blank', 'noopener,noreferrer');
@@ -1314,13 +1738,25 @@
       });
     });
 
+    thumbGrid.addEventListener('click', (event) => {
+      const button = event.target.closest('.thumb-btn');
+      if (!button) return;
+      renderSpotlight(Number(button.dataset.index));
+    });
+
     searchInput.addEventListener('input', renderCatalog);
     randomBtn.addEventListener('click', openRandom);
     surpriseBtn.addEventListener('click', openRandom);
 
     renderGames();
     renderGarageStrip();
+    renderThumbs();
+    renderSpotlight();
     renderCatalog();
+
+    window.setInterval(() => {
+      renderSpotlight(spotlightIndex + 1);
+    }, 5200);
   </script>
 </body>
 </html>
