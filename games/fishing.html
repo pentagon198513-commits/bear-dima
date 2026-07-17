@@ -197,6 +197,13 @@
     .action.hook{background:radial-gradient(circle at 30% 30%,#ff5b5b,#c00 70%,#700);animation:hk .25s infinite alternate}
     @keyframes hk{from{transform:scale(1)}to{transform:scale(1.1)}}
     .action.reel{background:radial-gradient(circle at 30% 30%,#ffd84a,#ff8800 70%,#b04000)}
+    .action.reel{
+      animation:reelPulse .7s ease-in-out infinite alternate;
+    }
+    @keyframes reelPulse{
+      from{box-shadow:0 8px 22px rgba(0,0,0,.5),inset 0 -6px 12px rgba(0,0,0,.3),0 0 0 rgba(255,216,74,0)}
+      to{box-shadow:0 8px 22px rgba(0,0,0,.5),inset 0 -6px 12px rgba(0,0,0,.3),0 0 28px rgba(255,216,74,.75)}
+    }
     .action.idle{filter:grayscale(.5) brightness(.75)}
 
     .cancel{
@@ -252,6 +259,41 @@
       text-shadow:1px 1px 2px #000;
       z-index:2;
       letter-spacing:.05em;
+    }
+    .fight-tip{
+      position:absolute;
+      left:50%;
+      bottom:calc(18% + 46px);
+      transform:translateX(-50%);
+      display:none;
+      align-items:center;
+      gap:9px;
+      padding:8px 14px;
+      border-radius:18px;
+      background:rgba(5,22,42,.78);
+      color:#fff;
+      border:2px solid rgba(255,255,255,.45);
+      font-weight:900;
+      font-size:clamp(.82rem,3vw,1rem);
+      z-index:22;
+      pointer-events:none;
+      text-shadow:1px 1px 0 #000;
+      box-shadow:0 8px 20px rgba(0,0,0,.35);
+    }
+    .fight-tip.show{display:flex}
+    .fight-tip b{
+      color:#ffd84a;
+      font-family:'Bangers',cursive;
+      font-size:1.15em;
+      letter-spacing:.04em;
+    }
+    .fight-tip.run{
+      background:rgba(130,18,18,.84);
+      animation:tipShake .16s linear infinite alternate;
+    }
+    @keyframes tipShake{
+      from{transform:translateX(-50%) translateY(0)}
+      to{transform:translateX(-50%) translateY(-2px)}
     }
 
     /* Catch reveal */
@@ -371,6 +413,7 @@
     <div class="meter-fill" id="tensionFill"></div>
     <div class="meter-label" id="tensionLabel">НАТЯЖЕНИЕ ЛЕСКИ</div>
   </div>
+  <div class="fight-tip" id="fightTip">🎣 <span>Жми <b>ТЯНИ</b>, когда леска зелёная</span></div>
 
   <button class="cancel" id="cancelBtn" style="display:none">↩ Смотать</button>
   <button class="action cast" id="actionBtn" style="display:none">
@@ -439,6 +482,7 @@ let floatTilt=0, floatSubmerge=0;
 let waitTimer=0, nibbleEndTime=0, biteEndTime=0;
 let currentFish=null, visibleFish=[];
 let tensionPct=30, fishHP=100, fightEndTime=0;
+let nextFishRunTime=0, fishRunUntil=0, lastHapticAt=0;
 let lastTime=performance.now(), waterTime=0;
 let splashTime=-999, splashX=0, splashY=0;
 let castFlightStart=0, castFlightDur=700;
@@ -538,7 +582,21 @@ function pBite(){ if(muted) return; const a=audio(); if(!a) return;
   o.start(); o.stop(a.currentTime+.5);
 }
 function pHook(){ pTone(800,.1,'square',.2); setTimeout(()=>pTone(1200,.1,'square',.2),60); }
-function pReel(){ pTone(220,.15,'sawtooth',.15); }
+function pReel(){
+  if(muted) return;
+  pTone(180,.08,'sawtooth',.10);
+  setTimeout(()=>pTone(260,.07,'triangle',.08),45);
+}
+function pLineStrain(){
+  if(muted) return;
+  pTone(720,.09,'sine',.08);
+  setTimeout(()=>pTone(520,.12,'triangle',.06),70);
+}
+function pFishRun(){
+  if(muted) return;
+  pTone(140,.18,'sawtooth',.12);
+  setTimeout(()=>pTone(110,.16,'sawtooth',.1),120);
+}
 function pCatch(){
   [523,659,784,1046].forEach((f,i)=>setTimeout(()=>pTone(f,.25,'triangle',.18), i*100));
 }
@@ -549,6 +607,17 @@ function pBreak(){ if(muted) return; const a=audio(); if(!a) return;
   const src=a.createBufferSource(); src.buffer=buf;
   const g=a.createGain(); g.gain.value=.4;
   src.connect(g); g.connect(a.destination); src.start();
+}
+
+function haptic(pattern){
+  if(!navigator.vibrate) return;
+  try{ navigator.vibrate(pattern); }catch(e){ /* ignore */ }
+}
+function hapticLimited(pattern, gap=120){
+  const now = performance.now();
+  if(now-lastHapticAt < gap) return;
+  lastHapticAt = now;
+  haptic(pattern);
 }
 
 // ============== UI ELEMENTS ==============
@@ -562,6 +631,7 @@ const powerFill = document.getElementById('powerFill');
 const tensionMeter = document.getElementById('tensionMeter');
 const tensionFill = document.getElementById('tensionFill');
 const tensionLabel = document.getElementById('tensionLabel');
+const fightTip = document.getElementById('fightTip');
 const reveal = document.getElementById('reveal');
 const muteBtn = document.getElementById('muteBtn');
 
@@ -611,6 +681,7 @@ function toReady(){
   setBanner('🎣 Зажми и держи кнопку для заброса', 'info', 2500);
   powerMeter.classList.remove('show');
   tensionMeter.classList.remove('show');
+  fightTip.classList.remove('show','run');
   floatX=-100; floatY=-100;
   visibleFish=[];
 }
@@ -655,13 +726,15 @@ function arrived(){
   visibleFish=[];
   const cnt = 2 + Math.floor(Math.random()*3);
   for(let i=0;i<cnt;i++){
+    const fishType = FISH.filter(f=>!f.junk)[Math.floor(Math.random()*6)];
     visibleFish.push({
       x: floatTargetX + (Math.random()-0.5)*W*0.4,
       y: floatTargetY + 30 + Math.random()*(H*0.25),
       vx: (Math.random()-0.5)*0.4,
       size: 14 + Math.random()*22,
       flip: Math.random()<0.5,
-      wagPhase: Math.random()*Math.PI*2
+      wagPhase: Math.random()*Math.PI*2,
+      name: fishType.name
     });
   }
 }
@@ -670,6 +743,7 @@ function startNibble(){
   nibbleEndTime = performance.now() + 700 + Math.random()*800;
   setBanner('🐟 Шевелится... подожди', 'info');
   pNibble();
+  haptic([12,80,12]);
 }
 function startBite(){
   phase='bite';
@@ -678,6 +752,7 @@ function startBite(){
   setBanner('⚡ ПОДСЕКАЙ!', 'alert');
   setAction('hook'); showCancel(false);
   pBite();
+  haptic([25,35,35]);
 }
 function missedBite(){
   setBanner('🐟 Сорвалась...', 'alert', 1500);
@@ -687,25 +762,35 @@ function missedBite(){
 function hookIt(){
   if(currentFish.junk){ doCatch(); return; }
   phase='fight';
-  fishHP = currentFish.hp;
-  tensionPct = 30;
-  fightEndTime = performance.now() + 25000;
+  fishHP = currentFish.hp * 1.75;
+  tensionPct = 24;
+  fightEndTime = performance.now() + 43000 + currentFish.diff*8000;
+  nextFishRunTime = performance.now() + 1600 + Math.random()*2200;
+  fishRunUntil = 0;
   setAction('reel'); showCancel(false);
   tensionMeter.classList.add('show');
-  setBanner('🎣 ТЯНИ! Не порви леску!', 'info');
+  fightTip.classList.add('show');
+  fightTip.classList.remove('run');
+  fightTip.innerHTML = '🎣 <span>Жми <b>ТЯНИ</b>, когда леска зелёная</span>';
+  setBanner('🎣 ТЯНИ В РИТМ! Рыба будет делать рывки', 'info', 2800);
   pHook();
+  haptic([18,45,28]);
 }
 function reelTap(){
   if(phase!=='fight') return;
-  fishHP -= 6 + Math.random()*4;
-  tensionPct += 4 + Math.random()*3;
+  const now = performance.now();
+  const inRun = now < fishRunUntil;
+  fishHP -= inRun ? (2.2 + Math.random()*2.4) : (3.6 + Math.random()*3.2);
+  tensionPct += inRun ? (5.5 + Math.random()*4.5) : (3.2 + Math.random()*3.2);
   if(tensionPct>100) tensionPct=100;
   pReel();
+  hapticLimited(inRun ? [18,30,28] : 14, inRun ? 90 : 130);
   if(fishHP<=0) startPulling();
 }
 function startPulling(){
   phase='pulling';
   tensionMeter.classList.remove('show');
+  fightTip.classList.remove('show','run');
   hideAction(); showCancel(false);
   setBanner('🎣 Вытаскиваем!', 'success');
   // Start at current float pos, end at rod tip
@@ -718,6 +803,7 @@ function startPulling(){
 function doCatch(){
   phase='catch';
   tensionMeter.classList.remove('show');
+  fightTip.classList.remove('show','run');
   hideAction(); showCancel(false);
   if(currentFish.junk){
     score = Math.max(0, score + currentFish.points);
@@ -731,6 +817,7 @@ function doCatch(){
   if(score>record){ record=score; localStorage.setItem('fishingR2', record); }
   updScore();
   pCatch();
+  haptic([35,45,35,45,80]);
   showReveal(currentFish);
 }
 function showReveal(f){
@@ -768,7 +855,7 @@ function reelIn(){
   phase='ready';
   reveal.classList.remove('show');
   setAction('cast'); showCancel(false);
-  powerMeter.classList.remove('show'); tensionMeter.classList.remove('show');
+  powerMeter.classList.remove('show'); tensionMeter.classList.remove('show'); fightTip.classList.remove('show','run');
   setBanner('🎣 Удочка готова к забросу', 'info', 1500);
   floatX=-100; floatY=-100; visibleFish=[]; currentFish=null;
 }
@@ -932,8 +1019,43 @@ function update(dt){
     floatTilt *= 0.92;
   }
   if(phase==='fight'){
-    tensionPct = Math.max(0, tensionPct - dt*18);
-    if(Math.random() < dt*0.6) tensionPct += 3 + Math.random()*5*currentFish.diff;
+    const now = performance.now();
+    if(now > nextFishRunTime){
+      fishRunUntil = now + 850 + Math.random()*900 + currentFish.diff*450;
+      nextFishRunTime = now + 2600 + Math.random()*3400;
+      splashTime = now;
+      splashX = floatX;
+      splashY = floatY + 5;
+      setBanner('🐟 Рыба тянет! Ослабь леску!', 'alert', 900);
+      pFishRun();
+      haptic([35,35,45,35,55]);
+    }
+    const inRun = now < fishRunUntil;
+    if(inRun){
+      fightTip.classList.add('run');
+      fightTip.innerHTML = '🐟 <span><b>ОТПУСТИ!</b> Рыба тащит леску</span>';
+    } else if(tensionPct < 32){
+      fightTip.classList.remove('run');
+      fightTip.innerHTML = '✅ <span>Сейчас можно <b>ТЯНУТЬ</b></span>';
+    } else if(tensionPct > 68){
+      fightTip.classList.remove('run');
+      fightTip.innerHTML = '⚠️ <span>Леска тугая, <b>ПОДОЖДИ</b></span>';
+    } else {
+      fightTip.classList.remove('run');
+      fightTip.innerHTML = '🎣 <span>Тяни короткими нажатиями</span>';
+    }
+    tensionPct = Math.max(0, tensionPct - dt*(inRun ? 9 : 15));
+    if(inRun){
+      tensionPct += dt*(13 + currentFish.diff*10);
+      floatX += Math.sin(now/55)*2.2*currentFish.diff;
+      floatY += Math.cos(now/70)*1.5*currentFish.diff;
+      if(Math.random() < dt*5) hapticLimited([18,24,24], 130);
+      if(Math.random() < dt*1.8) pLineStrain();
+    }
+    if(Math.random() < dt*(0.55 + currentFish.diff*0.25)){
+      tensionPct += 2 + Math.random()*4.5*currentFish.diff;
+      if(tensionPct>72) hapticLimited(18, 180);
+    }
     tensionFill.style.width = Math.min(100,tensionPct)+'%';
     let lab='НАТЯЖЕНИЕ ЛЕСКИ';
     if(tensionPct<30) lab='🟢 МОЖНО ТЯНУТЬ!';
@@ -944,15 +1066,17 @@ function update(dt){
     if(tensionPct>=100){
       setBanner('💥 ЛЕСКА ПОРВАЛАСЬ!','alert',1800);
       pBreak(); tensionMeter.classList.remove('show');
+      haptic([90,45,120]);
       setTimeout(reelIn, 1500); phase='miss';
     }
     if(performance.now()>fightEndTime){
       setBanner('🐟 Рыба сорвалась!','alert',1800);
       pBreak(); tensionMeter.classList.remove('show');
+      haptic([45,50,45]);
       setTimeout(reelIn, 1500); phase='miss';
     }
-    floatX += Math.sin(performance.now()/350)*1.5;
-    floatY += Math.sin(performance.now()/200)*0.8;
+    floatX += Math.sin(performance.now()/350)*(inRun ? 2.8 : 1.5);
+    floatY += Math.sin(performance.now()/200)*(inRun ? 1.6 : 0.8);
   }
   visibleFish.forEach(f=>{
     f.x += f.vx*dt*60;
@@ -988,14 +1112,14 @@ function drawFishUnder(){
     ctx.save();
     ctx.translate(f.x,f.y);
     if(f.flip) ctx.scale(-1,1);
-    const wag = Math.sin(f.wagPhase)*0.3;
-    ctx.fillStyle = 'rgba(20,40,60,0.5)';
-    ctx.beginPath(); ctx.ellipse(0,0,f.size,f.size*0.4,0,0,Math.PI*2); ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(-f.size*0.95,0);
-    ctx.lineTo(-f.size*1.4,-f.size*0.3-wag*5);
-    ctx.lineTo(-f.size*1.4,f.size*0.3+wag*5);
-    ctx.closePath(); ctx.fill();
+    const wag = Math.sin(f.wagPhase)*0.45;
+    ctx.globalAlpha = 0.36;
+    ctx.filter = 'blur(.3px)';
+    drawFishByName(ctx, f.name || 'Карась', 0, 0, f.size*0.72, Math.sin(f.wagPhase)*0.06, wag);
+    ctx.filter = 'none';
+    ctx.globalAlpha = 0.16;
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath(); ctx.ellipse(0,-f.size*.2,f.size*.55,f.size*.08,0,0,Math.PI*2); ctx.fill();
     ctx.restore();
   });
 }
