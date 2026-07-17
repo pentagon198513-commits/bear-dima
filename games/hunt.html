@@ -129,6 +129,11 @@
     let best = parseInt(localStorage.getItem('bear_hunt_best') || '0', 10);
     document.getElementById('recordEl').textContent = best;
 
+    function haptic(pattern) {
+      if (!navigator.vibrate) return;
+      try { navigator.vibrate(pattern); } catch (e) { /* ignore */ }
+    }
+
     /* ========== Утки ========== */
     /* === ПАРАМЕТРЫ СЛОЖНОСТИ ПО РАУНДАМ === */
     function getDifficulty() {
@@ -1021,6 +1026,7 @@
       recoil = 1;
       screenShake = 1;
       playRealisticBang();
+      haptic([35, 28, 55]);
 
       // Дым из ствола
       const baseX = W / 2;
@@ -1079,6 +1085,7 @@
           bearMood = 'cheer';
           bearMoodUntil = performance.now() + 1500;
           playHit();
+          haptic([18, 25, 28]);
         }
       });
 
