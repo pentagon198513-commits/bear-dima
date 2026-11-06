@@ -141,23 +141,22 @@
     .banner{
       position:absolute;
       left:50%;
-      top:14%;
+      top:max(14%,80px);
       transform:translateX(-50%);
       padding:9px 20px;
       border-radius:18px;
       font-family:'Bangers',cursive;
-      font-size:clamp(1rem,4vw,1.5rem);
-      letter-spacing:.06em;
+      font-size:18px;
+      letter-spacing:0;
       text-align:center;
       pointer-events:none;
       z-index:18;
-      white-space:nowrap;
+      white-space:normal;
       transition:opacity .3s;
       text-shadow:2px 2px 0 #000;
       opacity:0;
-      max-width:90vw;
-      overflow:hidden;
-      text-overflow:ellipsis;
+      width:max-content;
+      max-width:calc(100% - 40px);
     }
     .banner.show{opacity:1}
     .banner.info{background:rgba(0,80,160,.92);color:#fff;border:2px solid rgba(255,255,255,.5)}
@@ -268,6 +267,8 @@
       display:none;
       align-items:center;
       gap:9px;
+      width:max-content;
+      max-width:calc(100% - 32px);
       padding:8px 14px;
       border-radius:18px;
       background:rgba(5,22,42,.78);
@@ -307,6 +308,15 @@
       padding:14px;
     }
     .reveal.show{display:flex}
+    .reveal-behavior{
+      margin:0;
+      max-width:430px;
+      text-align:center;
+      color:#e3eef0;
+      font-size:15px;
+      line-height:1.45;
+      letter-spacing:0;
+    }
     .reveal-fish{
       width:clamp(220px,55vw,400px);
       height:clamp(220px,55vw,400px);
@@ -385,6 +395,10 @@
       text-decoration:none;
     }
     .home-btn:active,.mute:active{transform:scale(.92)}
+    @media (max-height:650px){
+      .reveal{justify-content:flex-start;overflow-y:auto;gap:8px}
+      .reveal-fish{width:190px;height:190px;min-height:190px}
+    }
     @media (max-height:500px){
       .reveal{gap:6px;overflow-y:auto}
       .reveal-fish{width:150px;height:150px;min-height:150px}
@@ -432,6 +446,7 @@
       <canvas id="revealCv" width="400" height="400"></canvas>
     </div>
     <div class="reveal-name" id="revealName">Карась</div>
+    <p class="reveal-behavior" id="revealBehavior"></p>
     <div class="reveal-stats">
       <div class="reveal-stat" id="revealWeight">1.2 кг</div>
       <div class="reveal-stat pts" id="revealPoints">+5 очков</div>
@@ -445,8 +460,8 @@
       <div class="sub">СИМУЛЯТОР</div>
       <p><b>1.</b> Зажми зелёную кнопку — копится сила</p>
       <p><b>2.</b> Отпусти — поплавок летит в воду</p>
-      <p><b>3.</b> Поплавок дёрнется и уйдёт под воду — клюёт!</p>
-      <p><b>4.</b> Жми <b>ПОДСЕЧЬ</b> когда нырнёт</p>
+      <p><b>3.</b> Поплавок поднимается, ныряет или уходит вбок</p>
+      <p><b>4.</b> Жми <b>ПОДСЕЧЬ</b>, когда появится кнопка</p>
       <p><b>5.</b> Тапай <b>ТЯНИ</b>, не порви леску!</p>
       <button class="start-btn" id="startBtn" type="button">▶ НАЧАТЬ ИГРУ</button>
       <a href="../index.html" class="back-link">⬅ В МЕНЮ</a>
@@ -468,6 +483,7 @@ document.getElementById('startBtn').addEventListener('touchend', function(e){
 }, {passive:false});
 </script>
 
+<script src="fishing-species.js?v=20261106"></script>
 <script>
 (function(){
 'use strict';
@@ -486,9 +502,12 @@ let charging = false, chargeStart = 0, castPower = 0;
 let floatX=-100, floatY=-100, floatTargetX=0, floatTargetY=0;
 let floatTilt=0, floatSubmerge=0;
 let waitTimer=0, nibbleEndTime=0, biteEndTime=0;
+let nibbleStartTime=0, biteStartTime=0, nibbleStage=-1, nibblePulse=-1;
+let previousFish='';
 let currentFish=null, visibleFish=[];
 let tensionPct=30, fishHP=100, fightEndTime=0;
 let nextFishRunTime=0, fishRunUntil=0, lastHapticAt=0;
+let fightStartTime=0, lastReelTapAt=-Infinity;
 let lastTime=performance.now(), waterTime=0;
 let splashTime=-999, splashX=0, splashY=0;
 let castFlightStart=0, castFlightDur=700;
@@ -502,30 +521,33 @@ let fishWag = 0;
 let hiddenAt = null;
 
 // ============== FISH ==============
-const FISH = [
-  {name:'Карась',     emoji:'🐟', minW:0.3, maxW:1.2, points:5,  rarity:.30, fightHP:30,  diff:0.6},
-  {name:'Окунь',      emoji:'🐠', minW:0.4, maxW:1.5, points:8,  rarity:.22, fightHP:38,  diff:0.7},
-  {name:'Лещ',        emoji:'🐡', minW:0.5, maxW:2.5, points:12, rarity:.18, fightHP:45,  diff:0.8},
-  {name:'Щука',       emoji:'🦈', minW:1.5, maxW:5.5, points:25, rarity:.10, fightHP:65,  diff:1.0},
-  {name:'Сом',        emoji:'🐬', minW:2.0, maxW:8.0, points:35, rarity:.06, fightHP:80,  diff:1.1},
-  {name:'Золотая',    emoji:'✨', minW:0.2, maxW:0.8, points:100,rarity:.02, fightHP:25,  diff:0.5},
-  {name:'Сапог',      emoji:'🥾', minW:0.5, maxW:1.0, points:-3, rarity:.12, fightHP:20,  diff:0.4, junk:true}
-];
+const FISH = FishingSpecies.fish;
+const WATER_FISH = FISH.filter(f=>!f.junk);
 function pickFish(){
-  const r=Math.random(); let acc=0;
-  for(const f of FISH){ acc+=f.rarity; if(r<acc) return mkFish(f); }
-  return mkFish(FISH[0]);
+  const fish = mkFish(FishingSpecies.choose(Math.random, previousFish));
+  previousFish = fish.name;
+  return fish;
 }
 function mkFish(t){
   const w=+(t.minW+Math.random()*(t.maxW-t.minW)).toFixed(2);
   const sz=(w-t.minW)/(t.maxW-t.minW||1);
-  return { name:t.name, emoji:t.emoji, weight:w,
+  return { id:t.id, name:t.name, weight:w,
+    profile:FishingSpecies.profiles[t.id], tempo:.9+Math.random()*.2,
+    direction:Math.random()<.5 ? -1 : 1,
     points:Math.round(t.points*(1+sz*0.5)),
     hp:t.fightHP*(0.7+sz*0.6), diff:t.diff, junk:!!t.junk };
 }
 
 // ============== CANVAS ==============
 function resize(){
+  const scaleX=W?window.innerWidth/W:1, scaleY=H?window.innerHeight/H:1;
+  floatX*=scaleX; floatY*=scaleY;
+  floatTargetX*=scaleX; floatTargetY*=scaleY;
+  castStartX*=scaleX; castStartY*=scaleY;
+  pullStartX*=scaleX; pullStartY*=scaleY;
+  pullEndX*=scaleX; pullEndY*=scaleY;
+  splashX*=scaleX; splashY*=scaleY;
+  visibleFish.forEach(f=>{ f.x*=scaleX; f.y*=scaleY; });
   DPR = Math.min(window.devicePixelRatio||1, 2);
   W = window.innerWidth; H = window.innerHeight;
   cv.width = W*DPR; cv.height = H*DPR;
@@ -726,6 +748,7 @@ function doCast(){
 }
 function arrived(){
   phase='waiting';
+  currentFish = pickFish();
   splashTime=performance.now(); splashX=floatX; splashY=floatY;
   pSplash();
   setBanner('🌊 Жди клёва...', 'info', 2000);
@@ -734,7 +757,7 @@ function arrived(){
   visibleFish=[];
   const cnt = 2 + Math.floor(Math.random()*3);
   for(let i=0;i<cnt;i++){
-    const fishType = FISH.filter(f=>!f.junk)[Math.floor(Math.random()*6)];
+    const fishType = WATER_FISH[Math.floor(Math.random()*WATER_FISH.length)];
     visibleFish.push({
       x: floatTargetX + (Math.random()-0.5)*W*0.4,
       y: floatTargetY + 30 + Math.random()*(H*0.25),
@@ -748,16 +771,15 @@ function arrived(){
 }
 function startNibble(){
   phase='nibble';
-  nibbleEndTime = performance.now() + 700 + Math.random()*800;
-  setBanner('🐟 Шевелится... подожди', 'info');
-  pNibble();
-  haptic([12,80,12]);
+  nibbleStartTime = performance.now();
+  nibbleEndTime = nibbleStartTime + currentFish.profile.nibbleMs*currentFish.tempo;
+  nibbleStage=-1; nibblePulse=-1;
 }
 function startBite(){
   phase='bite';
-  biteEndTime = performance.now() + 1800 + Math.random()*900;
-  currentFish = pickFish();
-  setBanner('⚡ ПОДСЕКАЙ!', 'alert');
+  biteStartTime = performance.now();
+  biteEndTime = biteStartTime + currentFish.profile.strike.window;
+  setBanner('⚡ ПОДСЕКАЙ! '+currentFish.profile.strike.text, 'alert');
   setAction('hook'); showCancel(false);
   pBite();
   haptic([25,35,35]);
@@ -775,8 +797,10 @@ function hookIt(){
   phase='fight';
   fishHP = currentFish.hp * 1.75;
   tensionPct = 24;
-  fightEndTime = performance.now() + 43000 + currentFish.diff*8000;
-  nextFishRunTime = performance.now() + 1600 + Math.random()*2200;
+  fightStartTime = performance.now();
+  fightEndTime = fightStartTime + 43000 + currentFish.diff*8000;
+  nextFishRunTime = fightStartTime + between(currentFish.profile.rest);
+  lastReelTapAt = -Infinity;
   fishRunUntil = 0;
   setAction('reel'); showCancel(false);
   tensionMeter.classList.add('show');
@@ -790,14 +814,16 @@ function hookIt(){
 function reelTap(){
   if(phase!=='fight') return;
   const now = performance.now();
+  if(now-lastReelTapAt<200) return;
+  lastReelTapAt=now;
   const inRun = now < fishRunUntil;
-  fishHP -= inRun ? (2.2 + Math.random()*2.4) : (3.6 + Math.random()*3.2);
+  fishHP = Math.max(0, fishHP - (inRun ? (2.2 + Math.random()*2.4) : (3.6 + Math.random()*3.2)));
   tensionPct += inRun ? (5.5 + Math.random()*4.5) : (3.2 + Math.random()*3.2);
   if(tensionPct>100) tensionPct=100;
   pReel();
   hapticLimited(inRun ? [18,30,28] : 14, inRun ? 90 : 130);
-  if(fishHP<=0) startPulling();
 }
+function between(range){ return range[0]+Math.random()*(range[1]-range[0]); }
 function startPulling(){
   phase='pulling';
   tensionMeter.classList.remove('show');
@@ -834,6 +860,7 @@ function doCatch(){
 }
 function showReveal(f){
   document.getElementById('revealName').textContent = f.name;
+  document.getElementById('revealBehavior').textContent = f.profile.note;
   document.getElementById('revealWeight').textContent = f.weight+' кг';
   const pt = f.points>=0 ? '+'+f.points+' очков' : f.points+' очков';
   document.getElementById('revealPoints').textContent = pt;
@@ -1017,24 +1044,34 @@ function update(dt){
   }
   if(phase==='waiting' && performance.now()>=waitTimer) startNibble();
   if(phase==='nibble' && performance.now()>=nibbleEndTime){
-    if(Math.random()<0.65) startBite();
-    else { phase='waiting'; setBanner('🌊 Тише... возможно ещё клюнет','info',1500);
-      waitTimer = performance.now() + 2500 + Math.random()*3500;
-    }
+    startBite();
   }
-  if(phase==='bite'){
-    floatSubmerge = Math.min(80, floatSubmerge + dt*150);
-    floatTilt = Math.sin(performance.now()/80)*0.4;
-    if(performance.now()>=biteEndTime){ missedBite(); floatSubmerge=0; }
+  if(phase==='nibble' || phase==='bite'){
+    const now=performance.now();
+    const pose=FishingSpecies.pose(currentFish.profile,phase,
+      now-(phase==='nibble'?nibbleStartTime:biteStartTime),currentFish.tempo,currentFish.direction);
+    floatSubmerge=pose.depth; floatTilt=pose.tilt;
+    floatX=Math.max(22,Math.min(W-22,floatTargetX+pose.side));
+    floatY=floatTargetY;
+    if(phase==='nibble'){
+      if(pose.stage!==nibbleStage){
+        nibbleStage=pose.stage;
+        setBanner('🐟 '+pose.text, 'info');
+      }
+      if(pose.pulse>=0 && pose.pulse!==nibblePulse){
+        nibblePulse=pose.pulse; pNibble(); haptic(12);
+      }
+    } else if(now>=biteEndTime){ missedBite(); floatSubmerge=0; }
   } else {
-    floatSubmerge = Math.max(0, floatSubmerge - dt*120);
+    floatSubmerge *= Math.max(0,1-dt*9);
     floatTilt *= 0.92;
   }
   if(phase==='fight'){
     const now = performance.now();
+    const profile = currentFish.profile;
     if(now > nextFishRunTime){
-      fishRunUntil = now + 850 + Math.random()*900 + currentFish.diff*450;
-      nextFishRunTime = now + 2600 + Math.random()*3400;
+      fishRunUntil = now + between(profile.run);
+      nextFishRunTime = fishRunUntil + between(profile.rest);
       splashTime = now;
       splashX = floatX;
       splashY = floatY + 5;
@@ -1056,17 +1093,13 @@ function update(dt){
       fightTip.classList.remove('run');
       fightTip.innerHTML = '🎣 <span>Тяни короткими нажатиями</span>';
     }
-    tensionPct = Math.max(0, tensionPct - dt*(inRun ? 9 : 15));
+    const alreadyBroken = tensionPct>=100;
+    tensionPct = Math.max(0, tensionPct - dt*(inRun ? 0 : profile.recovery));
     if(inRun){
-      tensionPct += dt*(13 + currentFish.diff*10);
-      floatX += Math.sin(now/55)*2.2*currentFish.diff;
-      floatY += Math.cos(now/70)*1.5*currentFish.diff;
-      if(Math.random() < dt*5) hapticLimited([18,24,24], 130);
+      const strength=.55+.45*Math.max(0,fishHP/(currentFish.hp*1.75));
+      tensionPct += dt*profile.pull*strength;
+      hapticLimited([12+Math.round(profile.pull*.6),30,18], Math.max(160,650-profile.rhythm*50));
       if(Math.random() < dt*1.8) pLineStrain();
-    }
-    if(Math.random() < dt*(0.55 + currentFish.diff*0.25)){
-      tensionPct += 2 + Math.random()*4.5*currentFish.diff;
-      if(tensionPct>72) hapticLimited(18, 180);
     }
     tensionFill.style.width = Math.min(100,tensionPct)+'%';
     let lab='НАТЯЖЕНИЕ ЛЕСКИ';
@@ -1075,7 +1108,7 @@ function update(dt){
     else if(tensionPct<88) lab='🟠 ОСЛАБЬ ЛЕСКУ!';
     else lab='🔴 ПОРВЕТСЯ!';
     tensionLabel.textContent = lab;
-    if(tensionPct>=100){
+    if(alreadyBroken || tensionPct>=100){
       setBanner('💥 ЛЕСКА ПОРВАЛАСЬ!','alert',1800);
       pBreak(); tensionMeter.classList.remove('show');
       fightTip.classList.remove('show','run'); hideAction();
@@ -1091,8 +1124,10 @@ function update(dt){
       setTimeout(reelIn, 1500); phase='miss';
       return;
     }
-    floatX += Math.sin(performance.now()/350)*(inRun ? 2.8 : 1.5);
-    floatY += Math.sin(performance.now()/200)*(inRun ? 1.6 : 0.8);
+    const wave=(now-fightStartTime)/1000*profile.rhythm;
+    floatX = Math.max(22,Math.min(W-22,floatTargetX+Math.sin(wave)*(inRun?profile.sway:6)));
+    floatY = floatTargetY+Math.cos(wave*.8)*(inRun?8:2);
+    if(fishHP<=0 && now-fightStartTime>=profile.minFight*1000) startPulling();
   }
   visibleFish.forEach(f=>{
     f.x += f.vx*dt*60;
@@ -1149,24 +1184,24 @@ function drawFloat(){
   }
   ctx.save();
   ctx.translate(floatX,floatY);
-  ctx.rotate(floatTilt);
-  const totalH=26, sub=floatSubmerge;
-  const visH = Math.max(8, totalH - sub*0.3);
+  const sub=floatSubmerge;
   ctx.fillStyle='rgba(0,0,0,.25)';
   ctx.beginPath(); ctx.ellipse(0,4,14,4,0,0,Math.PI*2); ctx.fill();
-  if(sub>0){ ctx.fillStyle='rgba(180,30,30,0.6)'; ctx.fillRect(-1.2,0,2.4,sub); }
-  const grad = ctx.createRadialGradient(-3,-visH+5,1, 0,-visH+8,12);
+  // Вода скрывает поплавок снизу; подъём и поклёвка вбок остаются видимыми.
+  ctx.beginPath(); ctx.rect(-70,-100,140,105); ctx.clip();
+  ctx.rotate(floatTilt);
+  const grad = ctx.createRadialGradient(-3,-6+sub,1, 0,-3+sub,12);
   grad.addColorStop(0,'#ff7070'); grad.addColorStop(0.6,'#cc1818'); grad.addColorStop(1,'#700606');
   ctx.fillStyle=grad;
-  ctx.beginPath(); ctx.arc(0,-visH+10,10,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(0,-3+sub,8,12,0,0,Math.PI*2); ctx.fill();
   ctx.fillStyle='#f5f5f5';
-  ctx.beginPath(); ctx.ellipse(0,-visH+18,9,4,0,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle='#333';
-  ctx.beginPath(); ctx.arc(0,-visH+2,4,0,Math.PI*2); ctx.fill();
-  ctx.strokeStyle='#333'; ctx.lineWidth=1.5;
-  ctx.beginPath(); ctx.moveTo(0,-visH+2); ctx.lineTo(0,-visH-8); ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(0,2+sub,8,3,0,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='#242d25'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(0,-14+sub); ctx.lineTo(0,-34+sub); ctx.stroke();
+  ctx.strokeStyle='#fff0a6'; ctx.lineWidth=4;
+  ctx.beginPath(); ctx.moveTo(0,-23+sub); ctx.lineTo(0,-32+sub); ctx.stroke();
   ctx.restore();
-  if(phase==='waiting'||phase==='nibble'||phase==='fight'){
+  if(phase==='waiting'||phase==='nibble'||phase==='bite'||phase==='fight'){
     const it = phase==='nibble'?2:phase==='fight'?3:1;
     for(let i=0;i<3;i++){
       const t = ((waterTime*0.6+i*0.33)%1);
@@ -1792,6 +1827,7 @@ function drawFishByName(c, name, x, y, sz, angle, wag){
   else if(name==='Сом') drawCatfish(c,sz,wag);
   else if(name==='Золотая') drawGoldfish(c,sz,wag);
   else if(name==='Сапог') drawBoot(c,sz,wag);
+  else if(FishingSpecies.looks[name]) FishingSpecies.draw(c,FishingSpecies.looks[name],sz,wag);
   else drawCarp(c,sz,wag);
   c.restore();
 }
@@ -1860,7 +1896,9 @@ document.addEventListener('visibilitychange', ()=>{
     const elapsed = now - hiddenAt;
     chargeStart += elapsed; castFlightStart += elapsed;
     waitTimer += elapsed; nibbleEndTime += elapsed; biteEndTime += elapsed;
+    nibbleStartTime += elapsed; biteStartTime += elapsed;
     fightEndTime += elapsed; nextFishRunTime += elapsed; fishRunUntil += elapsed;
+    fightStartTime += elapsed; lastReelTapAt += elapsed;
     pullStart += elapsed; splashTime += elapsed; lastHapticAt += elapsed;
     lastTime = now; hiddenAt = null;
     if(charging){ charging=false; toReady(); }
