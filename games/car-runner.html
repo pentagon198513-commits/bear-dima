@@ -10,9 +10,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@700;900&display=swap" rel="stylesheet" />
   <style>
     *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-    html,body{width:100%;height:100%;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+    html,body{width:100%;height:100%;overflow:hidden;touch-action:manipulation;user-select:none;-webkit-user-select:none}
     body{font-family:'Nunito',system-ui,sans-serif;background:#050814;color:#fff}
-    #game{position:relative;width:100vw;height:100vh;overflow:hidden;background:#050814}
+    #game{position:relative;width:100vw;height:100vh;height:100dvh;overflow:hidden;background:#050814}
     canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
     .topbar{
       position:absolute;left:0;right:0;top:0;z-index:12;
@@ -35,12 +35,12 @@
     }
     .title{
       min-width:0;flex:1;text-align:center;
-      font-family:'Bangers',cursive;
-      font-size:clamp(1.18rem,5vw,2.35rem);
-      letter-spacing:.04em;
+      font-family:'Nunito',system-ui,sans-serif;
+      font-size:1.2rem;
+      font-weight:900;
+      letter-spacing:0;
       color:#fff;
-      -webkit-text-stroke:1.5px #030303;
-      text-shadow:2px 3px 0 #f97316,0 0 28px rgba(34,211,238,.65);
+      text-shadow:1px 2px 0 #030303;
       white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
     }
     .hud{
@@ -104,7 +104,9 @@
     .card{
       width:min(94vw,560px);
       max-height:92vh;
+      max-height:calc(100dvh - 36px);
       overflow:auto;
+      touch-action:pan-y;
       padding:22px 18px;
       border-radius:28px;
       border:1px solid rgba(255,255,255,.52);
@@ -184,7 +186,7 @@
 
   <div class="topbar">
     <a class="round-btn" href="../" aria-label="Назад">←</a>
-    <div class="title">🏎️ МАШИНКА — НЕОНОВАЯ ГОНКА</div>
+    <div class="title">🏎️ МАШИНКА</div>
     <button class="round-btn" id="soundBtn" type="button" aria-label="Звук">🔊</button>
   </div>
 
@@ -257,6 +259,7 @@
   let touchStartX = 0, touchStartY = 0;
   let selectedCar = parseInt(localStorage.getItem('bear_car_runner_car') || '0', 10);
   let engine = null;
+  let hiddenAt = null;
 
   const carModels = [
     {name:'Grave Digger', src:'../img/cars/grave_digger.jpg', glow:'#39ff14'},
@@ -349,7 +352,7 @@
   }
 
   function audioCtx(){
-    if(muted) return null;
+    if(muted || document.hidden) return null;
     const Ctx = window.AudioContext || window.webkitAudioContext;
     if(!Ctx) return null;
     if(!window.__carAudio) window.__carAudio = new Ctx();
@@ -395,16 +398,15 @@
 
   function stopEngine(){
     if(!engine) return;
-    const a = audioCtx();
-    if(a){
-      engine.gain.gain.setTargetAtTime(.0001, a.currentTime, .08);
-      setTimeout(()=>{
-        try{ engine.osc.stop(); engine.growl.stop(); }catch(e){}
-        engine = null;
-      }, 220);
-    } else {
-      engine = null;
-    }
+    const stopped = engine;
+    engine = null;
+    // Останавливаем именно прежний мотор, даже если звук уже выключен.
+    stopped.gain.disconnect();
+    stopped.osc.stop();
+    stopped.growl.stop();
+    stopped.osc.disconnect();
+    stopped.growl.disconnect();
+    stopped.filter.disconnect();
   }
 
   function updateEngine(){
@@ -976,8 +978,7 @@
   function loop(now){
     const dt = Math.min(.05,(now-lastTime)/1000);
     lastTime = now;
-    update(dt);
-    render();
+    if(!document.hidden){ update(dt); render(); }
     requestAnimationFrame(loop);
   }
 
@@ -1019,6 +1020,20 @@
   }, {passive:false});
   window.addEventListener('resize', resize);
   window.addEventListener('pagehide', stopEngine);
+  document.addEventListener('visibilitychange', ()=>{
+    const now = performance.now();
+    if(document.hidden){
+      hiddenAt = now;
+      stopEngine();
+      if(window.__carAudio) window.__carAudio.suspend().catch(()=>{});
+      haptic(0);
+    } else if(hiddenAt !== null){
+      const elapsed = now - hiddenAt;
+      shieldUntil += elapsed; magnetUntil += elapsed; turboUntil += elapsed; crashUntil += elapsed;
+      lastTime = now; hiddenAt = null;
+      if(state === 'play') startEngine();
+    }
+  });
 
   resize();
   requestAnimationFrame(loop);

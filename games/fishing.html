@@ -10,7 +10,7 @@
   <style>
     *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
     html,body{width:100%;height:100%;overflow:hidden;font-family:'Nunito',sans-serif;background:#000;user-select:none;-webkit-user-select:none}
-    #game{position:relative;width:100vw;height:100vh;overflow:hidden}
+    #game{position:relative;width:100vw;height:100vh;height:100dvh;overflow:hidden}
 
     /* Background — gradient with mountains/forest/water */
     .bg-scene{
@@ -385,6 +385,12 @@
       text-decoration:none;
     }
     .home-btn:active,.mute:active{transform:scale(.92)}
+    @media (max-height:500px){
+      .reveal{gap:6px;overflow-y:auto}
+      .reveal-fish{width:150px;height:150px;min-height:150px}
+      .reveal-name{font-size:1.6rem}
+      .reveal-btn{margin-top:0;padding:10px 24px}
+    }
   </style>
 </head>
 <body>
@@ -493,6 +499,7 @@ let pullStartX=0, pullStartY=0;
 let pullEndX=0, pullEndY=0;
 let pullSplashed=false;
 let fishWag = 0;
+let hiddenAt = null;
 
 // ============== FISH ==============
 const FISH = [
@@ -531,6 +538,7 @@ resize();
 // ============== AUDIO ==============
 let _ac = null;
 function audio(){
+  if(document.hidden) return null;
   try{
     if(!_ac){
       const AC = window.AudioContext || window.webkitAudioContext;
@@ -755,6 +763,9 @@ function startBite(){
   haptic([25,35,35]);
 }
 function missedBite(){
+  if(phase!=='bite') return;
+  phase='miss';
+  hideAction(); showCancel(false);
   setBanner('🐟 Сорвалась...', 'alert', 1500);
   pBreak();
   setTimeout(reelIn, 800);
@@ -807,6 +818,7 @@ function doCatch(){
   hideAction(); showCancel(false);
   if(currentFish.junk){
     score = Math.max(0, score + currentFish.points);
+    updScore();
     setBanner('🥾 '+currentFish.name+' '+currentFish.points+' очков', 'alert', 1500);
     pBreak();
     showReveal(currentFish);
@@ -829,8 +841,8 @@ function showReveal(f){
     ? 'linear-gradient(180deg,#ffe066,#ff9800)'
     : 'linear-gradient(180deg,#888,#444)';
   // Draw fish on reveal canvas
-  drawRevealFish(f);
   reveal.classList.add('show');
+  drawRevealFish(f);
 }
 let revealAnimRunning = false;
 function drawRevealFish(f){
@@ -1066,14 +1078,18 @@ function update(dt){
     if(tensionPct>=100){
       setBanner('💥 ЛЕСКА ПОРВАЛАСЬ!','alert',1800);
       pBreak(); tensionMeter.classList.remove('show');
+      fightTip.classList.remove('show','run'); hideAction();
       haptic([90,45,120]);
       setTimeout(reelIn, 1500); phase='miss';
+      return;
     }
     if(performance.now()>fightEndTime){
       setBanner('🐟 Рыба сорвалась!','alert',1800);
       pBreak(); tensionMeter.classList.remove('show');
+      fightTip.classList.remove('show','run'); hideAction();
       haptic([45,50,45]);
       setTimeout(reelIn, 1500); phase='miss';
+      return;
     }
     floatX += Math.sin(performance.now()/350)*(inRun ? 2.8 : 1.5);
     floatY += Math.sin(performance.now()/200)*(inRun ? 1.6 : 0.8);
@@ -1830,10 +1846,26 @@ function render(){
 function loop(now){
   const dt = Math.min(0.05,(now-lastTime)/1000);
   lastTime = now;
-  update(dt);
-  render();
+  if(!document.hidden){ update(dt); render(); }
   requestAnimationFrame(loop);
 }
+document.addEventListener('visibilitychange', ()=>{
+  const now = performance.now();
+  if(document.hidden){
+    hiddenAt = now;
+    if(_ac) _ac.suspend().catch(()=>{});
+    haptic(0);
+  } else if(hiddenAt !== null){
+    // Переносим сроки поклёвки и борьбы на время, проведённое вне игры.
+    const elapsed = now - hiddenAt;
+    chargeStart += elapsed; castFlightStart += elapsed;
+    waitTimer += elapsed; nibbleEndTime += elapsed; biteEndTime += elapsed;
+    fightEndTime += elapsed; nextFishRunTime += elapsed; fishRunUntil += elapsed;
+    pullStart += elapsed; splashTime += elapsed; lastHapticAt += elapsed;
+    lastTime = now; hiddenAt = null;
+    if(charging){ charging=false; toReady(); }
+  }
+});
 requestAnimationFrame(loop);
 
 })();

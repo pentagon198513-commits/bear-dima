@@ -7,7 +7,7 @@
   <title>❌⭕ Крестики-нолики — Медведь</title>
   <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
   <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@700;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="game.css" />
+  <link rel="stylesheet" href="game.css?v=20261106" />
   <script src="sounds.js?v=4" defer></script>
   <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
   <script src="multiplayer.js?v=5"></script>
@@ -61,11 +61,12 @@
     <h2>🎮 ИГРАЙ С ДРУГОМ</h2>
     <div class="howto">
       <p><b>Онлайн (2 устройства):</b></p>
-      <p>1️⃣ Игрок 1 → <b>«Создать»</b> → получит 4 цифры</p>
+      <p>1️⃣ Игрок 1 → <b>«Создать»</b> → получит 6 цифр</p>
       <p>2️⃣ Игрок 2 → вводит цифры → <b>«Подключиться»</b></p>
       <p style="margin-top:6px"><b>На одном устройстве:</b></p>
       <p>Просто играйте по очереди!</p>
     </div>
+    <button class="lobby-btn green" id="resumeBtn" style="display:none" onclick="if(!loadTTT())this.style.display='none'">▶ ПРОДОЛЖИТЬ ПАРТИЮ</button>
     <button class="lobby-btn" onclick="createRoom()">🏠 СОЗДАТЬ ИГРУ</button>
     <div class="or-divider">— ИЛИ —</div>
     <p>Введи 6 цифр от друга:</p>
@@ -193,6 +194,7 @@
 
     function endGame(result, perspective) {
       gameOver = true;
+      localStorage.removeItem('bear_ttt');
       const title = document.getElementById('winTitle');
       const stat = document.getElementById('winStat');
       if (result.winner === 'draw') {
@@ -241,8 +243,13 @@
       try {
         const d = JSON.parse(s);
         if (!d.mode || d.mode === 'online') { localStorage.removeItem('bear_ttt'); return false; }
+        if(!Array.isArray(d.board) || d.board.length!==9 || d.board.some(v=>!['','X','O'].includes(v))) return false;
         board = d.board; mode = d.mode; myMark = d.myMark; currentMark = d.currentMark; myTurn = d.myTurn;
-        showGame(); return true;
+        showGame();
+        const result = checkWin();
+        if(result) endGame(result, myMark);
+        else if(mode==='bot' && !myTurn) setTimeout(botMove, 500);
+        return true;
       } catch(e) { return false; }
     }
 
@@ -327,7 +334,7 @@
     document.getElementById('musBtn').addEventListener('click',()=>{BearSound.toggleMusic();refreshSoundBtns()});
     window.addEventListener('load',()=>{
       setTimeout(refreshSoundBtns,100);
-      loadTTT();
+      if(localStorage.getItem('bear_ttt')) document.getElementById('resumeBtn').style.display='inline-block';
     });
   </script>
 </body>
