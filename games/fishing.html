@@ -507,7 +507,7 @@ let previousFish='';
 let currentFish=null, visibleFish=[];
 let tensionPct=30, fishHP=100, fightEndTime=0;
 let nextFishRunTime=0, fishRunUntil=0, lastHapticAt=0;
-let fightStartTime=0, lastReelTapAt=-Infinity;
+let fightStartTime=0, fightUpdatedAt=0, lastReelTapAt=-Infinity;
 let lastTime=performance.now(), waterTime=0;
 let splashTime=-999, splashX=0, splashY=0;
 let castFlightStart=0, castFlightDur=700;
@@ -798,6 +798,7 @@ function hookIt(){
   fishHP = currentFish.hp * 1.75;
   tensionPct = 24;
   fightStartTime = performance.now();
+  fightUpdatedAt = fightStartTime;
   fightEndTime = fightStartTime + 43000 + currentFish.diff*8000;
   nextFishRunTime = fightStartTime + between(currentFish.profile.rest);
   lastReelTapAt = -Infinity;
@@ -815,6 +816,7 @@ function reelTap(){
   if(phase!=='fight') return;
   const now = performance.now();
   if(now-lastReelTapAt<200) return;
+  if(advanceFight(now)) return;
   lastReelTapAt=now;
   const inRun = now < fishRunUntil;
   fishHP = Math.max(0, fishHP - (inRun ? (2.2 + Math.random()*2.4) : (3.6 + Math.random()*3.2)));
@@ -824,6 +826,30 @@ function reelTap(){
   hapticLimited(inRun ? [18,30,28] : 14, inRun ? 90 : 130);
 }
 function between(range){ return range[0]+Math.random()*(range[1]-range[0]); }
+function advanceFight(now){
+  const profile=currentFish.profile;
+  const strength=.55+.45*Math.max(0,fishHP/(currentFish.hp*1.75));
+  let cursor=fightUpdatedAt, startedRun=false;
+  // Делим задержанный кадр по границам рывков, не начисляя рывок за время отдыха.
+  while(cursor<now && tensionPct<100){
+    if(cursor>=nextFishRunTime){
+      fishRunUntil=cursor+between(profile.run);
+      nextFishRunTime=fishRunUntil+between(profile.rest);
+      startedRun=true;
+    }
+    const inRun=cursor<fishRunUntil;
+    const end=Math.min(now,inRun?fishRunUntil:nextFishRunTime);
+    tensionPct=Math.max(0,tensionPct+(end-cursor)/1000*(inRun?profile.pull*strength:-profile.recovery));
+    cursor=end;
+  }
+  fightUpdatedAt=now;
+  if(startedRun && now<fishRunUntil){
+    splashTime=now; splashX=floatX; splashY=floatY+5;
+    setBanner('🐟 Рыба тянет! Ослабь леску!', 'alert', 900);
+    pFishRun(); haptic([35,35,45,35,55]);
+  }
+  return tensionPct>=100;
+}
 function startPulling(){
   phase='pulling';
   tensionMeter.classList.remove('show');
@@ -1069,16 +1095,7 @@ function update(dt){
   if(phase==='fight'){
     const now = performance.now();
     const profile = currentFish.profile;
-    if(now > nextFishRunTime){
-      fishRunUntil = now + between(profile.run);
-      nextFishRunTime = fishRunUntil + between(profile.rest);
-      splashTime = now;
-      splashX = floatX;
-      splashY = floatY + 5;
-      setBanner('🐟 Рыба тянет! Ослабь леску!', 'alert', 900);
-      pFishRun();
-      haptic([35,35,45,35,55]);
-    }
+    const alreadyBroken=advanceFight(now);
     const inRun = now < fishRunUntil;
     if(inRun){
       fightTip.classList.add('run');
@@ -1093,11 +1110,7 @@ function update(dt){
       fightTip.classList.remove('run');
       fightTip.innerHTML = '🎣 <span>Тяни короткими нажатиями</span>';
     }
-    const alreadyBroken = tensionPct>=100;
-    tensionPct = Math.max(0, tensionPct - dt*(inRun ? 0 : profile.recovery));
     if(inRun){
-      const strength=.55+.45*Math.max(0,fishHP/(currentFish.hp*1.75));
-      tensionPct += dt*profile.pull*strength;
       hapticLimited([12+Math.round(profile.pull*.6),30,18], Math.max(160,650-profile.rhythm*50));
       if(Math.random() < dt*1.8) pLineStrain();
     }
@@ -1899,7 +1912,7 @@ document.addEventListener('visibilitychange', ()=>{
     waitTimer += elapsed; nibbleEndTime += elapsed; biteEndTime += elapsed;
     nibbleStartTime += elapsed; biteStartTime += elapsed;
     fightEndTime += elapsed; nextFishRunTime += elapsed; fishRunUntil += elapsed;
-    fightStartTime += elapsed; lastReelTapAt += elapsed;
+    fightStartTime += elapsed; fightUpdatedAt += elapsed; lastReelTapAt += elapsed;
     pullStart += elapsed; splashTime += elapsed; lastHapticAt += elapsed;
     lastTime = now; hiddenAt = null;
     if(charging){ charging=false; toReady(); }
