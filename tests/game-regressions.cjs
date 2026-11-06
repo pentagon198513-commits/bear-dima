@@ -65,6 +65,7 @@ function loadGame(file, expose, saved = {}) {
   return {api: context.testGame, elements, timers, oscillators,
     time:()=>now,
     step(ms=1000/60) { now+=ms; context.testGame.update(ms/1000); },
+    frame(ms=1000/60) { now+=ms; context.testGame.loop(now); },
     viewport(width,height) { context.innerWidth=width; context.innerHeight=height; context.testGame.resize(); },
     visibility(hidden, time) { now=time; context.document.hidden=hidden; documentEvents.visibilitychange(); }};
 }
@@ -74,7 +75,7 @@ for (const file of ['index.html', ...fs.readdirSync(path.join(root, 'games')).fi
 }
 
 const fishing = loadGame('games/fishing.html', `{
-  missedBite, update, doCatch, resize, hookIt, reelTap,
+  missedBite, update, loop, doCatch, resize, hookIt, reelTap,
   species:FishingSpecies,
   bite() { currentFish=mkFish(FISH[0]); phase='bite'; biteEndTime=1; },
   catchFish(junk=false) { currentFish=mkFish(FISH.find(f=>!!f.junk===junk)); score=20; doCatch(); },
@@ -157,6 +158,10 @@ fishing.viewport(844,390); fishing.step();
 assert.ok(fishing.api.stats().y>0 && fishing.api.stats().y<390,'При повороте телефона рыба остаётся в воде на экране');
 fishing.viewport(320,568); fishing.step();
 assert.ok(fishing.api.stats().x>=22 && fishing.api.stats().x<=298);
+fishing.frame(16); fishing.api.prepare(0); fishing.api.hookIt();
+const tensionBefore=fishing.api.stats().tension;
+fishing.frame(1000);
+assert.ok(tensionBefore-fishing.api.stats().tension>=16,'При редкой отрисовке леска должна ослабевать с той же скоростью');
 
 const race = loadGame('games/car-runner.html', `{
   startEngine, stopEngine,

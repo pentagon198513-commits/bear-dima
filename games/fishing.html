@@ -1880,7 +1880,8 @@ function render(){
 
 // ============== LOOP ==============
 function loop(now){
-  const dt = Math.min(0.05,(now-lastTime)/1000);
+  // Натяжение зависит от прошедшего времени, а не от частоты отрисовки.
+  const dt = Math.max(0,Math.min(1,(now-lastTime)/1000));
   lastTime = now;
   if(!document.hidden){ update(dt); render(); }
   requestAnimationFrame(loop);
