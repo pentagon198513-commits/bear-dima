@@ -7,7 +7,7 @@
   <title>🚢 Морской бой — Медведь</title>
   <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
   <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@700;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="game.css" />
+  <link rel="stylesheet" href="game.css?v=20261106" />
   <script src="sounds.js?v=4" defer></script>
   <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
   <script src="multiplayer.js?v=5"></script>
@@ -172,9 +172,10 @@
     <div style="background:#fff;border-radius:16px;padding:12px 16px;margin:10px auto;max-width:340px;text-align:left;border:3px solid #ffcc00;box-shadow:0 4px 12px rgba(0,0,0,0.15);">
       <p style="margin:0 0 6px;font-size:0.95rem;"><b>Как играть вдвоём:</b></p>
       <p style="margin:0 0 4px;font-size:0.9rem;">1️⃣ Игрок 1 нажимает <b>«Создать игру»</b></p>
-      <p style="margin:0 0 4px;font-size:0.9rem;">2️⃣ Появятся 4 цифры — скажи их другу</p>
+      <p style="margin:0 0 4px;font-size:0.9rem;">2️⃣ Появятся 6 цифр — скажи их другу</p>
       <p style="margin:0;font-size:0.9rem;">3️⃣ Игрок 2 вводит цифры и жмёт <b>«Подключиться»</b></p>
     </div>
+    <button class="lobby-btn green" id="resumeBtn" style="display:none" onclick="if(!loadBS())this.style.display='none'">▶ ПРОДОЛЖИТЬ ПАРТИЮ</button>
     <button class="lobby-btn" onclick="createRoom()">🏠 СОЗДАТЬ ИГРУ</button>
     <div class="or-divider">— ИЛИ —</div>
     <p>Введи 6 цифр от друга:</p>
@@ -690,6 +691,7 @@
         document.getElementById('battleView').classList.add('show');
         phase = 'battle';
         renderMyGrid(); renderEnemyGrid(); updateStatus(); saveBS();
+        if(!myTurn) setTimeout(botFire, 800);
         return true;
       } catch(e) { localStorage.removeItem('bear_bs'); return false; }
     }
@@ -837,7 +839,7 @@
     document.getElementById('musBtn').addEventListener('click', () => { BearSound.toggleMusic(); refreshSoundBtns(); });
     window.addEventListener('load', () => {
       setTimeout(refreshSoundBtns, 100);
-      loadBS();
+      if(localStorage.getItem('bear_bs')) document.getElementById('resumeBtn').style.display='inline-block';
     });
   </script>
 </body>

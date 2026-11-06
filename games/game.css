@@ -125,6 +125,8 @@ body {
   text-align: center;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 60px rgba(255, 107, 0, 0.6);
   max-width: 90vw;
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
   animation: popIn 0.5s cubic-bezier(0.5, 1.7, 0.5, 1);
 }
 .win-title {
@@ -244,7 +246,16 @@ body {
 
 /* ===== Адаптив: узкий мобильный экран ===== */
 @media (max-width: 480px) {
-  .game-header { padding: 8px 10px; gap: 6px; }
+  .game-header {
+    padding: 8px 10px;
+    gap: 6px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+  .game-header .back-btn { grid-column: 1; grid-row: 1; }
+  .game-header .game-stats { grid-column: 2; grid-row: 1; justify-content: center; }
+  .game-header .sound-toggles { grid-column: 3; grid-row: 1; justify-self: end; }
+  .game-header .game-title { grid-column: 1 / -1; grid-row: 2; }
   .back-btn {
     min-width: unset;
     padding: 10px 14px;
@@ -253,12 +264,12 @@ body {
   }
   .back-btn span:last-child { display: none; } /* оставляем только стрелку ← */
   .game-title {
-    font-size: clamp(0.95rem, 4.2vw, 1.5rem);
-    -webkit-text-stroke: 1.5px #000;
-    text-shadow: 2px 2px 0 var(--hw-red);
-    letter-spacing: 0.02em;
+    font-size: 1.2rem;
+    -webkit-text-stroke: 0;
+    text-shadow: 1px 2px 0 #000;
+    letter-spacing: 0;
     white-space: normal; /* разрешить перенос если нужно */
-    line-height: 1.05;
+    line-height: 1.25;
   }
   .stat-pill { padding: 4px 10px; font-size: 0.9rem; border-width: 2px; }
   .sound-toggles { gap: 4px; margin-left: 4px; }

@@ -7,7 +7,7 @@
   <title>♟ Шахматы — Медведь</title>
   <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
   <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@700;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="game.css" />
+  <link rel="stylesheet" href="game.css?v=20261106" />
   <script src="sounds.js?v=4" defer></script>
   <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
   <script src="multiplayer.js?v=5"></script>
@@ -62,9 +62,10 @@
     <h2>♟ ШАХМАТЫ</h2>
     <div class="howto">
       <p><b>Онлайн (2 устройства):</b></p>
-      <p>1️⃣ Игрок 1 → <b>«Создать»</b> → 4 цифры</p>
+      <p>1️⃣ Игрок 1 → <b>«Создать»</b> → 6 цифр</p>
       <p>2️⃣ Игрок 2 → вводит цифры → <b>«Подключиться»</b></p>
     </div>
+    <button class="lobby-btn green" id="resumeBtn" style="display:none" onclick="if(!loadGame())this.style.display='none'">▶ ПРОДОЛЖИТЬ ПАРТИЮ</button>
     <button class="lobby-btn" onclick="createRoom()">🏠 СОЗДАТЬ ИГРУ</button>
     <div class="or-divider">— ИЛИ —</div>
     <p>Введи 6 цифр от друга:</p>
@@ -328,6 +329,7 @@
         capturedB = d.capturedB || [];
         lastMove = d.lastMove || null;
         showGame();
+        if(mode==='bot' && !game.game_over() && game.turn()!==myColor) setTimeout(botMove, 500);
         return true;
       } catch (e) { return false; }
     }
@@ -425,10 +427,7 @@
     document.getElementById('musBtn').addEventListener('click',()=>{BearSound.toggleMusic();refreshSoundBtns()});
     window.addEventListener('load',()=>{
       setTimeout(refreshSoundBtns,100);
-      // Восстановить сохранённую партию
-      if (!loadGame()) {
-        // нет сохранения — показать лобби
-      }
+      if(localStorage.getItem('bear_chess')) document.getElementById('resumeBtn').style.display='inline-block';
     });
   </script>
 </body>
