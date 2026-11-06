@@ -82,6 +82,7 @@ const fishing = loadGame('games/fishing.html', `{
   prepare(index,edge=1) { currentFish=mkFish(FISH[index]); currentFish.hp=FISH[index].fightHP*1.3; floatTargetX=edge<0?22:W-22; floatTargetY=H*.6; startNibble(); },
   stats() { return {phase,id:currentFish.id,tension:tensionPct,hp:fishHP,inRun:performance.now()<fishRunUntil,x:floatX,y:floatY,elapsed:performance.now()-fightStartTime}; },
   breakAtFinish() { fishHP=0; tensionPct=100; },
+  fixedFight() { currentFish=mkFish(FISH[0]); currentFish.profile={...currentFish.profile,rest:[3000,3000],run:[2000,2000],pull:20,recovery:10}; hookIt(); },
   paint(index) { drawFishByName(ctx,FISH[index].name,200,200,110,.1,1); },
   phase() { return phase; }, score() { return score; },
   deadlines() { return [biteEndTime, fightEndTime, nextFishRunTime, pullStart,nibbleStartTime,biteStartTime,fightStartTime]; }
@@ -162,6 +163,11 @@ fishing.frame(16); fishing.api.prepare(0); fishing.api.hookIt();
 const tensionBefore=fishing.api.stats().tension;
 fishing.frame(1000);
 assert.ok(tensionBefore-fishing.api.stats().tension>=16,'При редкой отрисовке леска должна ослабевать с той же скоростью');
+for(const frameMs of [1000,100,1000/60]){
+  fishing.api.fixedFight();
+  for(let step=0;step<Math.round(18000/frameMs);step++) fishing.step(frameMs);
+  assert.ok(Math.abs(fishing.api.stats().tension-30)<.01,'Рывки и отдых должны одинаково считаться при любом числе кадров');
+}
 
 const race = loadGame('games/car-runner.html', `{
   startEngine, stopEngine,
